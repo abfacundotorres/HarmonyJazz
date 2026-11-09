@@ -5,6 +5,10 @@ on:
   push:
     branches-ignore: [main]
 
+# Permisos mínimos: este workflow sólo lee el código.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
