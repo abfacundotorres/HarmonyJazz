@@ -62,8 +62,10 @@ interface Voice {
 }
 
 /** Nivel base de la salida (dB) y niveles de cada instrumento; se ajustaron midiendo la salida real. */
-const MASTER_DB = 12;
-const LEVEL_DB = { piano: 0, bass: 3, horn: 7 };
+const MASTER_DB = 18;
+/** Base del volumen del usuario (después del compresor). El control actúa respecto de este valor. */
+const BASE_TRIM_DB = 2;
+const LEVEL_DB = { piano: 2, bass: 1.5, horn: 7 };
 
 const SAMPLE_BASE = () => new URL('samples/', location.href.split('#')[0]).href;
 /** Nota de Tone → archivo (los sostenidos del piano se renombraron: D#3 → Ds3). */
@@ -90,12 +92,16 @@ class Instruments {
   lead: Tone.MonoSynth;
   click: Tone.Synth;
   reverb: Tone.Reverb;
+  /** Ganancia fija antes del compresor. */
   master: Tone.Volume;
+  /** Volumen del usuario, después del compresor: así sube el nivel de verdad en lugar de ser aplastado. */
+  trim: Tone.Volume;
   private comp: Tone.Compressor;
   private synths: { piano: Tone.PolySynth; bass: Tone.MonoSynth; horn: Tone.MonoSynth };
 
   constructor() {
     this.master = new Tone.Volume(MASTER_DB);
+    this.trim = new Tone.Volume(0);
     // compresión para subir el nivel medio sin que los transitorios (piano, bombo) saturen,
     // limitador y un recortador suave final: la salida nunca supera ~0,91 (−0,8 dBFS)
     const shaper = new Tone.WaveShaper((x: number) => {
@@ -105,7 +111,8 @@ class Instruments {
     }, 4096);
     shaper.oversample = '4x';
     this.master.chain(
-      new Tone.Compressor({ threshold: -22, ratio: 4, attack: 0.003, release: 0.15 }),
+      new Tone.Compressor({ threshold: -28, ratio: 8, attack: 0.003, release: 0.15 }),
+      this.trim,
       new Tone.Limiter(-2),
       shaper,
       Tone.getDestination(),
@@ -121,7 +128,7 @@ class Instruments {
       modulation: { type: 'sine' },
       envelope: { attack: 0.005, decay: 1.4, sustain: 0.12, release: 0.9 },
       modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0.1, release: 0.5 },
-    }).connect(new Tone.Volume(-7).connect(comp));
+    }).connect(new Tone.Volume(-9).connect(comp));
     (this.piano as Tone.PolySynth).maxPolyphony = 24;
 
     this.bass = new Tone.MonoSynth({
@@ -129,7 +136,7 @@ class Instruments {
       filter: { Q: 1, type: 'lowpass', rolloff: -24 },
       envelope: { attack: 0.004, decay: 0.5, sustain: 0.35, release: 0.12 },
       filterEnvelope: { attack: 0.002, decay: 0.25, sustain: 0.25, release: 0.2, baseFrequency: 180, octaves: 2.6 },
-    }).connect(new Tone.Volume(-14).connect(comp));
+    }).connect(new Tone.Volume(-18).connect(comp));
 
     const drums = new Tone.Volume(8).connect(this.reverb);
     this.ride = new Tone.MetalSynth({
@@ -270,7 +277,7 @@ export class JazzEngine {
     if (!this.inst) {
       const inst = new Instruments();
       this.inst = inst;
-      inst.master.volume.value = MASTER_DB + this.volumeDb;
+      inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
       this.meter = new Tone.Meter({ smoothing: 0.7 });
       Tone.getDestination().connect(this.meter);
       this.samples = 'loading';
@@ -296,10 +303,10 @@ export class JazzEngine {
     }
   }
 
-  /** Volumen general en dB respecto del nivel base (−12…+6; más arriba empieza a distorsionar). */
+  /** Volumen general en dB respecto del nivel base (−14…+2; más arriba empieza a distorsionar). */
   setVolume(db: number) {
-    this.volumeDb = Math.max(-12, Math.min(6, db));
-    if (this.inst) this.inst.master.volume.value = MASTER_DB + this.volumeDb;
+    this.volumeDb = Math.max(-14, Math.min(2, db));
+    if (this.inst) this.inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
   }
 
   async init() {
