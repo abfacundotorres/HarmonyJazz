@@ -70,6 +70,23 @@ Es una aproximación: no capta notas fantasma, glissandos ni notas más rápidas
 
 Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento y sonido, técnica en la tonalidad del día, armonía aplicada (lección foco), vocabulario (frase del día), tema de la semana e improvisación libre / transcripción. La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. Hay temporizador por bloque, racha e historial de 28 días.
 
+### Loops, transposición y biblioteca propia
+
+- **Loop:** en el play-along se toca un compás para marcar el inicio y otro para el final. `sliceChart` recorta la forma y el motor la repite, así que el bajo, el piano y la grabación del solo trabajan sobre el tramo.
+- **Transposición:** los temas con tonalidad usan el selector de las 12 tonalidades; los demás (y las progresiones propias sin tonalidad) se transponen de a medio tono con ortografía de jazz (`semitoneInterval`: el tritono es una 5ª disminuida, C → G♭).
+- **Mis temas:** cifrados cargados por el usuario, guardados en `localStorage` (hasta 500). Se limpian secciones (`[A]`, `*A`), repeticiones y saltos de línea (`normalizeChartText`) y se validan al guardar, al importar y al leer, por si el almacenamiento tiene datos dañados. Se exportan e importan como `.json`.
+- **Sin el Real Book:** la app no trae contenido con derechos de autor (melodías ni cifrados de libros comerciales). El usuario carga los suyos.
+- **Diagnóstico de audio:** el reproductor muestra un medidor del sonido que genera la app y avisa si el audio del navegador está pausado o si todo está apagado; en móviles pide la sesión de audio "playback" y mantiene un `<audio>` silencioso.
+
+## Seguridad y privacidad
+
+- **Sin red:** la app no hace peticiones a terceros. Una CSP (meta tag, sólo en el build) lo impone: `connect-src 'self'`, sin scripts inline, `object-src 'none'`. `abcjs` trae URLs de soundfonts que no se usan; la CSP las deja inertes.
+- **Audio local:** el micrófono se analiza en el dispositivo; no se graba ni se envía. Se libera al apagarlo.
+- **Datos en el dispositivo:** configuración, registro de práctica, tempos dominados y temas propios, en `localStorage`. Sin cuentas, cookies ni rastreo.
+- **Entrada de usuario:** la progresión propia pasa por un parser estricto; el código propio no usa `innerHTML` ni `eval`.
+- **CI/CD:** permisos mínimos (`contents: read`); `pages: write` e `id-token: write` sólo en el job de deploy.
+- **Pendiente:** las acciones de GitHub están fijadas por etiqueta (`@v4`), no por SHA de commit; `frame-ancestors` no se puede fijar desde un meta tag en GitHub Pages.
+
 ## Roadmap
 
 **Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), Blue Bossa, Solar y balada en E♭, transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
