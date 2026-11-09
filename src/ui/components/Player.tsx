@@ -60,13 +60,21 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
     if (engine.options?.owner === id) engine.stop();
   }, [id]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const toggle = async () => {
+    setError(null);
     if (playing) {
       engine.stop();
       setPlaying(false);
     } else {
-      await engine.play(opts());
-      setPlaying(true);
+      try {
+        await engine.play(opts());
+        setPlaying(true);
+      } catch (e) {
+        console.error(e);
+        setError('No se pudo iniciar el audio: ' + ((e as Error).message || 'error desconocido') + '. Probá tocar de nuevo.');
+      }
     }
   };
 
@@ -105,6 +113,8 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
           <option key={s} value={s}>{STYLE_LABEL[s]}</option>
         ))}
       </select>
+      {error && <p className="error player-note">{error}</p>}
+      {playing && <LevelMeter />}
       <details className="more">
         <summary>Más</summary>
         <label>
@@ -128,5 +138,43 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button className={`chip ${on ? 'on' : ''}`} aria-pressed={on} onClick={onClick}>
       {children}
     </button>
+  );
+}
+
+/**
+ * Muestra cuánto sonido genera la app. Si la barra se mueve y no se oye nada, el problema está en el
+ * teléfono (volumen, modo silencio, salida de audio) y no en la app.
+ */
+function LevelMeter() {
+  const bar = useRef<HTMLElement>(null);
+  const [state, setState] = useState(engine.audioState);
+  const [silent, setSilent] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    let quiet = 0;
+    const tick = () => {
+      const l = engine.level();
+      if (bar.current) bar.current.style.width = `${Math.round(l * 100)}%`;
+      quiet = l < 0.02 ? quiet + 1 : 0;
+      setSilent(quiet > 90); // ~1,5 s seguidos sin señal
+      setState(engine.audioState);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div className="level player-note" role="status">
+      <div className="level-track" aria-hidden>
+        <i ref={bar} />
+      </div>
+      <span className="muted small">
+        {state !== 'running'
+          ? `El audio del navegador está en pausa (${state}). Tocá de nuevo ▶ para reanudarlo.`
+          : silent
+            ? 'La app no está generando sonido: revisá que Piano, Bajo o Batería estén activados.'
+            : 'La barra muestra el sonido que genera la app. Si se mueve y no lo oís: subí el volumen del teléfono y, en iPhone, desactivá el modo silencio.'}
+      </span>
+    </div>
   );
 }

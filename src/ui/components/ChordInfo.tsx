@@ -4,22 +4,52 @@ import { degreeNote, noteName, simplify, transposeNote } from '../../theory/note
 import { SCALES } from '../../theory/scales';
 import { useReading } from '../hooks';
 
-/** Cuadrícula de compases tipo lead sheet, con el acorde actual resaltado. */
-export function ChordBoard({ chart, current }: { chart: Chart; current: number }) {
+/**
+ * Cuadrícula de compases tipo lead sheet, con el acorde actual resaltado.
+ * Cada compás es clickeable para armar un loop: primer clic = inicio, segundo clic = final.
+ */
+export function ChordBoard({
+  chart,
+  current,
+  loop,
+  pending,
+  onBarClick,
+}: {
+  chart: Chart;
+  current: number;
+  loop?: [number, number] | null;
+  pending?: number | null;
+  onBarClick?: (bar: number) => void;
+}) {
   const { iv } = useReading();
   const bars: { idx: number; sym: string }[][] = Array.from({ length: chart.bars }, () => []);
   chart.chords.forEach((cc, i) => bars[cc.bar].push({ idx: i, sym: chordSymbol(transposeChord(cc.chord, iv), true) }));
   return (
     <div className="board">
-      {bars.map((b, i) => (
-        <div key={i} className={`bar ${b.some((x) => x.idx === current) ? 'now' : ''}`}>
-          {b.map((x) => (
-            <span key={x.idx} className={x.idx === current ? 'cur' : ''}>
-              {x.sym}
-            </span>
-          ))}
-        </div>
-      ))}
+      {bars.map((b, i) => {
+        const inLoop = !!loop && i >= loop[0] && i <= loop[1];
+        const cls = ['bar', b.some((x) => x.idx === current) ? 'now' : '', inLoop ? 'inloop' : '', pending === i ? 'pending' : '']
+          .filter(Boolean)
+          .join(' ');
+        return (
+          <button
+            key={i}
+            type="button"
+            className={cls}
+            onClick={() => onBarClick?.(i)}
+            disabled={!onBarClick}
+            aria-label={`Compás ${i + 1}: ${b.map((x) => x.sym).join(' ')}`}
+            aria-pressed={inLoop}
+          >
+            <small className="barno">{i + 1}</small>
+            {b.map((x) => (
+              <span key={x.idx} className={x.idx === current ? 'cur' : ''}>
+                {x.sym}
+              </span>
+            ))}
+          </button>
+        );
+      })}
     </div>
   );
 }

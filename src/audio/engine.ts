@@ -125,6 +125,20 @@ class Instruments {
   }
 }
 
+/** WAV mono de 8 kHz con 1 s de silencio, como blob: (permitido por la CSP: media-src blob:). */
+function silentWavUrl(): string {
+  const n = 8000;
+  const buf = new ArrayBuffer(44 + n);
+  const v = new DataView(buf);
+  const str = (o: number, t: string) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  new Uint8Array(buf, 44).fill(128); // 8 bits sin signo: 128 = silencio
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
 export class JazzEngine {
   private inst: Instruments | null = null;
   /**
@@ -138,13 +152,57 @@ export class JazzEngine {
   /** Momento (tiempo de AudioContext) en que empieza cada chorus. */
   private chorusStarts: { chorus: number; time: number }[] = [];
   playing = false;
+  private keepAlive: HTMLAudioElement | null = null;
+  private meter: Tone.Meter | null = null;
+
+  /**
+   * En iPhone el audio web puede quedar mudo (modo silencio / sesión "ambient"). Pedir la sesión
+   * "playback" y mantener un <audio> silencioso sonando lo evita. Debe llamarse dentro del gesto del usuario.
+   */
+  private unlockMobileAudio() {
+    try {
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (session) session.type = 'playback';
+    } catch {
+      /* no disponible */
+    }
+    try {
+      if (!this.keepAlive) {
+        const a = new Audio(silentWavUrl());
+        a.loop = true;
+        a.setAttribute('playsinline', '');
+        this.keepAlive = a;
+      }
+      void this.keepAlive.play().catch(() => {});
+    } catch {
+      /* sin soporte: el resto sigue funcionando */
+    }
+  }
 
   async init() {
+    this.unlockMobileAudio(); // antes de cualquier await, para seguir dentro del gesto
     await Tone.start();
+    const ctx = Tone.getContext();
+    if (ctx.state !== 'running') await ctx.resume();
     if (!this.inst) {
       this.inst = new Instruments();
       await this.inst.reverb.ready;
+      this.meter = new Tone.Meter({ smoothing: 0.7 });
+      Tone.getDestination().connect(this.meter);
     }
+  }
+
+  /** Nivel de salida 0..1 (de −60 dB a 0 dB), para el medidor de la interfaz. */
+  level(): number {
+    if (!this.meter) return 0;
+    const v = this.meter.getValue();
+    const db = Array.isArray(v) ? Math.max(...v) : v;
+    return Number.isFinite(db) ? Math.max(0, Math.min(1, (db + 60) / 60)) : 0;
+  }
+
+  /** Estado del contexto de audio: running, suspended, interrupted… */
+  get audioState(): string {
+    return Tone.getContext().state;
   }
 
   onPosition(l: Listener) {
@@ -212,6 +270,7 @@ export class JazzEngine {
     this.repeatId = null;
     this.inst?.piano.releaseAll();
     this.inst?.lead.triggerRelease();
+    this.keepAlive?.pause();
     if (this.playing) this.listeners.forEach((l) => l({ owner: this.lastOpts?.owner, chorus: -1, bar: -1, chordIndex: -1, beat: -1, countIn: false }));
     this.playing = false;
   }

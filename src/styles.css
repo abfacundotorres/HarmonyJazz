@@ -226,3 +226,31 @@ button.rec.on { background: var(--bad); color: #fff; }
 .stat b { font-size: 1.4rem; color: var(--accent); }
 .feedback { margin: 12px 0 0; padding-left: 1.2em; }
 .feedback li { margin: 4px 0; }
+
+/* medidor de nivel del reproductor */
+.player-note { flex-basis: 100%; margin: 0; }
+.level { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.level-track { flex: 0 0 140px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.level-track i { display: block; height: 100%; width: 0; background: var(--good); transition: width .05s linear; }
+
+/* tablero con loop */
+.board .bar { position: relative; background: transparent; border-radius: 0; color: var(--text); cursor: pointer; text-align: center; border-top: 0; border-left: 0; }
+.board .bar:disabled { cursor: default; opacity: 1; }
+.board .bar:hover { border-color: var(--line); background: var(--surface-2); }
+.board .bar.inloop { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 0 -3px 0 var(--accent); }
+.board .bar.pending { outline: 2px dashed var(--accent); outline-offset: -3px; }
+.board .bar.now { background: var(--surface-2); }
+.board .bar.inloop.now { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.barno { position: absolute; top: 2px; left: 5px; font-size: .62rem; color: var(--muted); font-weight: 400; }
+.loopbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.transpose { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0 4px; }
+.transpose b { min-width: 7em; text-align: center; }
+
+/* biblioteca */
+.formgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 10px 0; }
+.formgrid label { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--muted); }
+.formgrid input, .formgrid select { width: 100%; cursor: text; }
+input[type='number'] { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: .45em .8em; }
+.tunelist { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 6px; }
+.tunelist li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; background: var(--surface-2); border-radius: 10px; }
+.tunelist .row { margin: 0; }

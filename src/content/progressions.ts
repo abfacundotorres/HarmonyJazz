@@ -5,7 +5,7 @@ import { degreeNote, noteName, parseNote, simplify } from '../theory/notes';
 export interface Progression {
   id: string;
   name: string;
-  category: 'Fundamentos' | 'Blues' | 'Standards' | 'Avanzado';
+  category: 'Fundamentos' | 'Blues' | 'Standards' | 'Avanzado' | 'Mis temas';
   /** Tonalidad de referencia en concierto (para transponer). null = recorre varias tonalidades. */
   key: string | null;
   /** Modo de la tonalidad, para la armadura. */

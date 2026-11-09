@@ -1,5 +1,5 @@
 import { Chord, chordSymbol, parseChord, transposeChord } from './chords';
-import { Interval, intervalBetween, mod, Note, parseNote } from './notes';
+import { INTERVAL, Interval, intervalBetween, mod, Note, parseNote } from './notes';
 
 /** Un acorde ubicado en el tiempo (en corcheas, 8 por compás de 4/4). */
 export interface ChartChord {
@@ -17,6 +17,29 @@ export interface Chart {
 }
 
 export const EIGHTHS_PER_BAR = 8;
+export const MAX_BARS = 256;
+
+/** Recorta la carta a los compases [from, to] (0-based, inclusive) y reubica los tiempos desde 0. */
+export function sliceChart(c: Chart, from: number, to: number): Chart {
+  const a = Math.max(0, Math.min(from, to));
+  const b = Math.min(c.bars - 1, Math.max(from, to));
+  return {
+    bars: b - a + 1,
+    chords: c.chords
+      .filter((x) => x.bar >= a && x.bar <= b)
+      .map((x) => ({ ...x, bar: x.bar - a, start: x.start - a * EIGHTHS_PER_BAR })),
+  };
+}
+
+const SEMITONE_INTERVALS: Interval[] = [
+  INTERVAL.P1, INTERVAL.m2, INTERVAL.M2, INTERVAL.m3, INTERVAL.M3, INTERVAL.P4,
+  INTERVAL.d5, INTERVAL.P5, INTERVAL.m6, INTERVAL.M6, INTERVAL.m7, INTERVAL.M7,
+];
+
+/** Intervalo ascendente de n semitonos (módulo 12), con ortografía de jazz: el tritono es una 5ª disminuida (C → G♭). */
+export function semitoneInterval(n: number): Interval {
+  return SEMITONE_INTERVALS[mod(n, 12)];
+}
 
 /**
  * Formato: compases separados por "|", acordes dentro del compás separados por espacios.
@@ -28,6 +51,8 @@ export function parseChart(src: string): Chart {
     .split('|')
     .map((b) => b.trim())
     .filter((b) => b.length > 0);
+  if (bars.length === 0) throw new Error('La progresión está vacía');
+  if (bars.length > MAX_BARS) throw new Error(`Demasiados compases (máximo ${MAX_BARS})`);
   const chords: ChartChord[] = [];
   let prev: string[] = [];
   bars.forEach((bar, i) => {

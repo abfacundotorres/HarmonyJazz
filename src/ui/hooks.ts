@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { engine, Position } from '../audio/engine';
+import type { Library } from '../content/library';
 import { DEFAULT_SETTINGS, Mastery, PracticeLog, Settings, usePersistent } from '../state/storage';
 import { BB_TRUMPET, INTERVAL, Interval, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
 
@@ -31,6 +32,7 @@ export const navigate = (to: string) => {
 export const useSettings = () => usePersistent<Settings>('settings', DEFAULT_SETTINGS);
 export const useLog = () => usePersistent<PracticeLog>('log', {});
 export const useMastery = () => usePersistent<Mastery>('mastery', {});
+export const usePersistentLibrary = () => usePersistent<Library>('library', { tunes: [] });
 
 /** Transposición de lectura según la vista elegida. */
 export function useReading(): { iv: Interval; view: Settings['view']; keyLabel: (concert: string) => string } {
