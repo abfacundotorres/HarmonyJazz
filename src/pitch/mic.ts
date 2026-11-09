@@ -20,7 +20,8 @@ export interface MicListener {
  */
 export async function listen(
   onFrame: (f: PitchFrame) => void,
-  onNote?: (midi: number, time: number) => void,
+  /** midi = null cuando la nota termina. */
+  onNote?: (midi: number | null, time: number) => void,
 ): Promise<MicListener> {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
@@ -44,6 +45,7 @@ export async function listen(
     onFrame({ midi: m, freq: r?.freq ?? null, clarity: r?.clarity ?? 0, rms: r?.rms ?? 0, time: now });
     const ev = tracker.push(m, now);
     if (ev.on !== undefined) onNote?.(ev.on, now);
+    else if (ev.off) onNote?.(null, now);
     raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);

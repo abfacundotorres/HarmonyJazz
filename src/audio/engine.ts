@@ -15,12 +15,22 @@ export interface Mix {
   metronome: boolean;
 }
 
+/** swing = walking en 4; two = bajo en 2; ballad = escobillas y piano sostenido; bossa = corcheas rectas. */
+export type Style = 'swing' | 'two' | 'ballad' | 'bossa';
+
+export const STYLE_LABEL: Record<Style, string> = {
+  swing: 'Swing (walking)',
+  two: 'Swing en 2',
+  ballad: 'Balada',
+  bossa: 'Bossa nova',
+};
+
 export interface PlayOptions {
   chart: Chart;
   tempo: number;
   /** Proporción de la corchea larga: 0.5 = recto, 0.67 = tresillo. */
   swing: number;
-  feel: 'walking' | 'two';
+  style: Style;
   countIn: boolean;
   /** Melodía de guía en concierto (se toca en cada chorus). */
   melody?: MelNote[];
@@ -120,6 +130,8 @@ export class JazzEngine {
   private listeners = new Set<Listener>();
   private repeatId: number | null = null;
   private lastOpts: PlayOptions | null = null;
+  /** Momento (tiempo de AudioContext) en que empieza cada chorus. */
+  private chorusStarts: { chorus: number; time: number }[] = [];
   playing = false;
 
   async init() {
@@ -144,6 +156,7 @@ export class JazzEngine {
     await this.init();
     this.stop();
     this.lastOpts = opts;
+    this.chorusStarts = [];
     const t = Tone.getTransport();
     t.bpm.value = opts.tempo;
     const beat = 60 / opts.tempo;
@@ -167,6 +180,8 @@ export class JazzEngine {
     const state = { voicing: null as number[] | null, bassPrev: 40 };
     this.repeatId = t.scheduleRepeat(
       (time) => {
+        this.chorusStarts.push({ chorus, time });
+        if (this.chorusStarts.length > 64) this.chorusStarts.shift();
         this.scheduleChorus(opts, time, chorus, state);
         chorus++;
       },
@@ -195,6 +210,44 @@ export class JazzEngine {
     this.playing = false;
   }
 
+  /** Swing efectivo: la bossa siempre va recta. */
+  swingOf(opts: PlayOptions) {
+    return opts.style === 'bossa' ? 0.5 : opts.swing;
+  }
+
+  /**
+   * Ubica un instante (performance.now()) en la forma: chorus y corchea cuantizada,
+   * teniendo en cuenta el swing. Sirve para transcribir lo que se toca por micrófono.
+   */
+  locate(perfMs: number): { chorus: number; eighth: number } | null {
+    const opts = this.lastOpts;
+    if (!opts || !this.playing || this.chorusStarts.length === 0) return null;
+    const raw = Tone.getContext().rawContext as AudioContext;
+    const ts = raw.getOutputTimestamp?.();
+    const ctxTime =
+      ts && ts.contextTime !== undefined && ts.performanceTime !== undefined && ts.performanceTime > 0
+        ? ts.contextTime + (perfMs - ts.performanceTime) / 1000
+        : raw.currentTime - (performance.now() - perfMs) / 1000;
+    const start = [...this.chorusStarts].reverse().find((c) => c.time <= ctxTime + 0.05);
+    if (!start) return null;
+    const beat = 60 / opts.tempo;
+    const pos = (ctxTime - start.time) / beat;
+    const b = Math.floor(pos);
+    const frac = pos - b;
+    const sw = this.swingOf(opts);
+    // posiciones posibles dentro del tiempo: 0 (tiempo), sw (contratiempo), 1 (siguiente tiempo)
+    const cands: [number, number][] = [[0, 0], [sw, 1], [1, 2]];
+    const best = cands.reduce((a, c) => (Math.abs(c[0] - frac) < Math.abs(a[0] - frac) ? c : a));
+    let eighth = b * 2 + best[1];
+    let chorus = start.chorus;
+    const total = opts.chart.bars * EIGHTHS_PER_BAR;
+    if (eighth >= total) {
+      eighth -= total;
+      chorus++;
+    }
+    return { chorus, eighth: Math.max(0, eighth) };
+  }
+
   /** Reproduce una sola nota (concierto) de referencia. */
   async playNote(m: number, dur = 0.8) {
     await this.init();
@@ -212,7 +265,8 @@ export class JazzEngine {
     const draw = Tone.getDraw();
     const total = opts.chart.bars * EIGHTHS_PER_BAR;
     /** corchea (posición absoluta en el chorus) → segundos, con swing */
-    const at = (e: number) => time + (Math.floor(e / 2) + (mod(e, 2) === 1 ? opts.swing : 0)) * beat;
+    const swing = this.swingOf(opts);
+    const at = (e: number) => time + (Math.floor(e / 2) + (mod(e, 2) === 1 ? swing : 0)) * beat;
     const { mix } = opts;
     const chords = opts.chart.chords;
 
@@ -235,7 +289,7 @@ export class JazzEngine {
         for (const k of [1, 3]) inst.hat.triggerAttackRelease('32n', at(b * 8 + k * 2), 0.9);
       }
     } else {
-      if (mix.drums) this.drums(opts, at, chorus);
+      if (mix.drums) (opts.style === 'bossa' ? this.drumsBossa(opts, at) : this.drums(opts, at));
       if (mix.bass) this.bass(opts, at, state);
       if (mix.piano) this.comp(opts, at, state, beat);
     }
@@ -250,10 +304,20 @@ export class JazzEngine {
     }
   }
 
-  private drums(opts: PlayOptions, at: (e: number) => number, _chorus: number) {
+  private drums(opts: PlayOptions, at: (e: number) => number) {
     const inst = this.inst!;
+    const ballad = opts.style === 'ballad';
     for (let b = 0; b < opts.chart.bars; b++) {
       const e0 = b * 8;
+      if (ballad) {
+        // escobillas: "barrido" suave en cada tiempo, hi-hat en 2 y 4
+        for (let k = 0; k < 4; k++) {
+          inst.snare.triggerAttackRelease('8n', at(e0 + k * 2), k % 2 ? 0.22 : 0.14);
+          if (k % 2 === 1) inst.hat.triggerAttackRelease('32n', at(e0 + k * 2), 0.6);
+          if (k % 2 === 1) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), 0.08);
+        }
+        continue;
+      }
       for (let k = 0; k < 4; k++) {
         inst.ride.triggerAttackRelease('16n', at(e0 + k * 2), k % 2 ? 0.75 : 0.55);
         inst.kick.triggerAttackRelease('C1', '16n', at(e0 + k * 2), 0.25);
@@ -261,13 +325,24 @@ export class JazzEngine {
         // skip note de ride en el "y" de 2 y 4
         if (k % 2 === 1) inst.ride.triggerAttackRelease('16n', at(e0 + k * 2 + 1), 0.4);
         // comping de redoblante ocasional
-        if (Math.random() < 0.12) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), rnd(0.15, 0.4));
+        // comping de redoblante ocasional; en el último compás, pequeño fill en el "y" de 3 y 4
+        // (los golpes de un mismo instrumento deben agendarse en orden temporal)
+        const last = b === opts.chart.bars - 1;
+        if (last && k >= 2) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), k === 2 ? 0.5 : 0.7);
+        else if (Math.random() < 0.12) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), rnd(0.15, 0.4));
       }
-      // pequeño fill en el último compás
-      if (b === opts.chart.bars - 1) {
-        inst.snare.triggerAttackRelease('32n', at(e0 + 5), 0.5);
-        inst.snare.triggerAttackRelease('32n', at(e0 + 7), 0.7);
-      }
+    }
+  }
+
+  private drumsBossa(opts: PlayOptions, at: (e: number) => number) {
+    const inst = this.inst!;
+    // rim-click en clave 3-2 a lo largo de 2 compases; hi-hat en corcheas; bombo 1, (y del 2), 3
+    const rim = [[0, 3, 6], [2, 4]];
+    for (let b = 0; b < opts.chart.bars; b++) {
+      const e0 = b * 8;
+      for (let e = 0; e < 8; e++) inst.hat.triggerAttackRelease('32n', at(e0 + e), e % 2 ? 0.35 : 0.55);
+      for (const e of rim[b % 2]) inst.snare.triggerAttackRelease('64n', at(e0 + e), 0.35);
+      for (const [e, v] of [[0, 0.5], [3, 0.3], [4, 0.45], [7, 0.3]] as const) inst.kick.triggerAttackRelease('C1', '16n', at(e0 + e), v);
     }
   }
 
@@ -290,7 +365,16 @@ export class JazzEngine {
       const root = place(rootPc, state.bassPrev);
       const tones = bassTones(cc.chord);
       let line: number[];
-      if (opts.feel === 'two') {
+      if (opts.style === 'bossa') {
+        // fundamental (negra con puntillo), quinta en el "y" del 2 ligada al 3
+        const fifth = place(tones.fifth, root + 5);
+        const hits: [number, number, number][] =
+          beats >= 4 ? [[root, 0, 3], [fifth, 3, 1], [fifth, 4, 4]] : beats >= 2 ? [[root, 0, 3], [fifth, 3, 1]] : [[root, 0, 2]];
+        for (const [m, e, d] of hits) inst.bass.triggerAttackRelease(midiToFreq(m), d * beatDur * 0.5 * 0.9, at(cc.start + e), 0.85);
+        state.bassPrev = root;
+        return;
+      }
+      if (opts.style === 'two' || opts.style === 'ballad') {
         line = beats >= 4 ? [root, place(tones.fifth, root + 4)] : [root];
         line.forEach((m, k) => {
           inst.bass.triggerAttackRelease(midiToFreq(m), beatDur * 1.8, at(cc.start + k * 4), 0.9);
@@ -330,7 +414,13 @@ export class JazzEngine {
       const v = buildVoicing(cc.chord, state.voicing);
       state.voicing = v;
       const pats: [number, number][][] =
-        cc.dur >= 8
+        opts.style === 'ballad'
+          ? [[[0, cc.dur]], [[0, Math.min(cc.dur, 4)], ...(cc.dur >= 8 ? ([[5, 3]] as [number, number][]) : [])]]
+          : opts.style === 'bossa'
+            ? cc.dur >= 8
+              ? [[[0, 2], [3, 3], [6, 2]], [[-1, 3], [3, 2], [6, 1]], [[1, 2], [4, 1], [6, 2]]]
+              : [[[0, 2], [3, 1]], [[-1, 2], [3, 1]]]
+            : cc.dur >= 8
           ? [
               [[0, 3], [3, 1]],
               [[2, 1], [5, 3]],
@@ -344,7 +434,7 @@ export class JazzEngine {
       for (const [p, len] of pick(pats)) {
         const s = Math.max(0, cc.start + p);
         const dur = Math.max(0.12, len * beat * 0.5 * 0.95);
-        const vel = rnd(0.35, 0.6);
+        const vel = opts.style === 'ballad' ? rnd(0.25, 0.4) : rnd(0.35, 0.6);
         const freqs = v.map(midiToFreq);
         inst.piano.triggerAttackRelease(freqs, dur, at(s), vel);
       }

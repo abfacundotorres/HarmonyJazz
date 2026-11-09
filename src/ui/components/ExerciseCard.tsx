@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { Style } from '../../audio/engine';
 import { toAbc } from '../../exercises/abc';
 import type { MelNote } from '../../exercises/generators';
 import type { Chart } from '../../theory/chart';
@@ -18,7 +19,7 @@ export interface ExerciseCardProps {
   mode?: 'major' | 'minor';
   onKey?: (k: string) => void;
   tempo: number;
-  feel?: 'walking' | 'two';
+  style?: Style;
   onRegenerate?: () => void;
 }
 
@@ -54,7 +55,7 @@ export function ExerciseCard(p: ExerciseCardProps) {
         </>
       )}
       <Notation abc={abc} highlightBar={bar} />
-      <Player chart={p.chart} tempo={tempo} onTempo={setTempo} melody={p.notes} allowMelody feel={p.feel} owner={p.id} />
+      <Player chart={p.chart} tempo={tempo} onTempo={setTempo} melody={p.notes} allowMelody style={p.style} owner={p.id} />
       <div className="row">
         <button className="primary" onClick={mark}>
           ✓ Salió limpio a {tempo} bpm{p.keyValue ? '' : ' (todas las tonalidades)'}

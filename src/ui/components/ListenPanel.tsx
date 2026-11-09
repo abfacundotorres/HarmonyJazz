@@ -28,11 +28,14 @@ export function ListenPanel({
   chordIndex,
   chorus,
   tempo,
+  recorder,
 }: {
   chord: Chord | null;
   chordIndex: number;
   chorus: number;
   tempo: number;
+  /** Si está, se muestra el botón de grabar y se le pasan las notas con su tiempo. */
+  recorder?: { recording: boolean; toggle: () => void; onEvent: (midi: number | null, time: number) => void; count: number };
 }) {
   const { iv } = useReading();
   const [on, setOn] = useState(false);
@@ -42,6 +45,8 @@ export function ListenPanel({
   const [challenge, setChallenge] = useState({ hits: 0, total: 0 });
   const mic = useRef<MicListener | null>(null);
   const chordRef = useRef<Chord | null>(chord);
+  const recRef = useRef(recorder);
+  recRef.current = recorder;
   const windowRef = useRef<{ until: number; judged: boolean; played: boolean }>({ until: 0, judged: true, played: false });
   const idRef = useRef(0);
 
@@ -63,6 +68,8 @@ export function ListenPanel({
       mic.current = await listen(
         () => {},
         (m, time) => {
+          if (recRef.current?.recording) recRef.current.onEvent(m, time);
+          if (m === null) return;
           const c = chordRef.current;
           if (!c) return;
           const a = analyzePc(c, mod(m, 12));
@@ -108,6 +115,11 @@ export function ListenPanel({
         <div className="row">
           {on ? <button onClick={stop}>Apagar micrófono</button> : <button className="primary" onClick={start}>Activar micrófono</button>}
           <button onClick={reset}>Reiniciar</button>
+          {on && recorder && (
+            <button className={recorder.recording ? 'rec on' : 'rec'} onClick={recorder.toggle}>
+              {recorder.recording ? `■ Terminar (${recorder.count} notas)` : '● Grabar solo'}
+            </button>
+          )}
         </div>
       </header>
       {error && <p className="error">{error}</p>}

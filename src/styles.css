@@ -216,3 +216,13 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
   .prefs { margin-left: 0; }
   .blocks { grid-template-columns: 1fr; }
 }
+
+/* grabación y transcripción */
+button.rec { color: var(--bad); border-color: var(--bad); }
+button.rec.on { background: var(--bad); color: #fff; }
+.player .style { font-size: .88rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.stat { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-size: 1.4rem; color: var(--accent); }
+.feedback { margin: 12px 0 0; padding-left: 1.2em; }
+.feedback li { margin: 4px 0; }

@@ -115,7 +115,7 @@ function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExer
       mode={prog.mode}
       onKey={setKey}
       tempo={ex.tempo ?? prog.tempo}
-      feel={prog.feel}
+      style={prog.style}
       onRegenerate={lick ? undefined : () => setSeed((s) => s + 1)}
     />
   );

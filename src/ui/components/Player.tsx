@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { engine, Mix, PlayOptions } from '../../audio/engine';
+import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine';
 import type { MelNote } from '../../exercises/generators';
 import type { Chart } from '../../theory/chart';
 import { useSettings } from '../hooks';
@@ -9,7 +9,7 @@ export interface PlayerProps {
   tempo: number;
   onTempo: (t: number) => void;
   melody?: MelNote[];
-  feel?: 'walking' | 'two';
+  style?: Style;
   /** Mostrar la opción de escuchar la línea notada. */
   allowMelody?: boolean;
   defaultMetronome?: boolean;
@@ -18,17 +18,18 @@ export interface PlayerProps {
   onPlayingChange?: (playing: boolean) => void;
 }
 
-export function Player({ chart, tempo, onTempo, melody, feel = 'walking', allowMelody, defaultMetronome, owner, onPlayingChange }: PlayerProps) {
+export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange }: PlayerProps) {
   const autoId = useId();
   const id = owner ?? autoId;
   const [settings, setSettings] = useSettings();
   const [playing, setPlaying] = useState(false);
   const [countIn, setCountIn] = useState(true);
   const [mix, setMix] = useState<Mix>({ piano: true, bass: true, drums: true, melody: false, metronome: !!defaultMetronome });
-  const [bassFeel, setBassFeel] = useState(feel);
+  const [style, setStyle] = useState<Style>(initialStyle);
+  useEffect(() => setStyle(initialStyle), [initialStyle]);
 
   const opts = (): PlayOptions => ({
-    chart, tempo, swing: settings.swing, feel: bassFeel, countIn, melody, mix, owner: id,
+    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id,
   });
   const optsRef = useRef(opts);
   optsRef.current = opts;
@@ -52,7 +53,7 @@ export function Player({ chart, tempo, onTempo, melody, feel = 'walking', allowM
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tempo, settings.swing, mix, bassFeel, chart, melody]);
+  }, [tempo, settings.swing, mix, style, chart, melody]);
 
   // detener al desmontar
   useEffect(() => () => {
@@ -99,6 +100,11 @@ export function Player({ chart, tempo, onTempo, melody, feel = 'walking', allowM
           <Chip on={mix.melody} onClick={() => tog('melody')}>Oír la línea</Chip>
         )}
       </div>
+      <select className="style" value={style} onChange={(e) => setStyle(e.target.value as Style)} aria-label="Estilo">
+        {(Object.keys(STYLE_LABEL) as Style[]).map((s) => (
+          <option key={s} value={s}>{STYLE_LABEL[s]}</option>
+        ))}
+      </select>
       <details className="more">
         <summary>Más</summary>
         <label>
@@ -111,13 +117,6 @@ export function Player({ chart, tempo, onTempo, melody, feel = 'walking', allowM
         </label>
         <label>
           <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4
-        </label>
-        <label>
-          Bajo{' '}
-          <select value={bassFeel} onChange={(e) => setBassFeel(e.target.value as 'walking' | 'two')}>
-            <option value="walking">walking (4)</option>
-            <option value="two">en 2</option>
-          </select>
         </label>
       </details>
     </div>

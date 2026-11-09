@@ -44,6 +44,8 @@ src/
 - El swing se aplica posicionando el contratiempo en `beat + swing` (0,5 = recto, 0,67 = tresillo).
 - El bajo camina con fundamental, notas del acorde o de la escala, y una aproximación cromática o por 5ª a la siguiente fundamental.
 - El piano usa la forma A o B del voicing rootless, la que menos se mueve respecto del anterior, con ritmos tipo Charleston y anticipaciones.
+- **Estilos:** swing (walking), swing en 2, balada (escobillas, bajo en 2, piano sostenido) y bossa nova (corcheas rectas, clave 3-2 en rim, bajo fundamental–quinta). Cada progresión trae un estilo por defecto que se puede cambiar.
+- `engine.locate(performance.now())` convierte un instante en (chorus, corchea cuantizada con swing) usando `AudioContext.getOutputTimestamp()`: es el reloj que usa la transcripción.
 
 ### Escucha
 
@@ -54,23 +56,36 @@ src/
 - **Notas largas:** se mide la dispersión (desvío estándar en cents) para trabajar la estabilidad del sonido.
 - Se recomienda usar auriculares: el micrófono no separa la trompeta del acompañamiento.
 
+### Transcripción del solo
+
+En el play-along, con el micrófono activo, **● Grabar solo** captura cada inicio y fin de nota y, al terminar:
+1. ubica cada evento en la forma con `engine.locate`, compensando ~85 ms del retardo propio de la detección;
+2. arma notas que duran hasta la siguiente o hasta su fin, y las corta en el final del chorus (`pitch/transcribe.ts`);
+3. escribe cada altura con la ortografía del acorde que suena (sobre G7alt, A♭ es ♭9 y A♯ es ♯9);
+4. muestra la partitura por chorus, permite escucharla sobre el acompañamiento y analiza: llegadas a guide tones en los cambios, notas del acorde en tiempo fuerte, ataques en contratiempo, espacio, cromatismo y registro, con comentarios concretos.
+
+Es una aproximación: no capta notas fantasma, glissandos ni notas más rápidas que ~60 ms.
+
 ### Plan diario
 
 Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento y sonido, técnica en la tonalidad del día, armonía aplicada (lección foco), vocabulario (frase del día), tema de la semana e improvisación libre / transcripción. La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. Hay temporizador por bloque, racha e historial de 28 días.
 
 ## Roadmap
 
+**Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), Blue Bossa, Solar y balada en E♭, transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
+
 **Corto plazo**
 - Instrumentos sampleados (piano, contrabajo, ride) en lugar de síntesis.
+- Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
 - Más frases y más formas de standards; editor de frases propias.
-- Estilos: bossa, balada, latin, double-time.
+- Estilos: latin, double-time.
 
 **Mediano plazo**
 - Transcripción asistida: grabar un solo y obtener la notación con el análisis contra los cambios.
 - Ejercicios de oído: dictado de cualidades, guide tones y progresiones.
 - Repetición espaciada por tonalidad y ejercicio, según las marcas de tempo.
-- PWA instalable y offline.
+- Funcionamiento offline (service worker).
 
 **Opcional (requiere backend)**
 - Sincronización entre dispositivos.

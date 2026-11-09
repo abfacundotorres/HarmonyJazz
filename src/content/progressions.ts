@@ -1,3 +1,4 @@
+import type { Style } from '../audio/engine';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { degreeNote, noteName, parseNote, simplify } from '../theory/notes';
 
@@ -12,7 +13,7 @@ export interface Progression {
   /** Cifrado en concierto. */
   chart: string;
   tempo: number;
-  feel?: 'walking' | 'two';
+  style?: Style;
   /** Para qué sirve esta progresión. */
   notes: string;
   /** Grabaciones de referencia para escuchar. */
@@ -148,6 +149,41 @@ export const PROGRESSIONS: Progression[] = [
     tempo: 140,
     notes: 'ii–V–I mayor y menor relativos en la misma forma. El clásico para aprender a cambiar de modo.',
     listen: ['Cannonball Adderley con Miles Davis – "Somethin\' Else"', 'Chet Baker – "She Was Too Good to Me"'],
+  },
+  {
+    id: 'blue-bossa',
+    name: 'Blue Bossa (cambios)',
+    category: 'Standards',
+    key: 'C',
+    mode: 'minor',
+    style: 'bossa',
+    chart: 'Cm7 | Cm7 | Fm7 | Fm7 | Dm7b5 | G7alt | Cm7 | Cm7 | Ebm7 | Ab7 | Dbmaj7 | Dbmaj7 | Dm7b5 | G7alt | Cm7 | Dm7b5 G7alt',
+    tempo: 150,
+    notes: 'ii–V–i menor y una modulación de un compás a D♭ mayor. Corcheas rectas: el fraseo cambia por completo.',
+    listen: ['Kenny Dorham – "Blue Bossa" (Joe Henderson, Page One)'],
+  },
+  {
+    id: 'solar',
+    name: 'Solar (cambios)',
+    category: 'Standards',
+    key: 'C',
+    mode: 'minor',
+    chart: 'CmMaj7 | CmMaj7 | Gm7 | C7 | Fmaj7 | Fmaj7 | Fm7 | Bb7 | Ebmaj7 | Ebm7 Ab7 | Dbmaj7 | Dm7b5 G7alt',
+    tempo: 170,
+    notes: 'Doce compases, cada cuatro una tonalidad nueva y ii–V que bajan por tonos. Exige saber dónde estás siempre.',
+    listen: ['Miles Davis – "Solar"', 'Bill Evans Trio – "Solar" (Sunday at the Village Vanguard)'],
+  },
+  {
+    id: 'ballad',
+    name: 'Balada en E♭ (forma de 8 compases)',
+    category: 'Standards',
+    key: 'Eb',
+    mode: 'major',
+    style: 'ballad',
+    chart: 'Ebmaj7 Cm7 | Fm7 Bb7 | Gm7 C7b9 | Fm7 Bb7 | Abmaj7 | Abm7 Db7 | Gm7 C7b9 | Fm7 Bb7',
+    tempo: 64,
+    notes: 'Tempo lento: cada nota tiene que tener intención. Trabajá el sonido, el vibrato al final de las notas largas y el uso del espacio. Incluye un backdoor (A♭m7–D♭7).',
+    listen: ['Clifford Brown – "Stardust" (with Strings)', 'Chet Baker – "My Funny Valentine"'],
   },
   {
     id: 'modal',
