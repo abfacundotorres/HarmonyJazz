@@ -267,3 +267,12 @@ input[type='number'] { font: inherit; color: var(--text); background: var(--surf
 .bulklist li.dup .mark { color: var(--muted); }
 .bulklist li.error .mark { color: var(--bad); }
 .bulklist .block { display: block; }
+
+/* celular: nada se sale del ancho de la pantalla */
+select, input[type='range'], input[type='text'], input[type='number'], textarea { max-width: 100%; }
+.tempo input { width: 100%; min-width: 0; }
+.card > header select { flex: 1 1 100%; min-width: 0; }
+.more label { flex-wrap: wrap; }
+.more input[type='range'] { flex: 1 1 140px; min-width: 0; }
+.paper { min-height: 40px; }
+.paper svg { max-width: 100%; height: auto; }
