@@ -74,6 +74,20 @@ Es una aproximación: no capta notas fantasma, glissandos ni notas más rápidas
 
 Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento y sonido, técnica en la tonalidad del día, armonía aplicada (lección foco), vocabulario (frase del día), tema de la semana e improvisación libre / transcripción. La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. Hay temporizador por bloque, racha e historial de 28 días.
 
+### Vocabulario: frases con estudio paso a paso
+
+Cada frase (13 en total, con nivel y tempo propios) se estudia en seis partes:
+1. **Cómo aprenderla:** ocho pasos de lento a rápido, con el tempo de la propia frase.
+2. **Por ideas:** la frase dividida en 2–5 ideas, cada una con qué hace y por qué funciona (texto mío).
+3. **Nota por nota:** **generada** por `analyzeLick` a partir de la propia frase y la carta: grado sobre el acorde, función (nota del acorde, tensión, de la escala, cromática), guide tone, intervalo desde la anterior, posición en el compás y recursos detectados (aproximaciones, enclosures, notas azules, anticipaciones).
+4. **Por qué funciona:** mis explicaciones más datos medidos (porcentaje de notas del acorde en tiempo fuerte, llegadas a guide tones, etc.).
+5. **Ejercicios:** propios de la frase y comunes, con casillas que se guardan en el dispositivo.
+6. **En la trompeta:** consejos de ejecución.
+
+Los textos están escritos en la tonalidad de referencia de cada frase y `localizeNotes` traduce los nombres de notas y acordes a la tonalidad y a la lectura elegidas (Si♭ o concierto), para que coincidan con la partitura y la tabla.
+
+**Cómo se verifica:** el análisis de cada frase es idéntico en las 12 tonalidades (test); las ideas cubren todas las notas sin huecos ni solapes (test); los textos no contienen construcciones que el traductor confundiría con una nota (test); y en el navegador se comprueba que el texto de una idea nombre las mismas notas que sus fichas en Si♭, concierto y otra tonalidad. Revisar el contenido contra el análisis encontró errores míos que se corrigieron antes de publicar (una "escala bebop" que no lo era, una nota fuera de lugar en un ejercicio, afirmaciones sin fundamento).
+
 ### Loops, transposición y biblioteca propia
 
 - **Loop:** en el play-along se toca un compás para marcar el inicio y otro para el final. `sliceChart` recorta la forma y el motor la repite, así que el bajo, el piano y la grabación del solo trabajan sobre el tramo.
