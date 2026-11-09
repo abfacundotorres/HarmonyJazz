@@ -165,6 +165,16 @@ export function PlayAlong() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  /** Carga masiva desde texto: ya vienen validadas y sin repetidos. */
+  const bulkImport = (incoming: UserTune[]) => {
+    const room = Math.max(0, MAX_TUNES - tunes.length);
+    const fresh = incoming.slice(0, room);
+    if (fresh.length) setLibrary({ tunes: [...tunes, ...fresh] } as Library);
+    setLibMsg(
+      `Importados ${fresh.length} tema(s)` + (incoming.length > fresh.length ? `. Se omitieron ${incoming.length - fresh.length} por el máximo de ${MAX_TUNES} temas` : ''),
+    );
+  };
+
   const importTunes = async (file: File) => {
     if (file.size > 5_000_000) return setLibMsg('El archivo es demasiado grande');
     const { tunes: incoming, errors } = parseImport(await file.text());
@@ -315,6 +325,7 @@ export function PlayAlong() {
         }}
         onExport={exportTunes}
         onImport={importTunes}
+        onBulkImport={bulkImport}
       />
     </div>
   );

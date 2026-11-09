@@ -7,6 +7,7 @@ Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-alon
 - **Lecciones:** 12 lecciones de nivel avanzado con ejercicios generados en las 12 tonalidades y registro de tempos.
 - **Grabá tu solo:** en el play-along, la app transcribe lo que tocás, lo escribe según cada acorde y lo analiza (llegadas a guide tones, tiempo fuerte, contratiempo, espacio, registro).
 - **Vocabulario:** frases para transportar por el ciclo de cuartas.
+- **Mis temas:** cargá tus propios cifrados de a uno o en masa desde un texto, con loop de compases y transposición.
 - **Afinador:** afinación, medición de estabilidad en notas largas y notas de referencia.
 
 ## Desarrollo

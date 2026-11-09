@@ -57,7 +57,7 @@ export interface Settings {
   swing: number;
   minutes: number;
   focusLesson: string;
-  /** Volumen general en dB respecto del nivel base (−12…+6). */
+  /** Volumen general en dB respecto del nivel base (−14…+2). */
   volume: number;
 }
 
