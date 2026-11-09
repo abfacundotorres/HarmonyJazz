@@ -254,3 +254,5 @@ input[type='number'] { font: inherit; color: var(--text); background: var(--surf
 .tunelist { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 6px; }
 .tunelist li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; background: var(--surface-2); border-radius: 10px; }
 .tunelist .row { margin: 0; }
+
+.credits { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--muted); }

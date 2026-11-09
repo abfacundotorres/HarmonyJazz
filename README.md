@@ -22,6 +22,13 @@ npm run build    # sitio estático en dist/
 
 El workflow `.github/workflows/deploy.yml` publica `dist/` en cada push a `main`. Hay que activarlo una vez: **Settings → Pages → Source: GitHub Actions**. Para usarla en el celular, abrí la URL y elegí "Agregar a pantalla de inicio".
 
+## Créditos de audio
+
+- Piano: [Salamander Grand Piano V3](https://archive.org/details/SalamanderGrandPianoV3), Alexander Holm, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+- Contrabajo y trompeta: FluidR3 SoundFont, Frank Wen, MIT.
+
+Detalle de cambios y licencias en [`public/samples/CREDITS.txt`](public/samples/CREDITS.txt).
+
 El diseño completo está en [`docs/DISENO.md`](docs/DISENO.md).
 
 El micrófono necesita HTTPS o `localhost`. Usá auriculares para que el análisis no capte el acompañamiento.

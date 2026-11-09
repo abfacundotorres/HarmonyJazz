@@ -1,0 +1,43 @@
+HarmonyJazz - Créditos de las muestras de audio
+================================================
+
+Este directorio contiene una selección de muestras de instrumentos reales. Las notas intermedias
+las genera el motor de audio por interpolación.
+
+1) Piano (carpeta piano/)
+   Salamander Grand Piano V3
+   Autor: Alexander Holm
+   Licencia: Creative Commons Attribution 3.0 (CC BY 3.0)
+   https://creativecommons.org/licenses/by/3.0/
+   Fuente: https://archive.org/details/SalamanderGrandPianoV3
+   Cambios: se usa una selección de 13 notas de la capa de velocidad 8, en formato MP3
+   (conversión del paquete npm "@audio-samples/piano-mp3-velocity8"), con los archivos
+   renombrados (por ejemplo D#3 -> Ds3).
+
+2) Contrabajo y trompeta (carpetas bass/ y trumpet/)
+   FluidR3 SoundFont, instrumentos "Acoustic Bass" y "Trumpet"
+   Copyright (c) 2000-2002, 2008, 2013 Frank Wen <getfrank@gmail.com>
+   Licencia: MIT (texto completo abajo)
+   Cambios: conversión a MP3 por nota hecha por el paquete npm "soundfont-for-samplers"
+   (MIT); se usa una selección de notas.
+
+--------------------------------------------------------------------------------
+MIT License - FluidR3 SoundFont
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -57,9 +57,11 @@ export interface Settings {
   swing: number;
   minutes: number;
   focusLesson: string;
+  /** Volumen general en dB respecto del nivel base (−12…+6). */
+  volume: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '' };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0 };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

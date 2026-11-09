@@ -44,6 +44,10 @@ src/
 - El swing se aplica posicionando el contratiempo en `beat + swing` (0,5 = recto, 0,67 = tresillo).
 - El bajo camina con fundamental, notas del acorde o de la escala, y una aproximación cromática o por 5ª a la siguiente fundamental.
 - El piano usa la forma A o B del voicing rootless, la que menos se mueve respecto del anterior, con ritmos tipo Charleston y anticipaciones.
+- **Instrumentos reales:** piano (Salamander Grand Piano V3), contrabajo y trompeta (FluidR3), unas 34 muestras (~3 MB) servidas desde el propio sitio. Se piden al abrir la pantalla; `Tone.Sampler` interpola las notas intermedias. Si no cargan (por ejemplo, sin conexión) se usan los sintetizadores de respaldo y la interfaz lo avisa. La **batería sigue siendo sintetizada**: no hay un kit de jazz con licencia verificada. Créditos y licencias en `public/samples/CREDITS.txt` y en el pie de la app (el piano es CC BY 3.0 y exige atribución).
+- **Mezcla y volumen:** cada instrumento pasa por un bus; la salida va a un compresor, un limitador y un recortador suave que garantiza un techo de ~0,91 (sin saturar). Los niveles se ajustaron **midiendo la salida real** (rms por instrumento y del conjunto), no a oído. Control de volumen general de −12 a +6 dB (más arriba empieza a distorsionar).
+- **Humanización:** microvariaciones de tiempo por instrumento (piano apenas atrás, bajo apenas adelante; melodía y clic exactos), variación de intensidad y una dinámica que crece en los primeros coros.
+- **Robustez:** los avisos visuales llevan un número de generación y se descartan si el motor se detuvo o reinició (Tone no puede cancelar uno que ya pasó a `requestAnimationFrame`); `play()` se cancela solo si hubo un stop durante la preparación; en móviles pide la sesión de audio `playback` y mantiene un `<audio>` silencioso.
 - **Estilos:** swing (walking), swing en 2, balada (escobillas, bajo en 2, piano sostenido) y bossa nova (corcheas rectas, clave 3-2 en rim, bajo fundamental–quinta). Cada progresión trae un estilo por defecto que se puede cambiar.
 - `engine.locate(performance.now())` convierte un instante en (chorus, corchea cuantizada con swing) usando `AudioContext.getOutputTimestamp()`: es el reloj que usa la transcripción.
 
@@ -89,10 +93,13 @@ Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento
 
 ## Roadmap
 
+**Hecho en la iteración 3:** instrumentos reales (piano, contrabajo, trompeta), mezcla medida, más volumen sin saturar, humanización, control de volumen, y corrección de dos carreras del motor (stop).
+
 **Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), Blue Bossa, Solar y balada en E♭, transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
 
 **Corto plazo**
-- Instrumentos sampleados (piano, contrabajo, ride) en lugar de síntesis.
+- Batería real (ride, bombo, caja, hi-hat): falta una fuente con licencia verificable.
+- Elegir y comparar otros bancos de piano y contrabajo; más capas de velocidad.
 - Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
 - Más frases y más formas de standards; editor de frases propias.
@@ -110,6 +117,6 @@ Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento
 
 ## Limitaciones conocidas
 
-- El sonido es sintetizado: sirve para practicar, pero no es un trío real.
+- Piano, contrabajo y trompeta son muestras reales, pero el **acompañamiento sigue siendo generado**, no un trío grabado, y la **batería es sintetizada**. La calidad musical (fraseo del bajo, comping) no se puede evaluar sin escucharla: los números del documento miden niveles y tiempos, no gusto.
 - Si se cambia el tempo durante la reproducción, el chorus vuelve a empezar.
 - La detección de altura es monofónica y necesita auriculares para no confundirse con el acompañamiento.
