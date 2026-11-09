@@ -62,19 +62,37 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
 
   const [error, setError] = useState<string | null>(null);
 
+  // los instrumentos reales (~3 MB) se piden al abrir la pantalla, para que ▶ no espere
+  useEffect(() => {
+    engine.preload();
+  }, []);
+  useEffect(() => engine.setVolume(settings.volume), [settings.volume]);
+  const [samples, setSamples] = useState(engine.samples);
+  useEffect(() => {
+    const id = setInterval(() => setSamples(engine.samples), 300);
+    return () => clearInterval(id);
+  }, []);
+
+  const [starting, setStarting] = useState(false);
+
   const toggle = async () => {
     setError(null);
-    if (playing) {
+    if (playing || starting) {
+      // un segundo toque mientras se prepara el audio también cancela
       engine.stop();
       setPlaying(false);
-    } else {
-      try {
-        await engine.play(opts());
-        setPlaying(true);
-      } catch (e) {
-        console.error(e);
-        setError('No se pudo iniciar el audio: ' + ((e as Error).message || 'error desconocido') + '. Probá tocar de nuevo.');
-      }
+      setStarting(false);
+      return;
+    }
+    setStarting(true);
+    try {
+      const started = await engine.play(opts());
+      setPlaying(started);
+    } catch (e) {
+      console.error(e);
+      setError('No se pudo iniciar el audio: ' + ((e as Error).message || 'error desconocido') + '. Probá tocar de nuevo.');
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -82,8 +100,12 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
 
   return (
     <div className="player">
-      <button className={`play ${playing ? 'on' : ''}`} onClick={toggle} aria-label={playing ? 'Detener' : 'Reproducir'}>
-        {playing ? '■' : '▶'}
+      <button
+        className={`play ${playing ? 'on' : ''}`}
+        onClick={toggle}
+        aria-label={playing ? 'Detener' : starting ? 'Preparando el audio (tocá para cancelar)' : 'Reproducir'}
+      >
+        {playing ? '■' : starting ? '…' : '▶'}
       </button>
       <label className="tempo">
         <span>
@@ -114,6 +136,8 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
         ))}
       </select>
       {error && <p className="error player-note">{error}</p>}
+      {samples === 'loading' && <p className="muted small player-note" role="status">Cargando instrumentos reales (unos 3 MB)… la primera vez puede tardar un poco.</p>}
+      {samples === 'synth' && <p className="muted small player-note" role="status">No se pudieron cargar los instrumentos reales (¿sin conexión?): se usan sonidos sintetizados.</p>}
       {playing && <LevelMeter />}
       <details className="more">
         <summary>Más</summary>
@@ -124,6 +148,14 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
             onChange={(e) => setSettings({ swing: Number(e.target.value) })}
           />{' '}
           {settings.swing <= 0.52 ? 'recto' : settings.swing >= 0.66 ? 'tresillo' : Math.round(settings.swing * 100) + '%'}
+        </label>
+        <label>
+          Volumen{' '}
+          <input
+            type="range" min={-12} max={6} step={1} value={settings.volume}
+            onChange={(e) => setSettings({ volume: Number(e.target.value) })}
+          />{' '}
+          {settings.volume > 0 ? '+' : ''}{settings.volume} dB
         </label>
         <label>
           <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4
