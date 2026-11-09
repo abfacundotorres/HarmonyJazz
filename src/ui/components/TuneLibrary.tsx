@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { STYLE_LABEL, Style } from '../../audio/engine';
-import { MAX_CHART_CHARS, UserTune } from '../../content/library';
+import { BulkEntry, MAX_CHART_CHARS, parseBulk, UserTune } from '../../content/library';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useReading } from '../hooks';
 
@@ -32,6 +32,7 @@ export function TuneLibrary({
   onDelete,
   onExport,
   onImport,
+  onBulkImport,
   message,
 }: {
   draft: Draft;
@@ -47,6 +48,7 @@ export function TuneLibrary({
   onDelete: (t: UserTune) => void;
   onExport: () => void;
   onImport: (file: File) => void;
+  onBulkImport: (tunes: UserTune[]) => void;
   message: string | null;
 }) {
   const { keyLabel } = useReading();
@@ -154,10 +156,125 @@ export function TuneLibrary({
             }}
           />
         </div>
+        <BulkImport existing={tunes} onImport={onBulkImport} />
+
         <p className="muted small">
           Los temas viven en el almacenamiento de este navegador: si borrás los datos del sitio, se pierden. Exportalos para tener una copia o llevarlos a otro dispositivo.
         </p>
       </details>
     </section>
+  );
+}
+
+const EXAMPLE = `# Autumn Leaves
+compositor: J. Kosma
+tonalidad: G menor
+tempo: 140
+estilo: swing
+[A] Cm7 | F7 | Bbmaj7 | Ebmaj7 |
+Am7b5 | D7 | Gm | %
+[B] Am7b5 | D7 | Gm | % |
+Cm7 | F7 | Bbmaj7 | Ebmaj7
+
+# Blue Bossa
+tonalidad: C menor
+estilo: bossa
+Cm7 | % | Fm7 | % | Dm7b5 | G7 | Cm7 | %`;
+
+/** Carga masiva: pegar o subir un texto con varios temas, revisar y recién ahí importar. */
+function BulkImport({ existing, onImport }: { existing: UserTune[]; onImport: (t: UserTune[]) => void }) {
+  const [text, setText] = useState('');
+  const [entries, setEntries] = useState<BulkEntry[] | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const file = useRef<HTMLInputElement>(null);
+
+  const seen = new Set(existing.map((t) => t.name + '\u0000' + t.chart));
+  const status = (e: BulkEntry) => (e.error ? 'error' : e.tune && seen.has(e.tune.name + '\u0000' + e.tune.chart) ? 'dup' : 'ok');
+  const importable = (entries ?? []).filter((e) => status(e) === 'ok');
+
+  const review = (t: string) => {
+    setEntries(t.trim() ? parseBulk(t) : null);
+  };
+
+  return (
+    <details className="bulk">
+      <summary>Carga masiva: muchos temas de una vez</summary>
+      <p className="muted small">
+        Pegá un texto o subí un archivo <code>.txt</code>. Cada tema empieza con una línea <code>#</code> y su nombre; los datos opcionales van en líneas
+        <code> tonalidad:</code>, <code>tempo:</code>, <code>estilo:</code> y <code>compositor:</code>; los saltos de línea separan compases. Escribí el cifrado
+        <b> expandido</b> (sin repeticiones ni finales 1ª/2ª) y en <b>concierto</b>. Los cifrados se revisan antes de importar.
+      </p>
+      <details>
+        <summary className="small">Ver un ejemplo</summary>
+        <pre className="example">{EXAMPLE}</pre>
+        <button onClick={() => { setText(EXAMPLE); review(EXAMPLE); }}>Usar este ejemplo</button>
+      </details>
+      <textarea
+        rows={8}
+        value={text}
+        onChange={(e) => { setText(e.target.value); setEntries(null); }}
+        placeholder={'# Nombre del tema\ntonalidad: Bb\nBbmaj7 | G7 | Cm7 | F7 | ...'}
+        aria-label="Texto con varios temas"
+      />
+      <div className="row">
+        <button className="primary" onClick={() => review(text)} disabled={!text.trim()}>Revisar</button>
+        <button onClick={() => file.current?.click()}>Subir archivo…</button>
+        <input
+          ref={file}
+          type="file"
+          accept=".txt,.md,text/plain"
+          hidden
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (!f) return;
+            if (f.size > 2_000_000) return setFileError('El archivo es demasiado grande (máximo 2 MB de texto)');
+            setFileError(null);
+            const t = await f.text();
+            setText(t);
+            review(t);
+          }}
+        />
+      </div>
+      {fileError && <p className="error">{fileError}</p>}
+
+      {entries && (
+        <>
+          <p role="status">
+            <b>{importable.length}</b> para importar
+            {entries.filter((e) => status(e) === 'dup').length > 0 && <> · {entries.filter((e) => status(e) === 'dup').length} ya existen</>}
+            {entries.filter((e) => status(e) === 'error').length > 0 && <> · <span className="error">{entries.filter((e) => status(e) === 'error').length} con errores</span></>}
+          </p>
+          <ul className="bulklist">
+            {entries.map((e, i) => (
+              <li key={i} className={status(e)}>
+                <span className="mark" aria-hidden>{status(e) === 'ok' ? '✓' : status(e) === 'dup' ? '＝' : '✕'}</span>
+                <span>
+                  <b>{e.name || '(sin nombre)'}</b>
+                  <small className="muted"> · línea {e.line}{e.bars ? ` · ${e.bars} compases` : ''}{e.tune?.key ? ` · ${e.tune.key}${e.tune.mode === 'minor' ? ' menor' : ''}` : ''}</small>
+                  {status(e) === 'dup' && <small className="muted"> · ya está en tus temas, se omite</small>}
+                  {e.error && <small className="error"> · {e.error}</small>}
+                  {e.notes.map((n, k) => <small key={k} className="muted block">{n}</small>)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="row">
+            <button
+              className="primary"
+              disabled={importable.length === 0}
+              onClick={() => {
+                onImport(importable.map((e) => e.tune!));
+                setEntries(null);
+                setText('');
+              }}
+            >
+              Importar {importable.length} tema{importable.length === 1 ? '' : 's'}
+            </button>
+            <button onClick={() => setEntries(null)}>Seguir editando</button>
+          </div>
+        </>
+      )}
+    </details>
   );
 }

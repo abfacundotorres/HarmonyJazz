@@ -1,5 +1,7 @@
 import type { Style } from '../audio/engine';
+import { qdef } from '../theory/chords';
 import { CONCERT_KEYS, parseChart } from '../theory/chart';
+import { noteName, simplify } from '../theory/notes';
 import type { Progression } from './progressions';
 
 /** Un tema que el usuario cargó. Se guarda sólo en su dispositivo. */
@@ -101,4 +103,150 @@ export function tuneToProgression(t: UserTune): Progression {
     style: t.style,
     notes: t.composer ? `De ${t.composer}. Cifrado cargado por vos.` : 'Cifrado cargado por vos.',
   };
+}
+
+// ---------- Carga masiva desde texto ----------
+
+/** Un tema detectado en el texto, con lo que se pudo entender y lo que no. */
+export interface BulkEntry {
+  /** Línea (1-based) donde empieza el tema en el texto. */
+  line: number;
+  name: string;
+  tune: UserTune | null;
+  /** Avisos que no impiden importar (por ejemplo, "tonalidad deducida"). */
+  notes: string[];
+  /** Motivo por el que no se puede importar. */
+  error: string | null;
+  bars: number;
+}
+
+const ENHARMONIC: Record<string, string> = {
+  'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb', 'E#': 'F', 'B#': 'C', Cb: 'B', Fb: 'E',
+};
+
+/** "G", "Gm", "G minor", "Bb", "F# menor", "Ebmaj" → { key en concierto, modo } o null si no se entiende. */
+export function parseKeySpec(spec: string): { key: string; mode: 'major' | 'minor' } | null {
+  const m = /^\s*([A-Ga-g])([#b♯♭]?)\s*(m|min|minor|menor|-)?\s*(major|mayor|maj|M)?\s*$/.exec(spec.replace(/♯/g, '#').replace(/♭/g, 'b'));
+  if (!m) return null;
+  let root = m[1].toUpperCase() + m[2];
+  root = ENHARMONIC[root] ?? root;
+  if (!CONCERT_KEYS.includes(root)) return null;
+  const minor = !!m[3] && !m[4];
+  return { key: root, mode: minor ? 'minor' : 'major' };
+}
+
+function parseStyleSpec(spec: string): Style | null {
+  const t = spec.trim().toLowerCase();
+  if (/^(swing|walking)$/.test(t)) return 'swing';
+  if (/^(two|en ?2|swing en 2|2)$/.test(t)) return 'two';
+  if (/^(ballad|balada)$/.test(t)) return 'ballad';
+  if (/^(bossa|bossa ?nova|latin|latino)$/.test(t)) return 'bossa';
+  return null;
+}
+
+const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|modo)\s*[:=]\s*(.*)$/i;
+
+/**
+ * Lee varios temas de un texto. Formato:
+ *
+ *   # Nombre del tema
+ *   compositor: ...      (opcional)
+ *   tonalidad: G menor   (opcional, en concierto)
+ *   tempo: 140           (opcional)
+ *   estilo: swing        (opcional: swing, en 2, balada, bossa)
+ *   [A] Cm7 | F7 | Bbmaj7 | Ebmaj7 |
+ *   Am7b5 | D7 | Gm | %
+ *
+ * Cada línea que empieza con # abre un tema nuevo. Los saltos de línea separan compases.
+ * Si no hay tonalidad se deduce del último acorde sólo cuando éste es un acorde de tónica claro.
+ */
+export function parseBulk(text: string): BulkEntry[] {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+  interface Draft { line: number; name: string; meta: Record<string, string>; chart: string[]; }
+  const drafts: Draft[] = [];
+  let cur: Draft | null = null;
+  const stray: number[] = [];
+
+  lines.forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) return;
+    if (line.startsWith('#')) {
+      cur = { line: i + 1, name: line.replace(/^#+\s*/, '').trim(), meta: {}, chart: [] };
+      drafts.push(cur);
+      return;
+    }
+    if (!cur) {
+      stray.push(i + 1);
+      return;
+    }
+    const meta = META.exec(line);
+    if (meta) {
+      const k = meta[1].toLowerCase();
+      const norm = k === 'tono' || k === 'tonalidad' ? 'key' : k === 'estilo' ? 'style' : k === 'compositor' ? 'composer' : k === 'modo' ? 'mode' : k;
+      cur.meta[norm] = meta[2].trim();
+      return;
+    }
+    cur.chart.push(line);
+  });
+
+  const out: BulkEntry[] = drafts.map((d) => {
+    const notes: string[] = [];
+    const entry: BulkEntry = { line: d.line, name: d.name, tune: null, notes, error: null, bars: 0 };
+    if (!d.name) return { ...entry, error: 'Falta el nombre después del #' };
+    const chartText = normalizeChartText(d.chart.join('\n'));
+    if (!chartText) return { ...entry, error: 'No tiene cifrado' };
+
+    let chart;
+    try {
+      chart = parseChart(chartText);
+    } catch (e) {
+      return { ...entry, error: (e as Error).message };
+    }
+    entry.bars = chart.bars;
+
+    let key: string | null = null;
+    let mode: 'major' | 'minor' = 'major';
+    if (d.meta.key) {
+      const k = parseKeySpec(d.meta.key);
+      if (k) {
+        key = k.key;
+        mode = k.mode;
+      } else notes.push(`No entendí la tonalidad "${d.meta.key}": quedó sin tonalidad fija`);
+    } else {
+      // deducir sólo si el último acorde es una tónica clara
+      const last = chart.chords[chart.chords.length - 1].chord;
+      const fam = qdef(last).family;
+      const tonic = ['maj', 'maj7', '6', 'maj7#11', 'm', 'm7', 'm6', 'mMaj7'].includes(last.quality);
+      const root = noteName(simplify(last.root));
+      if (tonic && CONCERT_KEYS.includes(root)) {
+        key = root;
+        mode = fam === 'minor' ? 'minor' : 'major';
+        notes.push(`Tonalidad deducida del último acorde: ${root}${mode === 'minor' ? ' menor' : ''}. Si no es correcta, agregá "tonalidad: ..."`);
+      } else notes.push('Sin tonalidad fija (se puede transponer de a medio tono)');
+    }
+    if (d.meta.mode && !d.meta.key) mode = /^(m|min|minor|menor)/i.test(d.meta.mode) ? 'minor' : 'major';
+
+    const style = d.meta.style ? parseStyleSpec(d.meta.style) : null;
+    if (d.meta.style && !style) notes.push(`No entendí el estilo "${d.meta.style}": se usa swing`);
+
+    const v = validateTune({
+      name: d.name,
+      composer: d.meta.composer ?? '',
+      key,
+      mode,
+      chart: chartText,
+      tempo: d.meta.tempo ? Number(d.meta.tempo) : 120,
+      style: style ?? 'swing',
+    });
+    if (typeof v === 'string') return { ...entry, error: v };
+    return { ...entry, tune: v };
+  });
+
+  if (drafts.length === 0) {
+    return [{ line: 1, name: '', tune: null, notes: [], error: 'No encontré ningún tema: cada tema tiene que empezar con una línea "# Nombre"', bars: 0 }];
+  }
+  if (stray.length) {
+    out[0].notes.push(`Se ignoraron líneas anteriores al primer "#" (${stray.slice(0, 3).join(', ')}${stray.length > 3 ? '…' : ''})`);
+  }
+  return out;
 }
