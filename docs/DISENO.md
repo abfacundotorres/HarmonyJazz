@@ -88,6 +88,10 @@ Los textos están escritos en la tonalidad de referencia de cada frase y `locali
 
 **Cómo se verifica:** el análisis de cada frase es idéntico en las 12 tonalidades (test); las ideas cubren todas las notas sin huecos ni solapes (test); los textos no contienen construcciones que el traductor confundiría con una nota (test); y en el navegador se comprueba que el texto de una idea nombre las mismas notas que sus fichas en Si♭, concierto y otra tonalidad. Revisar el contenido contra el análisis encontró errores míos que se corrigieron antes de publicar (una "escala bebop" que no lo era, una nota fuera de lugar en un ejercicio, afirmaciones sin fundamento).
 
+### Lecciones: paso a paso y desglose de cada línea
+
+Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6 pasos de práctica progresiva), **por qué funciona** (3 puntos) y 4–6 ejercicios. Para cada línea generada se muestra **cómo está armada**: la fórmula exacta del generador (`recipe`) y, nota por nota, sus primeros cuatro compases, con el mismo analizador que usa Vocabulario. Las fórmulas se verifican con tests que ejecutan cada generador y comparan los grados que produce con lo que la receta dice. Los textos se traducen a la lectura elegida (Si♭ o concierto); sin transposición se dejan intactos para conservar la ortografía intencional (por ejemplo C♭ en la escala alterada de G).
+
 ### Loops, transposición y biblioteca propia
 
 - **Loop:** en el play-along se toca un compás para marcar el inicio y otro para el final. `sliceChart` recorta la forma y el motor la repite, así que el bajo, el piano y la grabación del solo trabajan sobre el tramo.

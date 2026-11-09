@@ -323,3 +323,4 @@ select, input[type='range'], input[type='text'], input[type='number'], textarea 
 .checks label:hover { background: var(--surface-2); }
 .checks label.done span { color: var(--muted); text-decoration: line-through; }
 .checks input { margin-top: .3em; flex: none; width: 1.1em; height: 1.1em; accent-color: var(--accent); }
+.sectionhead { margin: 8px 0 0; font-size: 1.05rem; }

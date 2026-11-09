@@ -13,6 +13,8 @@ const TOKEN = new RegExp(`(?<![\\p{L}\\p{N}♭♯])([A-G])([♭♯]?)(${SUFFIX})
  */
 export function localizeNotes(text: string, fromKey: string, toKey: string, reading: Interval): string {
   const shift = keyInterval(fromKey, toKey);
+  // sin transposición el texto queda intacto: conserva la ortografía intencional (p. ej. C♭ en la escala alterada de G)
+  if (shift.steps === 0 && shift.semis === 0 && reading.steps === 0 && reading.semis === 0) return text;
   return text.replace(TOKEN, (_m, letter: string, acc: string, suffix: string) => {
     const n = simplify(transposeNote(transposeNote(parseNote(letter + acc), shift), reading));
     return noteName(n, true) + suffix;

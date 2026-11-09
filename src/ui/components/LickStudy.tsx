@@ -2,12 +2,13 @@ import { useMemo } from 'react';
 import { Lick } from '../../content/licks';
 import { COMMON_EXERCISES, LICK_STUDY, learningSteps } from '../../content/licksStudy';
 import { localizeNotes } from '../../exercises/localize';
-import { analyzeLick, kindLabel, lickStats, NoteKind, NoteRow } from '../../exercises/lickAnalysis';
+import { analyzeLick, kindLabel, lickStats } from '../../exercises/lickAnalysis';
 import type { MelNote } from '../../exercises/generators';
-import { chordSymbol, transposeChord } from '../../theory/chords';
+import { chordSymbol } from '../../theory/chords';
 import type { Chart } from '../../theory/chart';
 import { noteName, pitchName, Pitch, simplify, simplifyPitch, transposeNote, transposePitch } from '../../theory/notes';
 import { usePersistent } from '../../state/storage';
+import { NoteRows } from './NoteRows';
 import { useReading } from '../hooks';
 
 /**
@@ -27,7 +28,6 @@ export function LickStudy({ lick, chart, notes, keyValue }: { lick: Lick; chart:
 
   const name = (p: Pitch) => pitchName(simplifyPitch(transposePitch(p, iv)), true);
   const bare = (p: Pitch) => noteName(simplify(transposeNote(p, iv)), true);
-  const chordAt = (ci: number) => chordSymbol(transposeChord(chart.chords[ci].chord, iv), true);
 
   const exercises = [...study.exercises, ...COMMON_EXERCISES];
   const doneCount = exercises.filter((_, i) => done[`${lick.id}:${i}`]).length;
@@ -46,9 +46,6 @@ export function LickStudy({ lick, chart, notes, keyValue }: { lick: Lick; chart:
   if (rows.some((r) => r.tieTo)) auto.push('Hay una nota que se sostiene hasta el acorde siguiente y pasa a ser una nota de ese acorde: una anticipación.');
   auto.push(`Se mueve por grado conjunto ${stats.stepwise} veces y por salto ${stats.leaps}: ${stats.stepwise >= stats.leaps ? 'predomina el movimiento conjunto, que suena cantable' : 'predominan los saltos, típicos de los arpegios'}.`);
   auto.push(`Rango (${view === 'Bb' ? 'escrito para trompeta en Si♭' : 'en concierto'}): de ${name(rows.reduce((a, b) => (a.midi < b.midi ? a : b)).pitch)} a ${name(rows.reduce((a, b) => (a.midi > b.midi ? a : b)).pitch)}.`);
-
-  const byBar = new Map<number, NoteRow[]>();
-  rows.forEach((r) => byBar.set(r.bar, [...(byBar.get(r.bar) ?? []), r]));
 
   return (
     <div className="study-wrap">
@@ -111,56 +108,7 @@ export function LickStudy({ lick, chart, notes, keyValue }: { lick: Lick; chart:
           Cada nota con su lugar en el compás, su grado sobre el acorde que suena y qué hace. Los nombres están escritos para trompeta en Si♭ (o en concierto, según lo que
           elegiste arriba). <b>GT</b> = guide tone (3ª o 7ª).
         </p>
-        <Legend />
-        {[...byBar.entries()].map(([bar, rs]) => (
-          <section key={bar} className="barblock">
-            <h4>
-              Compás {bar} · <span className="muted">{[...new Set(rs.map((r) => chordAt(r.chordIndex)))].join('  →  ')}</span>
-            </h4>
-            <ol className="notelist">
-              {rs.map((r) => (
-                <li key={r.index} className={`nrow ${r.kind} ${r.strong ? 'strong' : ''}`}>
-                  <span className="num">{r.index + 1}</span>
-                  <div>
-                    <div className="ntop">
-                      <b className="nname">{name(r.pitch)}</b>
-                      <span className="where">
-                        tiempo {r.beat}
-                        {r.dur > 1 ? ` · dura ${r.dur / 2} tiempo${r.dur === 2 ? '' : 's'}` : ''}
-                      </span>
-                    </div>
-                    <div className="fn">
-                      Sobre <b>{chordAt(r.chordIndex)}</b>: <b>{r.degree}</b>
-                      <span className="muted"> — {kindLabel(r.kind)}</span>
-                      {r.guide && <em className="gt">GT</em>}
-                    </div>
-                    {r.interval && (
-                      <div className="muted small">
-                        {r.interval.dir === '=' ? 'Misma nota que la anterior' : `${r.interval.dir} ${r.interval.name} desde la anterior`}
-                      </div>
-                    )}
-                    {r.tieTo && (
-                      <div className="small tag">
-                        Se sostiene hasta {chordAt(r.tieTo.chordIndex)}, donde es la {r.tieTo.degree}
-                      </div>
-                    )}
-                    {r.tags.filter((t) => t !== 'anticipación').length > 0 && (
-                      <div className="tags">
-                        {r.tags
-                          .filter((t) => t !== 'anticipación')
-                          .map((t) => (
-                            <span key={t} className="tagpill">
-                              {t}
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ))}
+        <NoteRows rows={rows} chart={chart} />
       </details>
 
       <details className="card study" open>
@@ -224,18 +172,5 @@ function Check({ id, text, on, onToggle }: { id: string; text: string; on: boole
         <input type="checkbox" id={id} checked={on} onChange={onToggle} /> <span>{text}</span>
       </label>
     </li>
-  );
-}
-
-const KINDS: NoteKind[] = ['chord', 'tension', 'scale', 'chromatic'];
-function Legend() {
-  return (
-    <div className="legend" aria-label="Colores">
-      {KINDS.map((k) => (
-        <span key={k} className={`nchip ${k}`}>
-          {kindLabel(k)}
-        </span>
-      ))}
-    </div>
   );
 }
