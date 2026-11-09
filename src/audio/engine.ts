@@ -127,6 +127,11 @@ class Instruments {
 
 export class JazzEngine {
   private inst: Instruments | null = null;
+  /**
+   * Instrumentos "diferidos" del chorus en curso: registran cada golpe en lugar de dispararlo.
+   * Después cada golpe se agenda en el Transport, que sí se cancela al detener.
+   */
+  private sink: Instruments | null = null;
   private listeners = new Set<Listener>();
   private repeatId: number | null = null;
   private lastOpts: PlayOptions | null = null;
@@ -202,6 +207,7 @@ export class JazzEngine {
     const t = Tone.getTransport();
     t.stop();
     t.cancel();
+    Tone.getDraw().cancel();
     if (this.repeatId !== null) t.clear(this.repeatId);
     this.repeatId = null;
     this.inst?.piano.releaseAll();
@@ -260,9 +266,11 @@ export class JazzEngine {
     chorus: number,
     state: { voicing: number[] | null; bassPrev: number },
   ) {
-    const inst = this.inst!;
+    const queue: { time: number; call: (t: number) => void }[] = [];
+    this.sink = this.deferred(queue);
+    const inst = this.sink;
+    const draw = { schedule: (fn: () => void, at: number) => queue.push({ time: at, call: (t) => Tone.getDraw().schedule(fn, t) }) };
     const beat = 60 / opts.tempo;
-    const draw = Tone.getDraw();
     const total = opts.chart.bars * EIGHTHS_PER_BAR;
     /** corchea (posición absoluta en el chorus) → segundos, con swing */
     const swing = this.swingOf(opts);
@@ -302,10 +310,21 @@ export class JazzEngine {
         inst.lead.triggerAttackRelease(midiToFreq(midi(n.pitch)), Math.max(0.05, (end - start) * 0.92), start, 0.8);
       }
     }
+
+    // pasar todo al Transport (en orden temporal): se cancela con stop()
+    const t = Tone.getTransport();
+    const t0 = t.getSecondsAtTime(time);
+    queue.sort((a, b) => a.time - b.time);
+    for (const q of queue) {
+      // lo que cae al inicio del chorus ya está dentro de la ventana de anticipación: se dispara directo
+      if (q.time - time < 0.03) q.call(q.time);
+      else t.schedule((when) => q.call(when), t0 + (q.time - time));
+    }
+    this.sink = null;
   }
 
   private drums(opts: PlayOptions, at: (e: number) => number) {
-    const inst = this.inst!;
+    const inst = this.sink!;
     const ballad = opts.style === 'ballad';
     for (let b = 0; b < opts.chart.bars; b++) {
       const e0 = b * 8;
@@ -335,7 +354,7 @@ export class JazzEngine {
   }
 
   private drumsBossa(opts: PlayOptions, at: (e: number) => number) {
-    const inst = this.inst!;
+    const inst = this.sink!;
     // rim-click en clave 3-2 a lo largo de 2 compases; hi-hat en corcheas; bombo 1, (y del 2), 3
     const rim = [[0, 3, 6], [2, 4]];
     for (let b = 0; b < opts.chart.bars; b++) {
@@ -347,7 +366,7 @@ export class JazzEngine {
   }
 
   private bass(opts: PlayOptions, at: (e: number) => number, state: { bassPrev: number }) {
-    const inst = this.inst!;
+    const inst = this.sink!;
     const chords = opts.chart.chords;
     const LOW = 31;
     const HIGH = 52;
@@ -377,7 +396,7 @@ export class JazzEngine {
       if (opts.style === 'two' || opts.style === 'ballad') {
         line = beats >= 4 ? [root, place(tones.fifth, root + 4)] : [root];
         line.forEach((m, k) => {
-          inst.bass.triggerAttackRelease(midiToFreq(m), beatDur * 1.8, at(cc.start + k * 4), 0.9);
+          inst.bass.triggerAttackRelease(midiToFreq(m), beatDur * (beats >= 4 ? 1.8 : beats * 0.9), at(cc.start + k * 4), 0.9);
         });
         state.bassPrev = line[line.length - 1];
         return;
@@ -408,7 +427,7 @@ export class JazzEngine {
   }
 
   private comp(opts: PlayOptions, at: (e: number) => number, state: { voicing: number[] | null }, beat: number) {
-    const inst = this.inst!;
+    const inst = this.sink!;
     const chords = opts.chart.chords;
     chords.forEach((cc) => {
       const v = buildVoicing(cc.chord, state.voicing);
@@ -439,6 +458,34 @@ export class JazzEngine {
         inst.piano.triggerAttackRelease(freqs, dur, at(s), vel);
       }
     });
+  }
+
+  /** Envoltorio que registra los triggerAttackRelease en una cola en lugar de ejecutarlos. */
+  private deferred(queue: { time: number; call: (t: number) => void }[]): Instruments {
+    const real = this.inst!;
+    // posición del argumento de tiempo: (duración, tiempo, vel) para metales/ruido; (nota, duración, tiempo, vel) para el resto
+    const timeArg: Partial<Record<keyof Instruments, number>> = { ride: 1, hat: 1, snare: 1 };
+    const wrap = <K extends keyof Instruments>(name: K): Instruments[K] => {
+      const target = real[name] as unknown as { triggerAttackRelease: (...a: unknown[]) => unknown };
+      const idx = timeArg[name] ?? 2;
+      return {
+        triggerAttackRelease: (...args: unknown[]) => {
+          queue.push({
+            time: args[idx] as number,
+            call: (when) => {
+              const a = [...args];
+              a[idx] = when;
+              target.triggerAttackRelease(...a);
+            },
+          });
+        },
+      } as unknown as Instruments[K];
+    };
+    return {
+      ...real,
+      piano: wrap('piano'), bass: wrap('bass'), ride: wrap('ride'), hat: wrap('hat'),
+      kick: wrap('kick'), snare: wrap('snare'), lead: wrap('lead'), click: wrap('click'),
+    } as Instruments;
   }
 
   get options() {
