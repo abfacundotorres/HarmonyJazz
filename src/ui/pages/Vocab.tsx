@@ -1,8 +1,12 @@
 import { useMemo, useState } from 'react';
-import { LICKS, lickById, lickInKey } from '../../content/licks';
+import { LICKS, Lick, lickById, lickInKey, LickLevel } from '../../content/licks';
 import { concertRange } from '../../state/storage';
 import { ExerciseCard } from '../components/ExerciseCard';
-import { useMastery, useRoute, useSettings } from '../hooks';
+import { LickStudy } from '../components/LickStudy';
+import { localizeNotes } from '../../exercises/localize';
+import { useMastery, useReading, useRoute, useSettings } from '../hooks';
+
+const LEVELS: LickLevel[] = ['Esencial', 'Intermedio', 'Avanzado'];
 
 export function Vocab() {
   const { path, query } = useRoute();
@@ -14,39 +18,51 @@ export function Vocab() {
       <section className="card">
         <h2>Vocabulario</h2>
         <p className="muted">
-          Frases para aprender en las 12 tonalidades. El método: aprendela de oído con "Oír la línea", tocala de memoria en la tonalidad del día, recorré el ciclo de cuartas y después variá la rítmica y el final.
+          Frases para aprender en las 12 tonalidades. Cada una trae el paso a paso para aprenderla, sus ideas, el análisis nota por nota, por qué funciona y ejercicios.
+          El método: escuchala con "Oír la línea", tocala de memoria, recorré el ciclo de cuartas y después variá el ritmo y el final.
         </p>
-        <nav className="lick-list">
-          {LICKS.map((l) => (
-            <a key={l.id} href={`#/vocabulario/${l.id}`} className={l.id === lick.id ? 'on' : ''}>
-              {l.name}
-              <small>{Object.keys(mastery[`lick:${l.id}`] ?? {}).length}/12</small>
-            </a>
-          ))}
-        </nav>
+        {LEVELS.map((lv) => {
+          const items = LICKS.filter((l) => (l.level ?? 'Intermedio') === lv);
+          return items.length ? (
+            <div key={lv} className="lickgroup">
+              <h4>{lv}</h4>
+              <nav className="lick-list">
+                {items.map((l) => (
+                  <a key={l.id} href={`#/vocabulario/${l.id}`} className={l.id === lick.id ? 'on' : ''}>
+                    {l.name}
+                    <small>{Object.keys(mastery[`lick:${l.id}`] ?? {}).length}/12</small>
+                  </a>
+                ))}
+              </nav>
+            </div>
+          ) : null;
+        })}
       </section>
-      <LickCard key={lick.id} id={lick.id} initialKey={query.get('k')} />
+      <LickCard key={lick.id} lick={lick} initialKey={query.get('k')} />
     </div>
   );
 }
 
-function LickCard({ id, initialKey }: { id: string; initialKey: string | null }) {
-  const lick = lickById(id);
+function LickCard({ lick, initialKey }: { lick: Lick; initialKey: string | null }) {
   const [settings] = useSettings();
+  const { iv } = useReading();
   const [key, setKey] = useState(initialKey ?? lick.key);
   const { chart, notes } = useMemo(() => lickInKey(lick, key, concertRange(settings.register)), [lick, key, settings.register]);
-  const minor = /m7b5|m6/.test(lick.chart);
+  const mode = lick.mode ?? (/m7b5|m6/.test(lick.chart) ? 'minor' : 'major');
   return (
-    <ExerciseCard
-      id={`lick:${lick.id}`}
-      title={lick.name}
-      description={lick.idea}
-      chart={chart}
-      notes={notes}
-      keyValue={key}
-      mode={minor ? 'minor' : 'major'}
-      onKey={setKey}
-      tempo={130}
-    />
+    <>
+      <ExerciseCard
+        id={`lick:${lick.id}`}
+        title={lick.name}
+        description={localizeNotes(lick.idea, lick.key, key, iv)}
+        chart={chart}
+        notes={notes}
+        keyValue={key}
+        mode={mode}
+        onKey={setKey}
+        tempo={lick.tempo ?? 130}
+      />
+      <LickStudy lick={lick} chart={chart} notes={notes} keyValue={key} />
+    </>
   );
 }

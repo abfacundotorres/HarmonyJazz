@@ -1,22 +1,23 @@
 import * as Tone from 'tone';
-import { Chord, qdef } from '../theory/chords';
 import { Chart, EIGHTHS_PER_BAR } from '../theory/chart';
-import { degreePc, midi, midiToFreq, mod, pc } from '../theory/notes';
-import { SCALES } from '../theory/scales';
-import { buildVoicing } from '../theory/voicings';
+import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
+import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, mulberry32, newCompState, Rng, Style } from './patterns';
 
 export interface Mix {
   piano: boolean;
   bass: boolean;
   drums: boolean;
   melody: boolean;
-  /** Sólo hi-hat en 2 y 4 (metrónomo de jazz). Ignora piano/bajo/batería. */
+  /** Sólo el pedal de hi-hat en 2 y 4 (metrónomo de jazz). Ignora piano/bajo/batería. */
   metronome: boolean;
 }
 
-/** swing = walking en 4; two = bajo en 2; ballad = escobillas y piano sostenido; bossa = corcheas rectas. */
-export type Style = 'swing' | 'two' | 'ballad' | 'bossa';
+/** swing = walking en 4; two = bajo en 2; ballad = ride suave y piano sostenido; bossa = corcheas rectas. */
+export type { Style };
+
+/** "phone" compensa la falta de graves de un altavoz chico; "normal" es la respuesta completa (auriculares, parlantes). */
+export type OutputMode = 'phone' | 'normal';
 
 export const STYLE_LABEL: Record<Style, string> = {
   swing: 'Swing (walking)',
@@ -28,7 +29,7 @@ export const STYLE_LABEL: Record<Style, string> = {
 export interface PlayOptions {
   chart: Chart;
   tempo: number;
-  /** Proporción de la corchea larga: 0.5 = recto, 0.67 = tresillo. */
+  /** Cantidad de swing que pide el usuario (0,5 = recto … 0,72); la relación real depende además del tempo. */
   swing: number;
   style: Style;
   countIn: boolean;
@@ -51,9 +52,6 @@ export interface Position {
 
 type Listener = (p: Position) => void;
 
-const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
-
 /** Lo que el motor necesita de un instrumento: tanto los sintetizadores como los Sampler lo cumplen. */
 interface Voice {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,7 +63,13 @@ interface Voice {
 const MASTER_DB = 18;
 /** Base del volumen del usuario (después del compresor). El control actúa respecto de este valor. */
 const BASE_TRIM_DB = 2;
-const LEVEL_DB = { piano: 2, bass: 1.5, horn: 7 };
+/** Nivel de cada bus con instrumentos reales y con los sintetizadores de respaldo. */
+const BUS_DB = {
+  real: { piano: 2, bass: 1.5, horn: 7, drums: -4 },
+  synth: { piano: -9, bass: -18, horn: -14, drums: 8 },
+};
+/** Procesamiento de la salida "phone": corte de graves inaudibles, presencia y armónicos del bajo. */
+const PHONE = { highpass: 120, presenceDb: 3, exciterDb: 6 };
 
 const SAMPLE_BASE = () => new URL('samples/', location.href.split('#')[0]).href;
 /** Nota de Tone → archivo (los sostenidos del piano se renombraron: D#3 → Ds3). */
@@ -79,6 +83,60 @@ const HORN_SAMPLES: Record<string, string> = Object.fromEntries(
   ['G3', 'Bb3', 'Db4', 'E4', 'G4', 'Bb4', 'Db5', 'E5', 'G5', 'Bb5', 'Db6'].map((n) => [n, n + '.mp3']),
 );
 
+/** Cantidad de variantes de cada golpe (carpeta samples/drums/). */
+const DRUM_GROUPS = { ridepp: 2, ridemp: 5, rideff: 3, chick: 6, hatc: 6, kick: 5, ghost: 6, snare: 4, stick: 4 } as const;
+type DrumGroup = keyof typeof DRUM_GROUPS;
+/** Ganancia (dB) de cada grupo respecto de la muestra original; se ajustó midiendo cada golpe. */
+const DRUM_DB: Record<DrumGroup, number> = { ridepp: 0, ridemp: 0, rideff: -2, chick: 0, hatc: -3, kick: 0, ghost: 0, snare: -2, stick: -1 };
+
+/**
+ * Kit de batería con muestras reales (Salamander Drumkit). Cada golpe tiene varias variantes que se
+ * alternan para no sonar a "ametralladora" y la intensidad elige el grupo (ride suave / medio / fuerte,
+ * golpe fantasma o acento de caja).
+ */
+class DrumKit {
+  private buffers: Partial<Record<DrumGroup, Tone.ToneAudioBuffer[]>> = {};
+  private lastIdx: Partial<Record<DrumGroup, number>> = {};
+  loaded = false;
+  constructor(private out: Tone.ToneAudioNode) {}
+
+  async load(baseUrl: string): Promise<void> {
+    const jobs: Promise<void>[] = [];
+    for (const [g, n] of Object.entries(DRUM_GROUPS) as [DrumGroup, number][]) {
+      for (let i = 1; i <= n; i++) {
+        jobs.push(Tone.ToneAudioBuffer.fromUrl(`${baseUrl}drums/${g}_${i}.mp3`).then((b) => void (this.buffers[g] = [...(this.buffers[g] ?? []), b])));
+      }
+    }
+    await Promise.all(jobs);
+    this.loaded = true;
+  }
+
+  private groupOf(voice: DrumVoice, vel: number): DrumGroup {
+    if (voice === 'ride') return vel < 0.45 ? 'ridepp' : vel < 0.72 ? 'ridemp' : 'rideff';
+    return voice;
+  }
+
+  /** Devuelve false si el kit no está cargado (el motor usa entonces los sintetizadores). */
+  hit(voice: DrumVoice, time: number, vel: number): boolean {
+    if (!this.loaded) return false;
+    const group = this.groupOf(voice, vel);
+    const list = this.buffers[group];
+    if (!list || list.length === 0) return false;
+    let i = Math.floor(Math.random() * list.length);
+    if (list.length > 1 && i === this.lastIdx[group]) i = (i + 1) % list.length;
+    this.lastIdx[group] = i;
+    const src = new Tone.ToneBufferSource({ url: list[i] });
+    const gain = new Tone.Gain(Tone.dbToGain(DRUM_DB[group]) * Math.pow(Math.max(0.05, vel), 1.1)).connect(this.out);
+    src.connect(gain);
+    src.onended = () => {
+      src.dispose();
+      gain.dispose();
+    };
+    src.start(time);
+    return true;
+  }
+}
+
 class Instruments {
   /** Los tres instrumentos que pasan a ser reales cuando cargan las muestras. */
   piano: Voice;
@@ -88,6 +146,7 @@ class Instruments {
   hat: Tone.MetalSynth;
   kick: Tone.MembraneSynth;
   snare: Tone.NoiseSynth;
+  drums: DrumKit;
   /** Sintetizador para las notas de referencia del afinador (sostenido y estable). */
   lead: Tone.MonoSynth;
   click: Tone.Synth;
@@ -96,12 +155,20 @@ class Instruments {
   master: Tone.Volume;
   /** Volumen del usuario, después del compresor: así sube el nivel de verdad en lugar de ser aplastado. */
   trim: Tone.Volume;
-  private comp: Tone.Compressor;
+  private pianoBus: Tone.Volume;
+  private bassBus: Tone.Volume;
+  private hornBus: Tone.Volume;
+  private drumBus: Tone.Volume;
+  private hp: Tone.Filter;
+  private presence: Tone.Filter;
+  private exciter: Tone.Volume;
   private synths: { piano: Tone.PolySynth; bass: Tone.MonoSynth; horn: Tone.MonoSynth };
 
   constructor() {
     this.master = new Tone.Volume(MASTER_DB);
     this.trim = new Tone.Volume(0);
+    this.hp = new Tone.Filter({ type: 'highpass', frequency: 20, rolloff: -24 });
+    this.presence = new Tone.Filter({ type: 'peaking', frequency: 2200, Q: 0.7, gain: 0 });
     // compresión para subir el nivel medio sin que los transitorios (piano, bombo) saturen,
     // limitador y un recortador suave final: la salida nunca supera ~0,91 (−0,8 dBFS)
     const shaper = new Tone.WaveShaper((x: number) => {
@@ -109,8 +176,10 @@ class Instruments {
       const a = Math.abs(x);
       return a < t ? x : Math.sign(x) * (t + (0.95 - t) * Math.tanh((a - t) / (0.95 - t)));
     }, 4096);
-    shaper.oversample = '4x';
+    shaper.oversample = 'none'; // con sobremuestreo el filtro de salida rebasa el techo en los transitorios (batería)
     this.master.chain(
+      this.hp,
+      this.presence,
       new Tone.Compressor({ threshold: -28, ratio: 8, attack: 0.003, release: 0.15 }),
       this.trim,
       new Tone.Limiter(-2),
@@ -119,7 +188,26 @@ class Instruments {
     );
     this.reverb = new Tone.Reverb({ decay: 2.2, wet: 0.18 }).connect(this.master);
     const comp = new Tone.Compressor(-18, 3).connect(this.reverb);
-    this.comp = comp;
+
+    // buses: cada instrumento (real o sintético) entra por el suyo, con su nivel
+    this.pianoBus = new Tone.Volume(BUS_DB.synth.piano).connect(comp);
+    this.bassBus = new Tone.Volume(BUS_DB.synth.bass).connect(comp);
+    this.hornBus = new Tone.Volume(BUS_DB.synth.horn).connect(this.reverb);
+    this.drumBus = new Tone.Volume(BUS_DB.synth.drums).connect(this.reverb);
+
+    // excitador de armónicos del bajo: un altavoz de celular casi no reproduce por debajo de ~300 Hz, pero
+    // si se agregan armónicos (240–900 Hz) el oído reconstruye la nota grave. Sólo suena en la salida "phone".
+    this.exciter = new Tone.Volume(PHONE.exciterDb);
+    this.exciter.mute = true;
+    this.bassBus.chain(
+      new Tone.Filter({ type: 'lowpass', frequency: 140, rolloff: -24 }),
+      new Tone.Volume(14),
+      new Tone.Distortion({ distortion: 0.8, oversample: '4x' }),
+      new Tone.Filter({ type: 'highpass', frequency: 170, rolloff: -24 }),
+      new Tone.Filter({ type: 'lowpass', frequency: 900, rolloff: -12 }),
+      this.exciter,
+      comp,
+    );
 
     this.piano = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 3,
@@ -128,7 +216,7 @@ class Instruments {
       modulation: { type: 'sine' },
       envelope: { attack: 0.005, decay: 1.4, sustain: 0.12, release: 0.9 },
       modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0.1, release: 0.5 },
-    }).connect(new Tone.Volume(-9).connect(comp));
+    }).connect(this.pianoBus);
     (this.piano as Tone.PolySynth).maxPolyphony = 24;
 
     this.bass = new Tone.MonoSynth({
@@ -136,33 +224,32 @@ class Instruments {
       filter: { Q: 1, type: 'lowpass', rolloff: -24 },
       envelope: { attack: 0.004, decay: 0.5, sustain: 0.35, release: 0.12 },
       filterEnvelope: { attack: 0.002, decay: 0.25, sustain: 0.25, release: 0.2, baseFrequency: 180, octaves: 2.6 },
-    }).connect(new Tone.Volume(-18).connect(comp));
+    }).connect(this.bassBus);
 
-    const drums = new Tone.Volume(8).connect(this.reverb);
+    // batería sintética de respaldo (si el kit real no carga)
     this.ride = new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 1.1, release: 0.4 },
       harmonicity: 5.1,
       modulationIndex: 24,
       resonance: 5200,
       octaves: 1.2,
-    }).connect(new Tone.Volume(-24).connect(drums));
+    }).connect(new Tone.Volume(-24).connect(this.drumBus));
     this.ride.frequency.value = 340;
-
     this.hat = new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.06, release: 0.02 },
       harmonicity: 5.1,
       modulationIndex: 40,
       resonance: 7000,
       octaves: 1,
-    }).connect(new Tone.Volume(-22).connect(drums));
+    }).connect(new Tone.Volume(-22).connect(this.drumBus));
     this.hat.frequency.value = 420;
-
     this.kick = new Tone.MembraneSynth({ pitchDecay: 0.03, octaves: 4, envelope: { attack: 0.001, decay: 0.3, sustain: 0 } }).connect(
-      new Tone.Volume(-16).connect(drums),
+      new Tone.Volume(-16).connect(this.drumBus),
     );
     this.snare = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.12, sustain: 0 } }).connect(
-      new Tone.Filter(2500, 'bandpass').connect(new Tone.Volume(-20).connect(drums)),
+      new Tone.Filter(2500, 'bandpass').connect(new Tone.Volume(-20).connect(this.drumBus)),
     );
+    this.drums = new DrumKit(this.drumBus);
 
     this.lead = new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
@@ -180,9 +267,18 @@ class Instruments {
     this.synths = { piano: this.piano as Tone.PolySynth, bass: this.bass as Tone.MonoSynth, horn: this.lead };
   }
 
+  /** Activa o desactiva el procesamiento para altavoz de celular. */
+  setOutput(mode: OutputMode) {
+    const phone = mode === 'phone';
+    this.hp.frequency.value = phone ? PHONE.highpass : 20;
+    this.presence.gain.value = phone ? PHONE.presenceDb : 0;
+    this.exciter.mute = !phone;
+  }
+
   /**
-   * Carga piano, contrabajo y trompeta reales y reemplaza a los sintetizadores.
-   * Si alguna descarga falla se conservan los sintetizadores y la promesa rechaza.
+   * Carga piano, contrabajo y trompeta reales y reemplaza a los sintetizadores; después la batería.
+   * Si fallan los instrumentos se conservan los sintetizadores y la promesa rechaza; si falla sólo la
+   * batería, el resto queda real y la batería sigue siendo sintética.
    */
   async loadSamples(): Promise<void> {
     const baseUrl = SAMPLE_BASE();
@@ -197,14 +293,32 @@ class Instruments {
       nodes.forEach((n) => n.dispose());
       throw e;
     }
-    piano.connect(new Tone.Volume(LEVEL_DB.piano).connect(this.comp));
-    bass.connect(new Tone.Volume(LEVEL_DB.bass).connect(this.comp));
-    horn.connect(new Tone.Volume(LEVEL_DB.horn).connect(this.reverb));
+    piano.connect(this.pianoBus);
+    bass.connect(this.bassBus);
+    horn.connect(this.hornBus);
+    this.pianoBus.volume.value = BUS_DB.real.piano;
+    this.bassBus.volume.value = BUS_DB.real.bass;
+    this.hornBus.volume.value = BUS_DB.real.horn;
     this.piano = piano;
     this.bass = bass;
     this.horn = horn;
     this.synths.piano.dispose();
     this.synths.bass.dispose();
+    try {
+      await this.drums.load(baseUrl);
+      this.drumBus.volume.value = BUS_DB.real.drums;
+    } catch (e) {
+      console.warn('No se pudo cargar la batería real; la batería sigue siendo sintética.', e);
+    }
+  }
+
+  /** Un golpe de batería: con el kit real si cargó y, si no, con los sintetizadores. */
+  drumHit(voice: DrumVoice, time: number, vel: number) {
+    if (this.drums.hit(voice, time, vel)) return;
+    if (voice === 'ride') this.ride.triggerAttackRelease('16n', time, vel);
+    else if (voice === 'chick' || voice === 'hatc') this.hat.triggerAttackRelease('32n', time, Math.min(1, vel * 1.4));
+    else if (voice === 'kick') this.kick.triggerAttackRelease('C1', '16n', time, vel);
+    else this.snare.triggerAttackRelease('32n', time, vel);
   }
 }
 
@@ -222,13 +336,15 @@ function silentWavUrl(): string {
   return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
 }
 
+/** Estado que se conserva entre los coros de una misma reproducción. */
+interface RunState {
+  bassPrev: number;
+  comp: CompState;
+  rng: Rng;
+}
+
 export class JazzEngine {
   private inst: Instruments | null = null;
-  /**
-   * Instrumentos "diferidos" del chorus en curso: registran cada golpe en lugar de dispararlo.
-   * Después cada golpe se agenda en el Transport, que sí se cancela al detener.
-   */
-  private sink: Instruments | null = null;
   private listeners = new Set<Listener>();
   private repeatId: number | null = null;
   private lastOpts: PlayOptions | null = null;
@@ -271,6 +387,7 @@ export class JazzEngine {
   samples: 'idle' | 'loading' | 'ready' | 'synth' = 'idle';
   private loading: Promise<void> | null = null;
   private volumeDb = 0;
+  private outputMode: OutputMode = 'normal';
 
   /** Crea los instrumentos y empieza a bajar las muestras. No necesita un gesto del usuario. */
   private ensure(): Instruments {
@@ -278,6 +395,7 @@ export class JazzEngine {
       const inst = new Instruments();
       this.inst = inst;
       inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
+      inst.setOutput(this.outputMode);
       this.meter = new Tone.Meter({ smoothing: 0.7 });
       Tone.getDestination().connect(this.meter);
       this.samples = 'loading';
@@ -307,6 +425,12 @@ export class JazzEngine {
   setVolume(db: number) {
     this.volumeDb = Math.max(-14, Math.min(2, db));
     if (this.inst) this.inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
+  }
+
+  /** Salida: "phone" para altavoz de celular (más presencia y armónicos del bajo) o "normal". */
+  setOutputMode(mode: OutputMode) {
+    this.outputMode = mode;
+    this.inst?.setOutput(mode);
   }
 
   async init() {
@@ -387,7 +511,7 @@ export class JazzEngine {
     }
 
     let chorus = 0;
-    const state = { voicing: null as number[] | null, bassPrev: 40 };
+    const state: RunState = { bassPrev: 40, comp: newCompState(), rng: mulberry32((Math.random() * 0xffffffff) >>> 0) };
     this.repeatId = t.scheduleRepeat(
       (time) => {
         this.chorusStarts.push({ chorus, time });
@@ -427,9 +551,9 @@ export class JazzEngine {
     this.playing = false;
   }
 
-  /** Swing efectivo: la bossa siempre va recta. */
+  /** Relación de la corchea larga: depende del estilo, del tempo y del ajuste del usuario. */
   swingOf(opts: PlayOptions) {
-    return opts.style === 'bossa' ? 0.5 : opts.swing;
+    return effectiveSwing(opts.tempo, opts.swing, opts.style);
   }
 
   /**
@@ -471,50 +595,72 @@ export class JazzEngine {
     this.inst!.lead.triggerAttackRelease(midiToFreq(m), dur);
   }
 
-  private scheduleChorus(
-    opts: PlayOptions,
-    time: number,
-    chorus: number,
-    state: { voicing: number[] | null; bassPrev: number },
-  ) {
+  /**
+   * Agenda un chorus. Los golpes salen de patterns.ts (datos puros); acá se les aplica el swing, una
+   * humanización mínima de tiempo y se pasan al Transport en orden (se cancelan con stop()).
+   */
+  private scheduleChorus(opts: PlayOptions, time: number, chorus: number, st: RunState) {
     const queue: { time: number; call: (t: number) => void }[] = [];
-    this.sink = this.deferred(queue, chorus);
-    const inst = this.sink;
+    const defer = (at: number, call: (t: number) => void) => queue.push({ time: at, call });
+    const inst = this.inst!;
     const gen = this.gen;
-    const draw = {
-      schedule: (fn: () => void, at: number) =>
-        queue.push({ time: at, call: (t) => Tone.getDraw().schedule(() => gen === this.gen && fn(), t) }),
-    };
     const beat = 60 / opts.tempo;
     const total = opts.chart.bars * EIGHTHS_PER_BAR;
-    /** corchea (posición absoluta en el chorus) → segundos, con swing */
     const swing = this.swingOf(opts);
+    /** corchea (posición absoluta en el chorus) → segundos, con swing */
     const at = (e: number) => time + (Math.floor(e / 2) + (mod(e, 2) === 1 ? swing : 0)) * beat;
+    const r = st.rng;
+    const jit = (a: number, b: number) => a + r() * (b - a);
     const { mix } = opts;
     const chords = opts.chart.chords;
 
     // posición para la UI
+    const ui = (fn: () => void, t: number) => Tone.getDraw().schedule(() => gen === this.gen && fn(), t);
     chords.forEach((cc, i) => {
-      draw.schedule(() => this.emit({ chorus, bar: cc.bar, chordIndex: i, beat: (cc.start % 8) / 2, countIn: false }), at(cc.start));
+      defer(at(cc.start), (t) => ui(() => this.emit({ chorus, bar: cc.bar, chordIndex: i, beat: (cc.start % 8) / 2, countIn: false }), t));
     });
     for (let b = 0; b < opts.chart.bars; b++) {
       for (let k = 1; k < 4; k++) {
         const e = b * 8 + k * 2;
-        draw.schedule(() => {
-          const ci = chords.findIndex((c) => e >= c.start && e < c.start + c.dur);
-          this.emit({ chorus, bar: b, chordIndex: ci, beat: k, countIn: false });
-        }, at(e));
+        defer(at(e), (t) =>
+          ui(() => {
+            const ci = chords.findIndex((c) => e >= c.start && e < c.start + c.dur);
+            this.emit({ chorus, bar: b, chordIndex: ci, beat: k, countIn: false });
+          }, t),
+        );
       }
     }
 
     if (mix.metronome) {
-      for (let b = 0; b < opts.chart.bars; b++) {
-        for (const k of [1, 3]) inst.hat.triggerAttackRelease('32n', at(b * 8 + k * 2), 0.9);
-      }
+      for (let b = 0; b < opts.chart.bars; b++) for (const k of [1, 3]) defer(at(b * 8 + k * 2), (t) => inst.drumHit('chick', t, 0.9));
     } else {
-      if (mix.drums) (opts.style === 'bossa' ? this.drumsBossa(opts, at) : this.drums(opts, at));
-      if (mix.bass) this.bass(opts, at, state);
-      if (mix.piano) this.comp(opts, at, state, beat);
+      if (mix.drums) {
+        // pequeñas variaciones de tiempo según el instrumento (la caja un poco atrás, el ride justo)
+        const lag: Record<DrumVoice, [number, number]> = {
+          ride: [-0.004, 0.004], chick: [-0.003, 0.005], hatc: [-0.003, 0.005], kick: [-0.003, 0.003], ghost: [0, 0.01], snare: [0, 0.01], stick: [0, 0.006],
+        };
+        for (const h of drumLine(opts.chart, opts.style, r, chorus)) {
+          const [a, b] = lag[h.voice];
+          defer(at(h.e) + jit(a, b), (t) => inst.drumHit(h.voice, t, h.vel));
+        }
+      }
+      if (mix.bass) {
+        const { hits, last } = bassLine(opts.chart, opts.style, r, st.bassPrev);
+        st.bassPrev = last;
+        for (const h of hits) {
+          const t0 = at(h.e);
+          const dur = Math.max(0.06, (at(h.e + h.dur) - t0) * 0.98);
+          defer(t0 + jit(-0.006, 0.004), (t) => inst.bass.triggerAttackRelease(midiToFreq(h.midi), dur, t, h.vel));
+        }
+      }
+      if (mix.piano) {
+        for (const h of compLine(opts.chart, opts.style, r, chorus, st.comp)) {
+          const t0 = at(h.e);
+          const dur = Math.max(0.12, (at(h.e + h.dur) - t0) * 0.98);
+          const freqs = h.midis.map(midiToFreq);
+          defer(t0 + jit(0.006, 0.022), (t) => inst.piano.triggerAttackRelease(freqs, dur, t, h.vel));
+        }
+      }
     }
 
     if (mix.melody && opts.melody) {
@@ -522,217 +668,24 @@ export class JazzEngine {
         if (!n.pitch || n.start >= total) continue;
         const start = at(n.start);
         const end = at(n.start + n.dur);
-        inst.horn.triggerAttackRelease(midiToFreq(midi(n.pitch)), Math.max(0.05, (end - start) * 0.92), start, 0.8);
+        defer(start, (t) => inst.horn.triggerAttackRelease(midiToFreq(midi(n.pitch!)), Math.max(0.05, (end - start) * 0.92), t, 0.8));
       }
     }
 
     // pasar todo al Transport (en orden temporal): se cancela con stop()
-    const t = Tone.getTransport();
-    const t0 = t.getSecondsAtTime(time);
+    const tr = Tone.getTransport();
+    const t0 = tr.getSecondsAtTime(time);
     queue.sort((a, b) => a.time - b.time);
     for (const q of queue) {
       // lo que cae al inicio del chorus ya está dentro de la ventana de anticipación: se dispara directo
       if (q.time - time < 0.03) q.call(q.time);
-      else t.schedule((when) => q.call(when), t0 + (q.time - time));
+      else tr.schedule((when) => q.call(when), t0 + (q.time - time));
     }
-    this.sink = null;
-  }
-
-  private drums(opts: PlayOptions, at: (e: number) => number) {
-    const inst = this.sink!;
-    const ballad = opts.style === 'ballad';
-    for (let b = 0; b < opts.chart.bars; b++) {
-      const e0 = b * 8;
-      if (ballad) {
-        // escobillas: "barrido" suave en cada tiempo, hi-hat en 2 y 4
-        for (let k = 0; k < 4; k++) {
-          inst.snare.triggerAttackRelease('8n', at(e0 + k * 2), k % 2 ? 0.22 : 0.14);
-          if (k % 2 === 1) inst.hat.triggerAttackRelease('32n', at(e0 + k * 2), 0.6);
-          if (k % 2 === 1) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), 0.08);
-        }
-        continue;
-      }
-      for (let k = 0; k < 4; k++) {
-        inst.ride.triggerAttackRelease('16n', at(e0 + k * 2), k % 2 ? 0.75 : 0.55);
-        inst.kick.triggerAttackRelease('C1', '16n', at(e0 + k * 2), 0.25);
-        if (k % 2 === 1) inst.hat.triggerAttackRelease('32n', at(e0 + k * 2), 0.8);
-        // skip note de ride en el "y" de 2 y 4
-        if (k % 2 === 1) inst.ride.triggerAttackRelease('16n', at(e0 + k * 2 + 1), 0.4);
-        // comping de redoblante ocasional
-        // comping de redoblante ocasional; en el último compás, pequeño fill en el "y" de 3 y 4
-        // (los golpes de un mismo instrumento deben agendarse en orden temporal)
-        const last = b === opts.chart.bars - 1;
-        if (last && k >= 2) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), k === 2 ? 0.5 : 0.7);
-        else if (Math.random() < 0.12) inst.snare.triggerAttackRelease('32n', at(e0 + k * 2 + 1), rnd(0.15, 0.4));
-      }
-    }
-  }
-
-  private drumsBossa(opts: PlayOptions, at: (e: number) => number) {
-    const inst = this.sink!;
-    // rim-click en clave 3-2 a lo largo de 2 compases; hi-hat en corcheas; bombo 1, (y del 2), 3
-    const rim = [[0, 3, 6], [2, 4]];
-    for (let b = 0; b < opts.chart.bars; b++) {
-      const e0 = b * 8;
-      for (let e = 0; e < 8; e++) inst.hat.triggerAttackRelease('32n', at(e0 + e), e % 2 ? 0.35 : 0.55);
-      for (const e of rim[b % 2]) inst.snare.triggerAttackRelease('64n', at(e0 + e), 0.35);
-      for (const [e, v] of [[0, 0.5], [3, 0.3], [4, 0.45], [7, 0.3]] as const) inst.kick.triggerAttackRelease('C1', '16n', at(e0 + e), v);
-    }
-  }
-
-  private bass(opts: PlayOptions, at: (e: number) => number, state: { bassPrev: number }) {
-    const inst = this.sink!;
-    const chords = opts.chart.chords;
-    const LOW = 31;
-    const HIGH = 52;
-    const place = (targetPc: number, near: number) => {
-      let best = LOW;
-      for (let m = LOW; m <= HIGH; m++) if (mod(m, 12) === targetPc && Math.abs(m - near) < Math.abs(best - near)) best = m;
-      return best;
-    };
-    const beatDur = 60 / opts.tempo;
-    chords.forEach((cc, i) => {
-      const next = chords[(i + 1) % chords.length];
-      const rootPc = pc(cc.chord.root);
-      const nextRoot = place(pc(next.chord.root), state.bassPrev);
-      const beats = cc.dur / 2;
-      const root = place(rootPc, state.bassPrev);
-      const tones = bassTones(cc.chord);
-      let line: number[];
-      if (opts.style === 'bossa') {
-        // fundamental (negra con puntillo), quinta en el "y" del 2 ligada al 3
-        const fifth = place(tones.fifth, root + 5);
-        const hits: [number, number, number][] =
-          beats >= 4 ? [[root, 0, 3], [fifth, 3, 1], [fifth, 4, 4]] : beats >= 2 ? [[root, 0, 3], [fifth, 3, 1]] : [[root, 0, 2]];
-        for (const [m, e, d] of hits) inst.bass.triggerAttackRelease(midiToFreq(m), d * beatDur * 0.5 * 0.9, at(cc.start + e), 0.85);
-        state.bassPrev = root;
-        return;
-      }
-      if (opts.style === 'two' || opts.style === 'ballad') {
-        line = beats >= 4 ? [root, place(tones.fifth, root + 4)] : [root];
-        line.forEach((m, k) => {
-          inst.bass.triggerAttackRelease(midiToFreq(m), beatDur * (beats >= 4 ? 1.8 : beats * 0.9), at(cc.start + k * 4), 0.9);
-        });
-        state.bassPrev = line[line.length - 1];
-        return;
-      }
-      const approach = () => pick([nextRoot - 1, nextRoot + 1, place(mod(pc(next.chord.root) + 7, 12), nextRoot)]);
-      if (beats >= 4) {
-        const up = nextRoot >= root;
-        const pattern = pick([
-          [tones.second, tones.third],
-          [tones.third, tones.fifth],
-          [tones.fifth, tones.third],
-          [tones.third, tones.second],
-        ]);
-        const a = place(pattern[0], root + (up ? 3 : -3));
-        const b = place(pattern[1], a + (up ? 2 : -2));
-        line = [root, a, b, approach()];
-      } else if (beats >= 2) {
-        line = [root, approach()];
-      } else {
-        line = [root];
-      }
-      line.forEach((m, k) => {
-        const clamped = Math.max(LOW, Math.min(HIGH, m));
-        inst.bass.triggerAttackRelease(midiToFreq(clamped), beatDur * 0.92, at(cc.start + k * 2), k === 0 ? 0.95 : 0.8);
-      });
-      state.bassPrev = line[line.length - 1];
-    });
-  }
-
-  private comp(opts: PlayOptions, at: (e: number) => number, state: { voicing: number[] | null }, beat: number) {
-    const inst = this.sink!;
-    const chords = opts.chart.chords;
-    chords.forEach((cc) => {
-      const v = buildVoicing(cc.chord, state.voicing);
-      state.voicing = v;
-      const pats: [number, number][][] =
-        opts.style === 'ballad'
-          ? [[[0, cc.dur]], [[0, Math.min(cc.dur, 4)], ...(cc.dur >= 8 ? ([[5, 3]] as [number, number][]) : [])]]
-          : opts.style === 'bossa'
-            ? cc.dur >= 8
-              ? [[[0, 2], [3, 3], [6, 2]], [[-1, 3], [3, 2], [6, 1]], [[1, 2], [4, 1], [6, 2]]]
-              : [[[0, 2], [3, 1]], [[-1, 2], [3, 1]]]
-            : cc.dur >= 8
-          ? [
-              [[0, 3], [3, 1]],
-              [[2, 1], [5, 3]],
-              [[1, 1], [4, 2]],
-              [[-1, 4], [5, 1]],
-              [[0, 2], [6, 1]],
-            ]
-          : cc.dur >= 4
-            ? [[[0, 2]], [[1, 1]], [[-1, 2]], [[0, 1], [3, 1]]]
-            : [[[0, 2]]];
-      for (const [p, len] of pick(pats)) {
-        const s = Math.max(0, cc.start + p);
-        const dur = Math.max(0.12, len * beat * 0.5 * 0.95);
-        const vel = opts.style === 'ballad' ? rnd(0.25, 0.4) : rnd(0.35, 0.6);
-        const freqs = v.map(midiToFreq);
-        inst.piano.triggerAttackRelease(freqs, dur, at(s), vel);
-      }
-    });
-  }
-
-  /** Envoltorio que registra los triggerAttackRelease en una cola en lugar de ejecutarlos. */
-  private deferred(queue: { time: number; call: (t: number) => void }[], chorus: number): Instruments {
-    const real = this.inst!;
-    // Humanización: pequeñas variaciones de tiempo (segundos) y de intensidad por instrumento.
-    // El piano llega apenas "atrás" del pulso y el bajo apenas adelante; la melodía y el clic quedan exactos.
-    const jitter: Partial<Record<keyof Instruments, () => number>> = {
-      piano: () => rnd(0.006, 0.022),
-      bass: () => rnd(-0.006, 0.004),
-      ride: () => rnd(-0.004, 0.004),
-      hat: () => rnd(-0.003, 0.005),
-      kick: () => rnd(-0.003, 0.003),
-      snare: () => rnd(0, 0.01),
-    };
-    // La intensidad crece en los primeros coros (más sutil al principio, más presente después).
-    const intensity = 0.88 + (0.12 * Math.min(chorus, 3)) / 3;
-    const humanized = new Set<keyof Instruments>(['piano', 'bass', 'ride', 'hat', 'kick', 'snare']);
-    // posición del argumento de tiempo: (duración, tiempo, vel) para metales/ruido; (nota, duración, tiempo, vel) para el resto
-    const timeArg: Partial<Record<keyof Instruments, number>> = { ride: 1, hat: 1, snare: 1 };
-    const wrap = <K extends keyof Instruments>(name: K): Instruments[K] => {
-      const target = real[name] as unknown as { triggerAttackRelease: (...a: unknown[]) => unknown };
-      const idx = timeArg[name] ?? 2;
-      const human = humanized.has(name);
-      return {
-        triggerAttackRelease: (...args: unknown[]) => {
-          if (human) {
-            const vi = idx + 1; // la intensidad va justo después del tiempo
-            if (typeof args[vi] === 'number') args[vi] = Math.max(0.04, Math.min(1, (args[vi] as number) * intensity * rnd(0.9, 1.08)));
-          }
-          queue.push({
-            time: (args[idx] as number) + (jitter[name]?.() ?? 0),
-            call: (when) => {
-              const a = [...args];
-              a[idx] = when;
-              target.triggerAttackRelease(...a);
-            },
-          });
-        },
-      } as unknown as Instruments[K];
-    };
-    return {
-      ...real,
-      piano: wrap('piano'), bass: wrap('bass'), ride: wrap('ride'), hat: wrap('hat'),
-      kick: wrap('kick'), snare: wrap('snare'), lead: wrap('lead'), horn: wrap('horn'), click: wrap('click'),
-    } as Instruments;
   }
 
   get options() {
     return this.lastOpts;
   }
-}
-
-function bassTones(c: Chord) {
-  const d = qdef(c);
-  const third = degreePc(d.guide[0]);
-  const fifthDeg = d.tones.find((t) => /5$/.test(t)) ?? 'b7';
-  const second = degreePc(SCALES[d.scale].degrees[1]);
-  const r = pc(c.root);
-  return { third: mod(r + third, 12), fifth: mod(r + degreePc(fifthDeg), 12), second: mod(r + second, 12) };
 }
 
 export const engine = new JazzEngine();

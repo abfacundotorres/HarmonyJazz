@@ -22,6 +22,8 @@ export interface Generator {
   id: string;
   name: string;
   description: string;
+  /** Fórmula exacta de lo que genera, para explicar la línea nota por nota. */
+  recipe: string;
   run: (chart: Chart, opt: GenOptions) => MelNote[];
 }
 
@@ -111,6 +113,7 @@ const guideTones: Generator = {
   id: 'guide',
   name: 'Línea de guide tones (3ª y 7ª)',
   description: 'Una nota por acorde: la 3ª o la 7ª más cercana a la anterior. Es el esqueleto de toda línea bebop.',
+  recipe: 'Un guide tone por acorde, durando lo que dura el acorde. El primero es la 3ª; los siguientes son la 3ª o la 7ª, la que quede más cerca de la nota anterior.',
   run: (chart, opt) => {
     const notes: MelNote[] = [];
     let ref = center(opt);
@@ -136,6 +139,7 @@ const guideTonesQuarter: Generator = {
   id: 'guide2',
   name: 'Guide tones en blancas (3 → 7 → 3)',
   description: 'Dos guide tones por compás: la línea desciende por grado conjunto y resuelve en la 3ª del acorde siguiente.',
+  recipe: 'Dos blancas por compás: la 3ª y después la 7ª del acorde. Si el acorde dura menos de un compás, sólo la 3ª.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc) => {
       const [g3, g7] = qdef(cc.chord).guide;
@@ -151,6 +155,7 @@ const arpeggio: Generator = {
   id: 'arp',
   name: 'Arpegio 1-3-5-7-9',
   description: 'Sube hasta la 9ª y baja. Conocer el acorde en todo el registro, a tempo, en las 12 tonalidades.',
+  recipe: 'Corcheas 1–3–5–7–9–7–5–3 sobre cada acorde: sube hasta la 9ª y baja. Cada acorde arranca en la nota del arpegio más cercana a donde terminó el anterior.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc) => {
       const [r, t, f, s, n] = arpDegrees(cc.chord);
@@ -162,6 +167,7 @@ const arpeggioFrom3: Generator = {
   id: 'arp3',
   name: 'Arpegio desde la 3ª (3-5-7-9)',
   description: 'Upper structure: empieza en la 3ª para sonar "adentro" sin marcar la fundamental, como un solista y no como un bajista.',
+  recipe: 'Corcheas, alternando el sentido: en los acordes 1.º, 3.º… 3–5–7–9–7–5–3–1; en los 2.º, 4.º… 9–7–5–3–5–7–9–7.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc, i) => {
       const [r, t, f, s, n] = arpDegrees(cc.chord);
@@ -176,6 +182,7 @@ const digital: Generator = {
   id: 'digital',
   name: 'Patrones digitales 1-2-3-5 / 3-5-7-9',
   description: 'El vocabulario de Coltrane: células de cuatro notas que se transportan por cualquier progresión.',
+  recipe: 'Corcheas con dos células de cuatro notas: 1–9–3–5 y 3–5–7–9. La 9ª hace de "2", de ahí el nombre 1-2-3-5.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc) => {
       const [r, t, f, s, n] = arpDegrees(cc.chord);
@@ -204,6 +211,7 @@ const enclosure: Generator = {
   id: 'enclosure',
   name: 'Enclosure a la 3ª',
   description: 'Nota de la escala por arriba + cromática por abajo → 3ª. El recurso de aproximación más usado en bebop.',
+  recipe: 'Sobre cada acorde: una nota de la escala por encima de la 3ª, una cromática por debajo y la 3ª (dos corcheas de aproximación y la nota objetivo). En un acorde de un compás sigue con 5–7–9–7.',
   run: (chart, opt) => {
     const notes: MelNote[] = [];
     let ref = center(opt);
@@ -248,6 +256,7 @@ const bebop: Generator = {
   id: 'bebop',
   name: 'Escala bebop descendente',
   description: 'Con la nota de paso cromática, las notas del acorde caen en los tiempos fuertes.',
+  recipe: 'Ocho corcheas descendentes con la escala bebop del tipo de acorde: dominante 1–7–♭7–6–5–4–3–2 (la 7ª mayor es la nota de paso), menor ♭7–6–5–4–♭3–2–1–♭7, mayor 1–7–6–♭6–5–4–3–2.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc) => {
       const c = cc.chord;
@@ -297,6 +306,7 @@ const triadPairs: Generator = {
   id: 'triads',
   name: 'Pares de tríadas',
   description: 'Dos tríadas sin notas en común que juntas forman una escala hexatónica. Se tocan en inversiones, alternando, para que la línea quede compacta. Sonido moderno (Woody Shaw, Brecker).',
+  recipe: 'Dos tríadas sin notas en común elegidas para cada acorde, tocadas en zigzag: una sube y la otra baja, cada una empezando por la nota más cercana.',
   run: (chart, opt) => {
     const notes: MelNote[] = [];
     let ref = center(opt) - 4;
@@ -350,6 +360,7 @@ const pentatonic: Generator = {
   id: 'pent',
   name: 'Superposición pentatónica',
   description: 'Una pentatónica mayor elegida para cada acorde: sobre C7alt, G♭ pentatónica (♯11, ♭13, ♭7, ♭9, ♯9).',
+  recipe: 'Ocho corcheas con la pentatónica mayor elegida para el acorde (♭3 en m7, 5ª en maj7, ♭5 en 7alt, 2ª en 7♯11…): sube en los acordes pares y baja en los impares. Si el acorde no tiene pentatónica asignada, toca su arpegio.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc, i) => {
       const c = cc.chord;
@@ -374,6 +385,7 @@ const sideSlip: Generator = {
   id: 'sideslip',
   name: 'Side-slipping (afuera → adentro)',
   description: 'Medio compás medio tono arriba y resolución al acorde real. La tensión sólo funciona si la resolución es clara.',
+  recipe: 'Alterna: en los compases pares, arpegio 1–3–5–7 del acorde. En los impares, ese arpegio medio tono más arriba (afuera) y luego 7–5–3–1 del acorde real (adentro).',
   run: (chart, opt) =>
     perChord(chart, opt, (cc, i) => {
       const c = cc.chord;
@@ -406,6 +418,7 @@ const displaced: Generator = {
   id: 'displaced',
   name: 'Desplazamiento rítmico (1-2-3-5 corrido una corchea)',
   description: 'El mismo patrón digital empezando en el contratiempo. Cambia por completo dónde caen los acentos.',
+  recipe: 'El patrón digital (1–9–3–5, 3–5–7–9) precedido por una corchea de silencio: las mismas notas con los acentos desplazados.',
   run: (chart, opt) => displace(digital.run(chart, opt), chart.bars * 8, 1),
 };
 

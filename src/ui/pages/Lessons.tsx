@@ -5,9 +5,11 @@ import { progressionById } from '../../content/progressions';
 import { generatorById } from '../../exercises/generators';
 import { concertRange } from '../../state/storage';
 import { keyInterval, parseChart, transposeChart } from '../../theory/chart';
+import { localizeNotes } from '../../exercises/localize';
 import { ExerciseCard } from '../components/ExerciseCard';
+import { LineBreakdown } from '../components/LineBreakdown';
 import { Prose } from '../components/Prose';
-import { useMastery, useRoute, useSettings } from '../hooks';
+import { useMastery, useReading, useRoute, useSettings } from '../hooks';
 
 export function Lessons() {
   const { path, query } = useRoute();
@@ -57,16 +59,19 @@ function LessonList() {
 }
 
 function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string | null }) {
+  const { iv } = useReading();
+  /** Los textos usan nombres de notas en concierto (tonalidad de Do): se traducen a la lectura elegida. */
+  const loc = (t: string) => localizeNotes(t, 'C', 'C', iv);
   return (
     <div className="page lesson">
       <a href="#/lecciones" className="back">← Lecciones</a>
       <section className="card">
         <span className="badge">{lesson.area}</span>
         <h2>{lesson.title}</h2>
-        <p className="lead">{lesson.summary}</p>
-        <Prose lines={lesson.body} />
+        <p className="lead">{loc(lesson.summary)}</p>
+        <Prose lines={lesson.body.map(loc)} />
         <h4>En la trompeta</h4>
-        <ul>{lesson.trumpet.map((t, i) => <li key={i}>{t}</li>)}</ul>
+        <ul>{lesson.trumpet.map((t, i) => <li key={i}>{loc(t)}</li>)}</ul>
         {lesson.listen && (
           <>
             <h4>Para escuchar</h4>
@@ -74,6 +79,27 @@ function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string
           </>
         )}
       </section>
+      <details className="card study" open>
+        <summary>
+          <h3>Paso a paso</h3>
+        </summary>
+        <ol className="steps">
+          {lesson.steps.map((t, i) => (
+            <li key={i}>{loc(t)}</li>
+          ))}
+        </ol>
+      </details>
+      <details className="card study" open>
+        <summary>
+          <h3>Por qué funciona</h3>
+        </summary>
+        <ul className="whylist">
+          {lesson.why.map((t, i) => (
+            <li key={i}>{loc(t)}</li>
+          ))}
+        </ul>
+      </details>
+      <h3 className="sectionhead">Ejercicios ({lesson.exercises.length})</h3>
       {lesson.exercises.map((ex, i) => (
         <LessonExerciseCard key={`${lesson.id}:${i}`} id={`${lesson.id}:${i}`} ex={ex} initialKey={initialKey} />
       ))}
@@ -105,6 +131,7 @@ function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExer
   }, [ex, key, seed, settings.register]);
 
   return (
+    <>
     <ExerciseCard
       id={id}
       title={ex.label}
@@ -118,5 +145,13 @@ function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExer
       style={prog.style}
       onRegenerate={lick ? undefined : () => setSeed((s) => s + 1)}
     />
+    {lick ? (
+      <p className="card muted">
+        Esta frase se estudia paso a paso (ideas, nota por nota, por qué funciona y ejercicios) en <a href={`#/vocabulario/${lick.id}`}>Vocabulario →</a>
+      </p>
+    ) : (
+      <LineBreakdown recipe={generatorById(ex.generator!).recipe} chart={chart} notes={notes} />
+    )}
+    </>
   );
 }

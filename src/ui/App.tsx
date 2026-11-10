@@ -64,7 +64,8 @@ export function App() {
       </main>
       <footer className="credits">
         Piano: Salamander Grand Piano V3 (Alexander Holm,{' '}
-        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>) · Contrabajo y trompeta: FluidR3 (Frank Wen, MIT) ·{' '}
+        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>) · Batería: Salamander Drumkit (Alexander Holm,{' '}
+        <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>) · Contrabajo y trompeta: FluidR3 (Frank Wen, MIT) ·{' '}
         <a href="./samples/CREDITS.txt" target="_blank" rel="noopener noreferrer">Créditos y licencias</a>
       </footer>
     </div>
