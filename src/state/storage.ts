@@ -59,9 +59,11 @@ export interface Settings {
   focusLesson: string;
   /** Volumen general en dB respecto del nivel base (−14…+2). */
   volume: number;
+  /** Salida: 'auto' = altavoz del celular si la pantalla es táctil. */
+  output: 'auto' | 'phone' | 'normal';
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0 };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto' };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

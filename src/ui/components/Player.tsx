@@ -67,6 +67,11 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
     engine.preload();
   }, []);
   useEffect(() => engine.setVolume(settings.volume), [settings.volume]);
+  useEffect(() => {
+    const touch = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    const mode = settings.output === 'auto' ? (touch ? 'phone' : 'normal') : settings.output;
+    engine.setOutputMode(mode);
+  }, [settings.output]);
   const [samples, setSamples] = useState(engine.samples);
   useEffect(() => {
     const id = setInterval(() => setSamples(engine.samples), 300);
@@ -156,6 +161,14 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
             onChange={(e) => setSettings({ volume: Number(e.target.value) })}
           />{' '}
           {settings.volume > 0 ? '+' : ''}{settings.volume} dB
+        </label>
+        <label>
+          Salida{' '}
+          <select value={settings.output} onChange={(e) => setSettings({ output: e.target.value as typeof settings.output })}>
+            <option value="auto">Automática</option>
+            <option value="phone">Altavoz del celular (más graves y presencia)</option>
+            <option value="normal">Auriculares / parlantes</option>
+          </select>
         </label>
         <label>
           <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4

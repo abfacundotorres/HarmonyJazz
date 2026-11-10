@@ -1,7 +1,7 @@
 HarmonyJazz - Créditos de las muestras de audio
 ================================================
 
-Este directorio contiene una selección de muestras de instrumentos reales. Las notas intermedias
+Este directorio contiene una selección de muestras de instrumentos reales (piano, contrabajo, trompeta y batería). Las notas intermedias
 las genera el motor de audio por interpolación.
 
 1) Piano (carpeta piano/)
@@ -20,6 +20,19 @@ las genera el motor de audio por interpolación.
    Licencia: MIT (texto completo abajo)
    Cambios: conversión a MP3 por nota hecha por el paquete npm "soundfont-for-samplers"
    (MIT); se usa una selección de notas.
+
+3) Batería (carpeta drums/)
+   The Salamander Drumkit
+   Autor de las muestras: Alexander Holm (versión SFZ: kinwie)
+   Licencia: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+   https://creativecommons.org/licenses/by-sa/3.0/
+   Fuente: https://archive.org/details/SalamanderDrumkit
+   Cambios: se usa una selección de 41 golpes (ride de 20", pedal de hi-hat, hi-hat cerrado, bombo,
+   caja, notas fantasma de caja y cross-stick). Cada muestra se recortó, se le aplicó un fundido
+   de salida, se pasó a mono y se convirtió de FLAC a MP3.
+   Estas muestras adaptadas se distribuyen bajo la misma licencia, CC BY-SA 3.0. La condición de
+   "compartir igual" aplica a estas muestras y a las bibliotecas que se armen con ellas; no al código
+   de la aplicación, que las usa como un recurso separado.
 
 --------------------------------------------------------------------------------
 MIT License - FluidR3 SoundFont
