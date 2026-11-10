@@ -2,6 +2,7 @@ import type { Style } from '../audio/engine';
 import { qdef } from '../theory/chords';
 import { CONCERT_KEYS, parseChart } from '../theory/chart';
 import { noteName, simplify } from '../theory/notes';
+import { compileDoc, ChartDoc, sanitizeDoc } from './chartDoc';
 import type { Progression } from './progressions';
 
 /** Un tema que el usuario cargó. Se guarda sólo en su dispositivo. */
@@ -15,6 +16,8 @@ export interface UserTune {
   chart: string;
   tempo: number;
   style: Style;
+  /** Grilla del editor (secciones, repeticiones, finales). `chart` es siempre su versión desplegada. */
+  doc?: ChartDoc;
 }
 
 export const MAX_TUNES = 500;
@@ -54,8 +57,19 @@ export function validateTune(raw: unknown): UserTune | string {
   if (!name) return 'Falta el nombre';
   if (name.length > 80) return 'El nombre es demasiado largo (máximo 80 caracteres)';
   const composer = typeof t.composer === 'string' ? t.composer.trim().slice(0, 80) : '';
-  const chart = typeof t.chart === 'string' ? t.chart : '';
+  let chart = typeof t.chart === 'string' ? t.chart : '';
   if (chart.length > MAX_CHART_CHARS) return 'El cifrado es demasiado largo';
+  let doc: ChartDoc | undefined;
+  if (t.doc !== undefined && t.doc !== null) {
+    const d = sanitizeDoc(t.doc);
+    if (typeof d === 'string') return d;
+    try {
+      chart = compileDoc(d); // el cifrado que se toca sale siempre de la grilla
+    } catch (e) {
+      return (e as Error).message;
+    }
+    doc = d;
+  }
   try {
     parseChart(normalizeChartText(chart));
   } catch (e) {
@@ -67,7 +81,7 @@ export function validateTune(raw: unknown): UserTune | string {
   const tempo = Number.isFinite(tempoN) ? Math.max(40, Math.min(320, tempoN)) : 120;
   const style = STYLES.includes(t.style as Style) ? (t.style as Style) : 'swing';
   const id = typeof t.id === 'string' && /^u:[a-z0-9]{4,24}$/.test(t.id) ? t.id : newTuneId();
-  return { id, name, composer, key, mode, chart: normalizeChartText(chart), tempo, style };
+  return { id, name, composer, key, mode, chart: normalizeChartText(chart), tempo, style, ...(doc ? { doc } : {}) };
 }
 
 export function parseImport(json: string): { tunes: UserTune[]; errors: string[] } {

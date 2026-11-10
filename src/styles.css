@@ -324,3 +324,27 @@ select, input[type='range'], input[type='text'], input[type='number'], textarea 
 .checks label.done span { color: var(--muted); text-decoration: line-through; }
 .checks input { margin-top: .3em; flex: none; width: 1.1em; height: 1.1em; accent-color: var(--accent); }
 .sectionhead { margin: 8px 0 0; font-size: 1.05rem; }
+
+/* ---- editor de grilla ---- */
+.ced { margin-top: .6em; }
+.ced-tools { display: flex; flex-wrap: wrap; gap: .5em; align-items: center; margin: .6em 0; }
+.ced-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+@media (max-width: 520px) { .ced-grid { grid-template-columns: repeat(2, 1fr); } }
+.ced-bar { position: relative; min-height: 3.4em; padding: 1.1em .4em .5em; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; color: var(--text); font-weight: 600; cursor: pointer; text-align: center; }
+.ced-bar.sel { background: color-mix(in srgb, var(--accent) 18%, transparent); outline: 2px solid var(--accent); outline-offset: -2px; }
+.ced-bar.rs { border-left: 4px double var(--text); }
+.ced-bar.re { border-right: 4px double var(--text); }
+.ced-bar.bad { background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.ced-bar.add { color: var(--muted); font-size: 1.3rem; padding: .5em; }
+.ced-chords { display: flex; justify-content: space-around; gap: .5em; flex-wrap: wrap; }
+.ced-chords .err { color: var(--bad); text-decoration: underline wavy; }
+.ced-tags { position: absolute; top: .2em; left: .4em; right: .4em; display: flex; justify-content: space-between; font-size: .75rem; }
+.ced-sec { background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: 0 .4em; }
+.ced-end { border-top: 2px solid var(--text); padding: 0 .4em; }
+.ced-panel { margin-top: .8em; padding: .6em; border: 1px solid var(--line); border-radius: 8px; }
+.ced-slots, .ced-pal, .ced-marks, .ced-acts { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; margin: .5em 0; }
+.ced-slots input { width: 5.5em; font-size: 1rem; text-align: center; }
+.ced-slots input.on { outline: 2px solid var(--accent); }
+.ced-slots input[aria-invalid="true"] { border-color: var(--bad); }
+.ced-pal button { min-width: 2.6em; min-height: 2.4em; }
+.ced-pal button.on, .ced-marks button.on { background: var(--accent); color: var(--accent-ink); }

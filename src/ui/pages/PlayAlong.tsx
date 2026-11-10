@@ -3,6 +3,7 @@ import { engine } from '../../audio/engine';
 import {
   Library, MAX_TUNES, normalizeChartText, parseImport, tuneToProgression, UserTune, validateTune,
 } from '../../content/library';
+import { ChartDoc, compileDoc, docFromChart, emptyBar } from '../../content/chartDoc';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
@@ -43,6 +44,21 @@ export function PlayAlong() {
 
   // progresión propia sin guardar ("probar")
   const [custom, setCustom] = useState('');
+  // grilla del editor (null = el usuario eligió escribir texto); `custom` es siempre lo que se toca
+  const [doc, setDocState] = useState<ChartDoc | null>({ bars: [emptyBar()] });
+  const [docError, setDocError] = useState<string | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
+  const setDoc = (d: ChartDoc | null) => {
+    setDocState(d);
+    if (!d) return setDocError(null);
+    try {
+      setCustom(compileDoc(d));
+      setDocError(null);
+    } catch (e) {
+      setCustom('');
+      setDocError((e as Error).message);
+    }
+  };
   const [useCustom, setUseCustom] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [libMsg, setLibMsg] = useState<string | null>(null);
@@ -142,7 +158,7 @@ export function PlayAlong() {
 
   // ---- biblioteca ----
   const saveTune = () => {
-    const r = validateTune({ ...draft, key: draft.key || null, chart: custom });
+    const r = validateTune({ ...draft, key: draft.key || null, chart: custom, doc: doc ?? undefined });
     if (typeof r === 'string') return setLibMsg(r);
     const exists = tunes.some((t) => t.id === draft.id);
     if (!exists && tunes.length >= MAX_TUNES) return setLibMsg(`Llegaste al máximo de ${MAX_TUNES} temas`);
@@ -152,6 +168,8 @@ export function PlayAlong() {
     setUseCustom(false);
     setDraft(EMPTY_DRAFT);
     setCustom('');
+    setDoc({ bars: [emptyBar()] });
+    setEditorKey((k) => k + 1);
     setQuery(tune.id);
   };
 
@@ -300,7 +318,10 @@ export function PlayAlong() {
         onDraft={setDraft}
         chartText={custom}
         onChartText={setCustom}
-        error={useCustom ? customError : null}
+        doc={doc}
+        onDoc={setDoc}
+        editorKey={editorKey}
+        error={useCustom ? (doc ? docError ?? customError : customError) : null}
         tunes={tunes}
         message={libMsg}
         onTry={() => {
@@ -315,7 +336,9 @@ export function PlayAlong() {
         onPlay={(t) => { setUseCustom(false); setTempo(t.tempo); setQuery(t.id); }}
         onEdit={(t) => {
           setDraft({ id: t.id, name: t.name, composer: t.composer, key: t.key ?? '', mode: t.mode, tempo: t.tempo, style: t.style });
+          setDoc(t.doc ?? docFromChart(t.chart));
           setCustom(t.chart);
+          setEditorKey((k) => k + 1);
           setLibMsg(null);
         }}
         onDelete={(t) => {

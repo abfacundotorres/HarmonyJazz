@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import { STYLE_LABEL, Style } from '../../audio/engine';
+import { ChartDoc, compileDoc, docFromChart } from '../../content/chartDoc';
 import { BulkEntry, MAX_CHART_CHARS, parseBulk, UserTune } from '../../content/library';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useReading } from '../hooks';
+import { ChartEditor } from './ChartEditor';
 
 export interface Draft {
   /** Si está, se edita un tema existente. */
@@ -15,6 +17,16 @@ export interface Draft {
   style: Style;
 }
 
+const docFromText = (t: string): ChartDoc => docFromChart(t);
+/** Texto plano de una grilla; si tiene errores se conserva lo escrito sin desplegar. */
+const unrolledText = (d: ChartDoc): string => {
+  try {
+    return compileDoc(d);
+  } catch {
+    return d.bars.map((b) => b.chords.join(' ')).join(' | ');
+  }
+};
+
 export const EMPTY_DRAFT: Draft = { name: '', composer: '', key: '', mode: 'major', tempo: 120, style: 'swing' };
 
 /** Formulario y lista de temas propios: cargar, probar, guardar, editar, borrar, exportar e importar. */
@@ -23,6 +35,9 @@ export function TuneLibrary({
   onDraft,
   chartText,
   onChartText,
+  doc,
+  onDoc,
+  editorKey,
   error,
   tunes,
   onTry,
@@ -39,6 +54,11 @@ export function TuneLibrary({
   onDraft: (d: Draft) => void;
   chartText: string;
   onChartText: (t: string) => void;
+  /** Grilla en edición (null = modo texto). */
+  doc: ChartDoc | null;
+  onDoc: (d: ChartDoc | null) => void;
+  /** Cambia al cargar otro tema, para reiniciar el deshacer del editor. */
+  editorKey: number;
   error: string | null;
   tunes: UserTune[];
   onTry: () => void;
@@ -63,8 +83,8 @@ export function TuneLibrary({
           Mis temas ({tunes.length}) · cargar un cifrado propio
         </summary>
         <p className="muted small">
-          Copiá los cifrados de tu libro: compases separados por <code>|</code>, acordes por espacio, <code>%</code> repite el compás anterior.
-          Se limpian secciones como <code>[A]</code>, repeticiones y saltos de línea. Escribilos en <b>concierto</b>. Se guardan sólo en este dispositivo.
+          Armá el tema en la <b>grilla</b> (como iReal Pro: compases, secciones, repeticiones y finales 1.º/2.º) o pegá el cifrado como <b>texto</b>
+          (compases separados por <code>|</code>, <code>%</code> repite el compás anterior). Escribilos en <b>concierto</b>. Se guardan sólo en este dispositivo.
         </p>
 
         <div className="formgrid">
@@ -106,19 +126,27 @@ export function TuneLibrary({
           </label>
         </div>
 
-        <textarea
-          rows={5}
-          value={chartText}
-          maxLength={MAX_CHART_CHARS}
-          onChange={(e) => onChartText(e.target.value)}
-          placeholder={'Cm7 | Cm7 | Fm7 | Fm7 | Dm7b5 | G7alt | Cm7 | %'}
-          aria-label="Cifrado"
-        />
+        <div className="seg" role="group" aria-label="Forma de cargar el cifrado">
+          <button className={doc ? 'on' : ''} onClick={() => onDoc(docFromText(chartText))}>Grilla</button>
+          <button className={!doc ? 'on' : ''} onClick={() => { if (doc) { onChartText(unrolledText(doc)); onDoc(null); } }}>Texto</button>
+        </div>
+        {doc ? (
+          <ChartEditor key={editorKey} doc={doc} onChange={onDoc} />
+        ) : (
+          <textarea
+            rows={5}
+            value={chartText}
+            maxLength={MAX_CHART_CHARS}
+            onChange={(e) => onChartText(e.target.value)}
+            placeholder={'Cm7 | Cm7 | Fm7 | Fm7 | Dm7b5 | G7alt | Cm7 | %'}
+            aria-label="Cifrado"
+          />
+        )}
         {error && <p className="error">{error}</p>}
         <div className="row">
           <button onClick={onTry}>Probar sin guardar</button>
           <button className="primary" onClick={onSave}>{draft.id ? 'Guardar cambios' : 'Guardar tema'}</button>
-          {draft.id && <button onClick={() => { onDraft(EMPTY_DRAFT); onChartText(''); }}>Cancelar edición</button>}
+          {draft.id && <button onClick={() => { onDraft(EMPTY_DRAFT); onChartText(''); onDoc({ bars: [{ chords: [''] }] }); }}>Cancelar edición</button>}
         </div>
         {message && <p className="muted small" role="status">{message}</p>}
 
