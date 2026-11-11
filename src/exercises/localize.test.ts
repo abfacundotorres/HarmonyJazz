@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { LICKS } from '../content/licks';
-import { COMMON_EXERCISES, LICK_STUDY } from '../content/licksStudy';
 import { BB_TRUMPET, INTERVAL } from '../theory/notes';
 import { localizeNotes } from './localize';
 
@@ -29,34 +27,5 @@ describe('localizeNotes', () => {
   });
   it('respeta alteraciones y calidades largas', () => {
     expect(conc('G7♭9♭13, Dm7♭5, Cmaj7♯11', 'C', 'D')).toBe('A7♭9♭13, Em7♭5, Dmaj7♯11');
-  });
-});
-
-describe('los textos de estudio', () => {
-  const texts: [string, string][] = [];
-  for (const l of LICKS) {
-    texts.push([`${l.id}.idea`, l.idea], [`${l.id}.name`, l.name]);
-    const st = LICK_STUDY[l.id];
-    st.ideas.forEach((i, k) => texts.push([`${l.id}.ideas[${k}]`, `${i.name} ${i.text} ${i.why}`]));
-    st.why.concat(st.exercises, st.trumpet).forEach((t, k) => texts.push([`${l.id}.t[${k}]`, t]));
-  }
-  COMMON_EXERCISES.forEach((t, k) => texts.push([`common[${k}]`, t]));
-
-  it('no hay una "A" suelta usada como preposición (se confundiría con la nota La)', () => {
-    for (const [where, t] of texts) expect(t, where).not.toMatch(/(^|[.:;!?¿¡("] ?)A [a-záéíóú]/);
-  });
-
-  it('todas las notas nombradas existen y se traducen a las 12 tonalidades sin error', () => {
-    for (const [where, t] of texts) {
-      for (const key of ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'B', 'E', 'A', 'D', 'G']) {
-        const out = bb(t, 'C', key);
-        expect(out.length, `${where} en ${key}`).toBeGreaterThan(0);
-        expect(out, `${where} en ${key}`).not.toMatch(/undefined|NaN/);
-      }
-    }
-  });
-
-  it('los nombres no usan "b" ni "#" ASCII para alteraciones (usan ♭ y ♯)', () => {
-    for (const [where, t] of texts) expect(t, where).not.toMatch(/\b[A-G][b#]\d?\b/);
   });
 });

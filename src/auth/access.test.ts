@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkPassword, deriveAccessHash } from './access';
+import { ACCESS_HASH, checkPassword, deriveAccessHash, isUnlocked } from './access';
 
 describe('contraseña de acceso', () => {
   it('la derivación del navegador coincide con la del script', async () => {
@@ -12,5 +12,13 @@ describe('contraseña de acceso', () => {
     expect(await checkPassword('secreta', h)).toBe(true);
     expect(await checkPassword('Secreta', h)).toBe(false);
     expect(await checkPassword('', h)).toBe(false);
+  });
+
+  it('hay una contraseña configurada (la clave no está en el repositorio, sólo su derivación)', () => {
+    expect(ACCESS_HASH).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('sin almacenamiento disponible sigue pidiendo la contraseña (no lanza)', () => {
+    expect(isUnlocked(ACCESS_HASH)).toBe(false);
   });
 });

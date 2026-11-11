@@ -1,8 +1,7 @@
 export interface LessonExercise {
   label: string;
-  /** Generador de ejercicios o lick del vocabulario. */
+  /** Generador de ejercicios. */
   generator?: string;
-  lick?: string;
   progression: string;
   /** Tempo sugerido para empezar. */
   tempo?: number;
@@ -132,7 +131,6 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Enclosure a la 3ª: ii–V–I por las 12', generator: 'enclosure', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Enclosure en el turnaround', generator: 'enclosure', progression: 'turnaround', tempo: 130 },
-      { label: 'Frase: ii–V corto con enclosure', lick: 'enclosure-251', progression: 'ii-v-i-short', tempo: 140 },
       { label: 'Enclosures en Rhythm changes', generator: 'enclosure', progression: 'rhythm', tempo: 160 },
       { label: 'Enclosures en Autumn Leaves', generator: 'enclosure', progression: 'autumn', tempo: 140 },
     ],
@@ -170,7 +168,6 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Bebop descendente: ii–V–I por las 12', generator: 'bebop', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Bebop en el blues de F', generator: 'bebop', progression: 'blues-f', tempo: 150 },
-      { label: 'Frase: bebop descendente en el V', lick: 'bebop-scale-251', progression: 'ii-v-i', tempo: 140 },
       { label: 'Bebop en Autumn Leaves', generator: 'bebop', progression: 'autumn', tempo: 140 },
       { label: 'Bebop en el turnaround', generator: 'bebop', progression: 'turnaround', tempo: 140 },
     ],
@@ -239,7 +236,6 @@ export const LESSONS: Lesson[] = [
     ],
     exercises: [
       { label: 'Pares de tríadas sobre ii–V–i menor por las 12', generator: 'triads', progression: 'ii-v-i-minor-12', tempo: 110 },
-      { label: 'Frase: ii–V–i menor alterado', lick: 'minor-251', progression: 'ii-v-i-minor', tempo: 130 },
       { label: 'Pentatónica de ♭5 sobre el alterado', generator: 'pent', progression: 'ii-v-i-minor', tempo: 120 },
       { label: 'Arpegios desde la 3ª en el ii–V–i menor', generator: 'arp3', progression: 'ii-v-i-minor-12', tempo: 120 },
       { label: 'Bebop en el ii–V–i menor', generator: 'bebop', progression: 'ii-v-i-minor', tempo: 120 },
@@ -378,9 +374,9 @@ export const LESSONS: Lesson[] = [
     ],
     exercises: [
       { label: '1-2-3-5 desplazado: ii–V–I por las 12', generator: 'displaced', progression: 'ii-v-i-12', tempo: 120 },
-      { label: 'Frase: anticipación de la resolución', lick: 'anticipation-251', progression: 'ii-v-i-short', tempo: 150 },
       { label: 'Desplazamiento en Rhythm changes', generator: 'displaced', progression: 'rhythm', tempo: 160 },
       { label: 'Desplazamiento en el blues de F', generator: 'displaced', progression: 'blues-f', tempo: 140 },
+      { label: 'Desplazamiento en Autumn Leaves', generator: 'displaced', progression: 'autumn', tempo: 140 },
     ],
     trumpet: ['El doodle tonguing ("doo-dl") es la herramienta para el bebop rápido: practicalo lento sobre una sola nota con el metrónomo en 2 y 4.'],
     listen: ['Clifford Brown – "Cherokee"', 'Lee Morgan – "Moanin\'" (Art Blakey)'],
@@ -407,7 +403,6 @@ export const LESSONS: Lesson[] = [
       'El Bird blues reemplaza los compases estáticos por ii–V descendentes. Tocá guide tones ahí antes de intentar frases.',
     ],
     exercises: [
-      { label: 'Frase: la blue note que resbala', lick: 'blues-blue-note', progression: 'blues-f', tempo: 140 },
       { label: 'Guide tones en el Bird blues', generator: 'guide', progression: 'blues-bird', tempo: 140 },
       { label: 'Arpegios en el blues de F', generator: 'arp', progression: 'blues-f', tempo: 150 },
       { label: 'Bebop en el blues de F', generator: 'bebop', progression: 'blues-f', tempo: 150 },
@@ -441,7 +436,6 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Guide tones en sustitución tritonal', generator: 'guide', progression: 'tritone', tempo: 120 },
       { label: '1-2-3-5 en cambios de Coltrane', generator: 'digital', progression: 'coltrane', tempo: 110 },
-      { label: 'Frase: ii–V–I bebop con ♭9 y ♭13', lick: 'bebop-251', progression: 'ii-v-i', tempo: 140 },
       { label: 'Arpegios desde la 3ª en la sustitución tritonal', generator: 'arp3', progression: 'tritone', tempo: 120 },
       { label: 'Enclosures en la sustitución tritonal', generator: 'enclosure', progression: 'tritone', tempo: 120 },
     ],

@@ -7,7 +7,7 @@
  * Para cambiarla: `node scripts/access-hash.mjs "nueva contraseña"` y pegar el resultado en ACCESS_HASH.
  * Con ACCESS_HASH vacío la app no pide contraseña.
  */
-export const ACCESS_HASH = '';
+export const ACCESS_HASH = 'dccea14e74d59021f1c51d46050855867cbadc26a58eff093286dbc160197ff6';
 export const ACCESS_SALT = 'harmonyjazz:acceso:v1';
 export const ACCESS_ITERATIONS = 200_000;
 const STORE_KEY = 'hj:acceso';

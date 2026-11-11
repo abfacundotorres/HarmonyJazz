@@ -353,3 +353,8 @@ select, input[type='range'], input[type='text'], input[type='number'], textarea 
 .gate { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
 .gate form { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); }
 .gate h2 { margin: 0 0 6px; }
+
+/* carga de frases */
+.pad { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
+.pad button { min-width: 2.6em; }
+.block { display: block; margin: 8px 0; }
