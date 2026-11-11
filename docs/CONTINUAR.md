@@ -1,0 +1,27 @@
+# Continuar el trabajo en HarmonyJazz
+
+Texto para pegar al empezar una conversación nueva.
+
+## Proyecto
+Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jazz en trompeta (Si♭), nivel avanzado. Repo `abfacundotorres/HarmonyJazz`, desplegada en GitHub Pages desde `main`. Un solo usuario, **Android**, escucha por el altavoz del celular. iOS no importa.
+
+## Cómo trabajar
+- Respuestas sinceras, sin condescendencia. Preguntar antes si hay ambigüedad. Eficiencia antes que tener razón.
+- Todo legal: no publicar melodías ni letras con derechos de autor. Sólo armonía (acordes), frases originales y material de dominio público o con licencia libre. Los cifrados de Real Book los carga el usuario.
+- No abrir PR salvo que se pida. Ramas: usar la que indique la sesión.
+- Antes de commitear: `npx tsc -b` y `npx vitest run`.
+
+## Qué existe
+- Play-along con loops, transposición, "Mis temas" (localStorage, exportar/importar, carga masiva) y editor de grilla estilo iReal.
+- Audio con muestras reales (piano, bajo, trompeta, batería), swing según tempo, salida "celular" (`PHONE` en `src/audio/engine.ts`).
+- **Repertorio** (`src/content/standards.ts`): 22 temas con **sólo la armonía**. Escritos de memoria: contrastarlos de oído. Botón "Copiar a Mis temas".
+- **Vocabulario**: sin frases propias de la app; el usuario las carga a mano (`phrases.ts`, `pages/Vocab.tsx`) en Si♭ o concierto, con teclado de entrada y vista previa en partitura.
+- **Transcribir** (`pages/Transcribe.tsx`, `ui/components/transcribe/`, `src/transcribe/`): motor propio (WSOLA en AudioWorklet) con loops sin cortes, velocidad con tono preservado, afinación fina, filtros, espectrograma, nota que suena, detección de notas (estimación), compases, marcadores, entrenador de loops y pasajes guardados. Ver `docs/DISENO.md`. Respaldo con el reproductor del navegador para audios largos.
+- **Contraseña de acceso** (`src/auth/access.ts`, `scripts/access-hash.mjs`): contraseña provisoria activa (no figura en el repo, sólo su derivación). Es una traba del lado del navegador, no seguridad real. Para cambiarla: `node scripts/access-hash.mjs "clave"` y pegar el resultado en `ACCESS_HASH`.
+
+## Pendiente
+1. Escuchar en el celular el ajuste anti-saturación (`MASTER_DB` 18→15, compresor ratio 4, recorte desde 0,8, `PHONE.exciterDb` 4). Si aún satura, bajar `MASTER_DB` o `BUS_DB.real.horn`.
+2. Probar Transcribir en el celular con audios reales (mp3, m4a) y **escuchar**: calidad del estiramiento a 50–70 % (batería, piano), cortes, latencia, memoria con audios de 8–12 min. Si el celular se queda corto, bajar `MAX_DECODED_BYTES` en `transcribe/engine.ts`. Probar la detección de notas con un solo real y ver cuántas acierta. Posibles mejoras: exportar/importar pasajes y marcadores, metrónomo sobre la grilla, ajuste de la afinación de referencia por detección.
+3. Revisar de oído el Repertorio.
+4. Vocabulario desde fuentes libres: *A Guide to Exploring Jazz Improvisation* (open.maricopa.edu, CC BY 4.0) devolvió 403 desde este entorno. Si el usuario pega texto o ejemplos del libro, se pueden incorporar con atribución (los ejemplos musicales pueden tener excepciones a la licencia).
+5. Ideas para la grilla en celular: tocar mientras se edita, cifrado en pantalla grande, atajos de acordes.

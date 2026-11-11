@@ -1,6 +1,6 @@
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { LESSONS } from './lessons';
-import { LICKS } from './licks';
+import type { Lick } from './licks';
 import { PROGRESSIONS } from './progressions';
 
 export interface PlanBlock {
@@ -24,7 +24,7 @@ const dayNumber = (d: Date) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth()
 export const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-const TUNES = PROGRESSIONS.filter((p) => p.category === 'Standards' || p.category === 'Blues' || p.category === 'Avanzado');
+const TUNES = PROGRESSIONS.filter((p) => ['Standards', 'Repertorio', 'Blues', 'Avanzado'].includes(p.category));
 
 /** Tonalidad del día: recorre el ciclo de cuartas, una por día. */
 export function keyOfDay(d: Date) {
@@ -50,12 +50,12 @@ const TECHNIQUE = [
   'Intervalos crecientes desde la tónica (2ª, 3ª, 4ª...) para precisión de ataque.',
 ];
 
-export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string): DailyPlan {
+export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string, phrases: Lick[] = []): DailyPlan {
   const n = dayNumber(d);
   const key = keyOfDay(d);
   const tune = tuneOfWeek(d);
   const lesson = LESSONS.find((l) => l.id === focusLessonId) ?? LESSONS[Math.floor(n / 3) % LESSONS.length];
-  const lick = LICKS[n % LICKS.length];
+  const lick = phrases.length ? phrases[n % phrases.length] : null;
   const warm = WARMUPS[n % WARMUPS.length];
 
   // reparto proporcional
@@ -90,17 +90,28 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string)
       link: `#/lecciones/${lesson.id}?k=${key}`,
       linkLabel: 'Ir a la lección',
     },
-    {
-      id: 'lick',
-      title: `Vocabulario: ${lick.name}`,
-      minutes: m(w.lick),
-      detail: [
-        lick.idea,
-        'Aprendela en la tonalidad del día, después recorré el ciclo de cuartas. Tocala cambiando la rítmica y el final.',
-      ],
-      link: `#/vocabulario/${lick.id}?k=${key}`,
-      linkLabel: 'Abrir la frase',
-    },
+    lick
+      ? {
+          id: 'lick',
+          title: `Vocabulario: ${lick.name}`,
+          minutes: m(w.lick),
+          detail: [
+            lick.idea || 'Una de tus frases del día.',
+            'Aprendela en la tonalidad del día, después recorré el ciclo de cuartas. Tocala cambiando la rítmica y el final.',
+          ],
+          link: `#/vocabulario/${lick.id}?k=${key}`,
+          linkLabel: 'Abrir la frase',
+        }
+      : {
+          id: 'lick',
+          title: 'Vocabulario: cargá una frase',
+          minutes: m(w.lick),
+          detail: [
+            'Elegí una frase de un solo que te guste (de un disco o de un libro tuyo), cargala en la sección Vocabulario y aprendela en la tonalidad del día.',
+          ],
+          link: '#/vocabulario',
+          linkLabel: 'Ir a Vocabulario',
+        },
     {
       id: 'tune',
       title: `Tema de la semana: ${tune.name}`,

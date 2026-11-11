@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
-import { streak } from '../../state/storage';
+import type { PhraseLibrary } from '../../content/phrases';
+import { streak, usePersistent } from '../../state/storage';
 import { useLog, useReading, useSettings } from '../hooks';
 
 export function Today() {
@@ -8,7 +9,8 @@ export function Today() {
   const [log, setLog] = useLog();
   const { keyLabel, view } = useReading();
   const today = useMemo(() => new Date(), []);
-  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson), [today, settings.minutes, settings.focusLesson]);
+  const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
+  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? []), [today, settings.minutes, settings.focusLesson, pl]);
   const day = log[plan.date] ?? { done: [], minutes: 0 };
   const total = plan.blocks.reduce((s, b) => s + b.minutes, 0);
   const s = streak(log, today);

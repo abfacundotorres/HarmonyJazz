@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Lesson, LessonExercise, LESSONS, lessonById } from '../../content/lessons';
-import { lickById, lickInKey } from '../../content/licks';
 import { progressionById } from '../../content/progressions';
 import { generatorById } from '../../exercises/generators';
 import { concertRange } from '../../state/storage';
@@ -109,17 +108,12 @@ function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string
 
 function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExercise; initialKey: string | null }) {
   const prog = progressionById(ex.progression);
-  const lick = ex.lick ? lickById(ex.lick) : null;
   const [settings] = useSettings();
   const [key, setKey] = useState(initialKey ?? prog.key ?? 'C');
   const [seed, setSeed] = useState(0);
   const range = concertRange(settings.register);
 
   const { chart, notes, description, keyValue } = useMemo(() => {
-    if (lick) {
-      const r = lickInKey(lick, key, range);
-      return { ...r, description: lick.idea, keyValue: key };
-    }
     const g = generatorById(ex.generator!);
     const base = parseChart(prog.chart);
     const chart = prog.key ? transposeChart(base, keyInterval(prog.key, key)) : base;
@@ -143,15 +137,9 @@ function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExer
       onKey={setKey}
       tempo={ex.tempo ?? prog.tempo}
       style={prog.style}
-      onRegenerate={lick ? undefined : () => setSeed((s) => s + 1)}
+      onRegenerate={() => setSeed((s) => s + 1)}
     />
-    {lick ? (
-      <p className="card muted">
-        Esta frase se estudia paso a paso (ideas, nota por nota, por qué funciona y ejercicios) en <a href={`#/vocabulario/${lick.id}`}>Vocabulario →</a>
-      </p>
-    ) : (
-      <LineBreakdown recipe={generatorById(ex.generator!).recipe} chart={chart} notes={notes} />
-    )}
+    <LineBreakdown recipe={generatorById(ex.generator!).recipe} chart={chart} notes={notes} />
     </>
   );
 }

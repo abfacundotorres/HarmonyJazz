@@ -5,6 +5,7 @@ import { Lessons } from './pages/Lessons';
 import { Listen } from './pages/Listen';
 import { PlayAlong } from './pages/PlayAlong';
 import { Today } from './pages/Today';
+import { Transcribe } from './pages/Transcribe';
 import { Vocab } from './pages/Vocab';
 
 const NAV = [
@@ -12,6 +13,7 @@ const NAV = [
   ['playalong', 'Play-along'],
   ['lecciones', 'Lecciones'],
   ['vocabulario', 'Vocabulario'],
+  ['transcribir', 'Transcribir'],
   ['escucha', 'Afinador'],
 ] as const;
 
@@ -60,6 +62,7 @@ export function App() {
         {page === 'playalong' && <PlayAlong />}
         {page === 'lecciones' && <Lessons />}
         {page === 'vocabulario' && <Vocab />}
+        {page === 'transcribir' && <Transcribe />}
         {page === 'escucha' && <Listen />}
       </main>
       <footer className="credits">

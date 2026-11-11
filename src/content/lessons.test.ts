@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { GENERATORS } from '../exercises/generators';
 import { localizeNotes } from '../exercises/localize';
 import { BB_TRUMPET, INTERVAL } from '../theory/notes';
-import { lickById } from './licks';
 import { LESSONS } from './lessons';
 import { PROGRESSIONS } from './progressions';
 
@@ -27,8 +26,7 @@ describe('lecciones', () => {
         for (const e of l.exercises) {
           expect(PROGRESSIONS.some((p) => p.id === e.progression), `${l.id}: progresión ${e.progression}`).toBe(true);
           if (e.generator) expect(GENERATORS.some((g) => g.id === e.generator), `${l.id}: generador ${e.generator}`).toBe(true);
-          if (e.lick) expect(() => lickById(e.lick!)).not.toThrow();
-          expect(Boolean(e.generator) !== Boolean(e.lick), `${l.id}: ${e.label} debe tener generador o frase, no ambos`).toBe(true);
+          expect(GENERATORS.some((g) => g.id === e.generator), `${l.id}: ${e.label} necesita generador`).toBe(true);
           expect(e.tempo ?? 120).toBeGreaterThanOrEqual(60);
         }
       });

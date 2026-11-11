@@ -1,11 +1,12 @@
 import type { Style } from '../audio/engine';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
+import { STANDARDS, standardToProgression } from './standards';
 import { degreeNote, noteName, parseNote, simplify } from '../theory/notes';
 
 export interface Progression {
   id: string;
   name: string;
-  category: 'Fundamentos' | 'Blues' | 'Standards' | 'Avanzado' | 'Mis temas';
+  category: 'Fundamentos' | 'Blues' | 'Standards' | 'Repertorio' | 'Avanzado' | 'Mis temas';
   /** Tonalidad de referencia en concierto (para transponer). null = recorre varias tonalidades. */
   key: string | null;
   /** Modo de la tonalidad, para la armadura. */
@@ -229,6 +230,7 @@ export const PROGRESSIONS: Progression[] = [
     notes: 'Los cambios de Giant Steps. Empezá a 120 con 1-2-3-5 y guide tones; subí de a 4 bpm.',
     listen: ['John Coltrane – "Giant Steps"'],
   },
+  ...STANDARDS.map(standardToProgression),
 ];
 
 export const progressionById = (id: string) => PROGRESSIONS.find((p) => p.id === id)!;

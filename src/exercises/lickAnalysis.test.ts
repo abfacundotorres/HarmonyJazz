@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { LICKS, lickById, lickInKey, parseLine } from '../content/licks';
+import { lickInKey, parseLine } from '../content/licks';
+import { FIXTURE_LICKS as LICKS, fixtureLick as lickById } from './fixtures';
 import { CONCERT_KEYS, parseChart } from '../theory/chart';
 import { pitchName } from '../theory/notes';
 import { analyzeLick, intervalName, lickStats } from './lickAnalysis';
