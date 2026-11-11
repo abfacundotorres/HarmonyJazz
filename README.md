@@ -6,7 +6,9 @@ Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-alon
 - **Play-along:** 17 progresiones con estilos swing, en 2, balada y bossa (ii–V–I en las 12, blues, Rhythm changes, Autumn Leaves, modal, Coltrane, Giant Steps…) o la tuya, en cualquier tonalidad, con acorde actual, guide tones y escala.
 - **Lecciones:** 12 lecciones de nivel avanzado con ejercicios generados en las 12 tonalidades y registro de tempos.
 - **Grabá tu solo:** en el play-along, la app transcribe lo que tocás, lo escribe según cada acorde y lo analiza (llegadas a guide tones, tiempo fuerte, contratiempo, espacio, registro).
-- **Vocabulario:** frases para transportar por el ciclo de cuartas.
+- **Vocabulario:** tu colección de frases, cargadas a mano (en Si♭ o concierto) y transportables por el ciclo de cuartas.
+- **Transcribir:** cargá un audio, bajale la velocidad sin cambiar el tono, marcá pasajes en loop y guardalos para seguir otro día.
+- **Repertorio:** 22 standards, sólo con los acordes (sin melodía ni letra).
 - **Mis temas:** cargá tus propios cifrados de a uno o en masa desde un texto, con loop de compases y transposición.
 - **Afinador:** afinación, medición de estabilidad en notas largas y notas de referencia.
 

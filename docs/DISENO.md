@@ -24,12 +24,14 @@ src/
     generators.ts  11 generadores de líneas (guide tones, arpegios, enclosures, bebop,
                    1-2-3-5, pares de tríadas, pentatónicas, side-slipping, desplazamiento)
     abc.ts         línea + carta → notación ABC (armadura, alteraciones por compás, ligaduras)
-  content/     progresiones, lecciones, licks (frases originales) y plan diario
+  content/     progresiones, repertorio (sólo armonía), lecciones, frases del usuario y plan diario
+  transcribe/  audios guardados (IndexedDB), selecciones, loop y picos de la onda
+  auth/        contraseña de acceso (traba en el navegador)
   audio/engine.ts  play-along con Tone.js: bajo walking, comping rootless, batería con swing,
                    melodía guía, cuenta, metrónomo en 2 y 4
   pitch/       detector YIN + segmentador de notas + captura del micrófono
   state/       persistencia (ajustes, historial, tonalidades dominadas)
-  ui/          React: Hoy, Play-along, Lecciones, Vocabulario, Afinador
+  ui/          React: Hoy, Play-along, Lecciones, Vocabulario, Transcribir, Afinador
 ```
 
 ### Flujo de un ejercicio
@@ -74,23 +76,30 @@ Es una aproximación: no capta notas fantasma, glissandos ni notas más rápidas
 
 Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento y sonido, técnica en la tonalidad del día, armonía aplicada (lección foco), vocabulario (frase del día), tema de la semana e improvisación libre / transcripción. La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. Hay temporizador por bloque, racha e historial de 28 días.
 
-### Vocabulario: frases con estudio paso a paso
+### Vocabulario: tus frases, cargadas a mano
 
-Cada frase (13 en total, con nivel y tempo propios) se estudia en seis partes:
-1. **Cómo aprenderla:** ocho pasos de lento a rápido, con el tempo de la propia frase.
-2. **Por ideas:** la frase dividida en 2–5 ideas, cada una con qué hace y por qué funciona (texto mío).
-3. **Nota por nota:** **generada** por `analyzeLick` a partir de la propia frase y la carta: grado sobre el acorde, función (nota del acorde, tensión, de la escala, cromática), guide tone, intervalo desde la anterior, posición en el compás y recursos detectados (aproximaciones, enclosures, notas azules, anticipaciones).
-4. **Por qué funciona:** mis explicaciones más datos medidos (porcentaje de notas del acorde en tiempo fuerte, llegadas a guide tones, etc.).
-5. **Ejercicios:** propios de la frase y comunes, con casillas que se guardan en el dispositivo.
-6. **En la trompeta:** consejos de ejecución.
+La app **no trae frases propias**: el Vocabulario es una colección que carga el usuario (`content/phrases.ts`, guardada en `localStorage`). Cada frase se carga con notas, cifrado, tonalidad, modo, nivel y tempo, escritas como estén en la partitura del usuario: **en Si♭ o en concierto** (se convierte a concierto al guardar). Hay un teclado de entrada (alteración, octava, duración) y una vista previa en partitura. Una vez guardada, la frase se estudia con la misma tarjeta de ejercicio de las lecciones: partitura, play-along sobre su armonía, tempo y las 12 tonalidades con registro de dominio.
 
-Los textos están escritos en la tonalidad de referencia de cada frase y `localizeNotes` traduce los nombres de notas y acordes a la tonalidad y a la lectura elegidas (Si♭ o concierto), para que coincidan con la partitura y la tabla.
+Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en los tests y no forman parte de la app.
 
-**Cómo se verifica:** el análisis de cada frase es idéntico en las 12 tonalidades (test); las ideas cubren todas las notas sin huecos ni solapes (test); los textos no contienen construcciones que el traductor confundiría con una nota (test); y en el navegador se comprueba que el texto de una idea nombre las mismas notas que sus fichas en Si♭, concierto y otra tonalidad. Revisar el contenido contra el análisis encontró errores míos que se corrigieron antes de publicar (una "escala bebop" que no lo era, una nota fuera de lugar en un ejercicio, afirmaciones sin fundamento).
+**Fuentes libres:** se evaluó el libro abierto *A Guide to Exploring Jazz Improvisation* (open.maricopa.edu, CC BY 4.0); desde este entorno el sitio devolvió 403 y no se pudo leer. No se incorporó contenido de él.
+
+### Repertorio: sólo armonía
+
+`content/standards.ts` tiene 22 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
+
+### Transcribir
+
+Pestaña para trabajar audios propios (`ui/pages/Transcribe.tsx`, `transcribe/`):
+- Los archivos se guardan en **IndexedDB** (no en `localStorage`), sólo en el dispositivo; nada se sube.
+- Velocidad de 25 % a 200 % con el tono preservado (`HTMLMediaElement.preservesPitch`).
+- Onda dibujada desde picos (decodificados a 8 kHz para gastar poca memoria; sin onda por encima de 80 MB), con zoom y desplazamiento. Tocar = ir a ese punto; arrastrar = seleccionar; arrastrar un borde = ajustarlo; ajuste fino de 0,1 s.
+- Loop sobre la selección y **pasajes guardados** (nombre, inicio, fin y velocidad). Se guardan también la posición, la velocidad y la selección activa, para continuar otro día.
+- Lógica pura (selecciones, loop, vista, picos) en `transcribe/regions.ts`, con tests.
 
 ### Lecciones: paso a paso y desglose de cada línea
 
-Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6 pasos de práctica progresiva), **por qué funciona** (3 puntos) y 4–6 ejercicios. Para cada línea generada se muestra **cómo está armada**: la fórmula exacta del generador (`recipe`) y, nota por nota, sus primeros cuatro compases, con el mismo analizador que usa Vocabulario. Las fórmulas se verifican con tests que ejecutan cada generador y comparan los grados que produce con lo que la receta dice. Los textos se traducen a la lectura elegida (Si♭ o concierto); sin transposición se dejan intactos para conservar la ortografía intencional (por ejemplo C♭ en la escala alterada de G).
+Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6 pasos de práctica progresiva), **por qué funciona** (3 puntos) y 4–6 ejercicios. Para cada línea generada se muestra **cómo está armada**: la fórmula exacta del generador (`recipe`) y, nota por nota, sus primeros cuatro compases, con el analizador `analyzeLick`. Las fórmulas se verifican con tests que ejecutan cada generador y comparan los grados que produce con lo que la receta dice. Los textos se traducen a la lectura elegida (Si♭ o concierto); sin transposición se dejan intactos para conservar la ortografía intencional (por ejemplo C♭ en la escala alterada de G).
 
 ### Loops, transposición y biblioteca propia
 
@@ -123,7 +132,7 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 - Elegir y comparar otros bancos de piano y contrabajo; más capas de velocidad.
 - Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
-- Más frases y más formas de standards; editor de frases propias.
+- Más formas de standards (revisadas de oído).
 - Estilos: latin, double-time.
 
 **Mediano plazo**
