@@ -66,8 +66,26 @@ function tx<T>(stores: string | string[], mode: IDBTransactionMode, run: (t: IDB
   );
 }
 
+/** Lista los audios; descarta (y borra) las fichas huérfanas cuyo archivo ya no existe. */
 export async function listTracks(): Promise<TrackMeta[]> {
-  const all = (await tx<TrackMeta[]>('meta', 'readonly', (t) => t.objectStore('meta').getAll())) ?? [];
+  const d = await db();
+  const all = await new Promise<TrackMeta[]>((res, rej) => {
+    const t = d.transaction(['meta', 'blobs'], 'readwrite');
+    const metas = t.objectStore('meta').getAll();
+    const out: TrackMeta[] = [];
+    metas.onsuccess = () => {
+      for (const m of metas.result as TrackMeta[]) {
+        const c = t.objectStore('blobs').count(m.id);
+        c.onsuccess = () => {
+          if (c.result) out.push(m);
+          else t.objectStore('meta').delete(m.id);
+        };
+      }
+    };
+    t.oncomplete = () => res(out);
+    t.onerror = () => rej(t.error ?? new Error('Error de almacenamiento'));
+    t.onabort = () => rej(t.error ?? new Error('Error de almacenamiento'));
+  });
   return all.sort((a, b) => b.opened - a.opened);
 }
 
@@ -98,9 +116,13 @@ export async function getBlob(id: string): Promise<Blob | null> {
   return (await tx<Blob>('blobs', 'readonly', (t) => t.objectStore('blobs').get(id))) ?? null;
 }
 
+/** Guarda la ficha sólo si el audio todavía existe (así borrar un audio abierto no lo "resucita"). */
 export async function saveMeta(meta: TrackMeta): Promise<void> {
-  await tx('meta', 'readwrite', (t) => {
-    t.objectStore('meta').put(meta);
+  await tx(['meta', 'blobs'], 'readwrite', (t) => {
+    const c = t.objectStore('blobs').count(meta.id);
+    c.onsuccess = () => {
+      if (c.result) t.objectStore('meta').put(meta);
+    };
   });
 }
 
