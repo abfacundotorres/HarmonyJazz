@@ -358,3 +358,24 @@ select, input[type='range'], input[type='text'], input[type='number'], textarea 
 .pad { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
 .pad button { min-width: 2.6em; }
 .block { display: block; margin: 8px 0; }
+
+/* transcribir */
+.wavewrap { position: relative; margin: 10px 0; }
+.wave { width: 100%; height: 150px; display: block; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; touch-action: none; cursor: crosshair; }
+.wavemsg { position: absolute; left: 10px; bottom: 6px; }
+.filebtn { display: inline-block; cursor: pointer; margin: 6px 0; }
+.tracklist { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+.tracklist li { display: flex; gap: 6px; align-items: stretch; }
+.tracklist li > .link { flex: 1; text-align: left; display: flex; flex-direction: column; min-width: 0; }
+.tracklist li.on > .link { border-color: var(--accent); }
+.tracklist small { color: var(--muted); }
+.link { font: inherit; }
+button.link { background: var(--surface-2); }
+.selection .link, .row > span > .link { padding: .1em .5em; }
+.transport .bigplay { min-width: 9em; }
+.timeread { font-variant-numeric: tabular-nums; }
+.rate { margin: 12px 0; }
+.rate label { display: flex; flex-direction: column; gap: 6px; }
+.rate input[type='range'] { width: 100%; }
+.seglabel { padding: 0 .5em; color: var(--muted); font-size: .85rem; align-self: center; }
+.savedloops h4 { margin: 14px 0 6px; }
