@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Lick, lickInKey, LickLevel, parseLine } from '../../content/licks';
+import { takePhraseDraft } from '../../content/phraseDraft';
 import { buildPhrase, MAX_PHRASES, newPhraseId, PhraseInput, PhraseLibrary, Reading, validatePhrase } from '../../content/phrases';
 import { toAbc } from '../../exercises/abc';
 import { concertRange, usePersistent } from '../../state/storage';
@@ -24,6 +25,11 @@ export function Vocab() {
   const { view } = useReading();
   const [lib, setLib] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
   const [draft, setDraft] = useState<(PhraseInput & { id?: string }) | null>(null);
+  // una frase estimada desde Transcribir llega como borrador (en concierto) y se abre en el editor
+  useEffect(() => {
+    const d = takePhraseDraft();
+    if (d) setDraft({ ...emptyDraft('C'), name: d.name, tempo: d.tempo, line: d.line, idea: d.idea });
+  }, []);
 
   const phrases = useMemo(
     () => (lib.phrases ?? []).map((p) => validatePhrase(p)).filter((p): p is Lick => typeof p !== 'string'),

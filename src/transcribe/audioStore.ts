@@ -1,4 +1,7 @@
+import { Filters, NO_FILTERS, validFilters } from './filters';
+import { Grid, Marker, validGrid } from './grid';
 import { Peaks, peaksFromChannels, Region } from './regions';
+import { DEFAULT_TRAINER, Trainer, validTrainer } from './trainer';
 
 /**
  * Audios del transcriptor. Los archivos pueden pesar decenas de MB, así que van en IndexedDB (no en
@@ -27,6 +30,41 @@ export interface TrackMeta {
   loopOn: boolean;
   region: Region | null;
   loops: SavedLoop[];
+  /** Afinación: semitonos enteros y centésimas. */
+  pitchSemis: number;
+  pitchCents: number;
+  filters: Filters;
+  grid: Grid | null;
+  markers: Marker[];
+  trainer: Trainer;
+  /** Apuntes del usuario sobre este audio. */
+  text: string;
+  /** Vista de la onda. */
+  viewMode: 'wave' | 'spec';
+  /** Usar el reproductor simple del navegador. */
+  simple: boolean;
+}
+
+const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : d);
+
+/** Completa y valida una ficha guardada (las de versiones anteriores no tienen los campos nuevos). */
+export function normalizeMeta(raw: TrackMeta): TrackMeta {
+  const r = raw as Partial<TrackMeta> & TrackMeta;
+  return {
+    ...r,
+    rate: num(r.rate, 0.25, 2, 1),
+    pos: num(r.pos, 0, 1e6, 0),
+    loops: Array.isArray(r.loops) ? r.loops : [],
+    pitchSemis: Math.round(num(r.pitchSemis, -12, 12, 0)),
+    pitchCents: Math.round(num(r.pitchCents, -100, 100, 0)),
+    filters: validFilters(r.filters) ? r.filters : NO_FILTERS,
+    grid: validGrid(r.grid) ? r.grid : null,
+    markers: Array.isArray(r.markers) ? r.markers.filter((m) => m && typeof m.t === 'number' && typeof m.name === 'string') : [],
+    trainer: validTrainer(r.trainer) ? r.trainer : DEFAULT_TRAINER,
+    text: typeof r.text === 'string' ? r.text.slice(0, 5000) : '',
+    viewMode: r.viewMode === 'spec' ? 'spec' : 'wave',
+    simple: r.simple === true,
+  };
 }
 
 export const MAX_FILE_BYTES = 400 * 1024 * 1024;
@@ -86,7 +124,7 @@ export async function listTracks(): Promise<TrackMeta[]> {
     t.onerror = () => rej(t.error ?? new Error('Error de almacenamiento'));
     t.onabort = () => rej(t.error ?? new Error('Error de almacenamiento'));
   });
-  return all.sort((a, b) => b.opened - a.opened);
+  return all.map(normalizeMeta).sort((a, b) => b.opened - a.opened);
 }
 
 export async function addTrack(file: File): Promise<TrackMeta> {
@@ -104,6 +142,15 @@ export async function addTrack(file: File): Promise<TrackMeta> {
     loopOn: false,
     region: null,
     loops: [],
+    pitchSemis: 0,
+    pitchCents: 0,
+    filters: NO_FILTERS,
+    grid: null,
+    markers: [],
+    trainer: DEFAULT_TRAINER,
+    text: '',
+    viewMode: 'wave',
+    simple: false,
   };
   await tx(['meta', 'blobs'], 'readwrite', (t) => {
     t.objectStore('blobs').put(file, meta.id);

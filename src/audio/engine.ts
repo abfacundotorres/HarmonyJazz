@@ -597,6 +597,24 @@ export class JazzEngine {
     this.inst!.lead.triggerAttackRelease(midiToFreq(m), dur);
   }
 
+  private lineTimers: number[] = [];
+  /** Toca una línea de notas (concierto; `start` y `dur` en segundos desde ahora) con la trompeta. Se corta con stopLine(). */
+  async playLine(notes: { midi: number; start: number; dur: number }[], onEnd?: () => void) {
+    this.stopLine();
+    await this.init();
+    const horn = this.inst!.horn;
+    for (const n of notes) {
+      this.lineTimers.push(window.setTimeout(() => horn.triggerAttackRelease(midiToFreq(n.midi), Math.max(0.06, n.dur * 0.92), undefined, 0.8), n.start * 1000));
+    }
+    const end = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
+    this.lineTimers.push(window.setTimeout(() => onEnd?.(), end * 1000 + 300));
+  }
+  stopLine() {
+    this.lineTimers.forEach((t) => window.clearTimeout(t));
+    this.lineTimers = [];
+    this.inst?.horn.releaseAll?.();
+  }
+
   /**
    * Agenda un chorus. Los golpes salen de patterns.ts (datos puros); acá se les aplica el swing, una
    * humanización mínima de tiempo y se pasan al Transport en orden (se cancelan con stop()).

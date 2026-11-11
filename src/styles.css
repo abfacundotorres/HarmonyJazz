@@ -379,3 +379,17 @@ button.link { background: var(--surface-2); }
 .rate input[type='range'] { width: 100%; }
 .seglabel { padding: 0 .5em; color: var(--muted); font-size: .85rem; align-self: center; }
 .savedloops h4 { margin: 14px 0 6px; }
+
+/* transcribir: paneles, vista general y notas */
+.panel { border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; }
+.panel > summary { cursor: pointer; padding: .65em .9em; font-weight: 600; }
+.panelbody { padding: 0 .9em .9em; }
+.panelbody fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.panelbody fieldset:disabled { opacity: .5; }
+.panelbody hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.overview { width: 100%; height: 46px; display: block; margin-top: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; touch-action: none; cursor: pointer; }
+.livepitch { min-height: 1.7em; margin: 6px 0 0; }
+.notelist { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px; max-height: 230px; overflow: auto; }
+.notelist .link { padding: .25em .6em; }
+.viewbar { margin: 0 0 8px; }
+.wave.spec { background: #14101e; }

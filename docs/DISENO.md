@@ -90,12 +90,22 @@ Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en l
 
 ### Transcribir
 
-Pestaña para trabajar audios propios (`ui/pages/Transcribe.tsx`, `transcribe/`):
-- Los archivos se guardan en **IndexedDB** (no en `localStorage`), sólo en el dispositivo; nada se sube.
-- Velocidad de 25 % a 200 % con el tono preservado (`HTMLMediaElement.preservesPitch`).
-- Onda dibujada desde picos (decodificados a 8 kHz para gastar poca memoria; sin onda por encima de 80 MB), con zoom y desplazamiento. Tocar = ir a ese punto; arrastrar = seleccionar; arrastrar un borde = ajustarlo; ajuste fino de 0,1 s.
-- Loop sobre la selección y **pasajes guardados** (nombre, inicio, fin y velocidad). Se guardan también la posición, la velocidad y la selección activa, para continuar otro día.
-- Lógica pura (selecciones, loop, vista, picos) en `transcribe/regions.ts`, con tests.
+Pestaña para sacar música de oído a partir de audios propios (`ui/pages/Transcribe.tsx`, `ui/components/transcribe/`, `transcribe/`). Los archivos se guardan en **IndexedDB**, sólo en el dispositivo; nada se sube. Cada audio guarda su posición, velocidad, afinación, filtros, selección, pasajes, marcadores, grilla, entrenador y apuntes, para seguir otro día.
+
+**Motor de audio.** Hay dos, y la app elige sola:
+- **Motor preciso** (`stretch.ts`, `engine.worklet.ts`, `engine.ts`): se decodifica el audio entero, se pasa a 16 bits y lo reproduce un `AudioWorklet` con un núcleo propio (`PlayerCore`). Estira el tiempo con **WSOLA** (cuadros de 2048 muestras, solape del 50 %, empalme por correlación normalizada), afina por remuestreo de Hermite (la velocidad final es la pedida y el tono cambia por esa razón) y trata el loop como una señal circular: los últimos 12 ms se mezclan con el audio anterior al inicio, así que el loop dura exactamente lo marcado y **no tiene cortes ni clics**. Los saltos (buscar, pausar, cambiar de modo) llevan fundidos de 2 ms. El silencio entre repeticiones se inserta en el flujo ya estirado.
+- **Reproductor simple** (`MediaEngine`): el `<audio>` del navegador. Sirve para cualquier duración, pero el loop se corta un instante y no hay afinación, filtros ni espectrograma. Se usa si el audio decodificado superaría ~260 MB (unos 12–15 min en estéreo), si el navegador no admite worklets, si falla la decodificación o si el usuario lo pide.
+
+**Medido** (`stretch.test.ts`, núcleo puro y determinista): a 50/75/150/200 % el tono de un seno de 440 Hz se mantiene entre 438 y 442 Hz y la posición avanza al ritmo pedido (±0,12 s en 4 s); +100 centésimas da 466,16 ± 1 Hz sin cambiar la velocidad; un tono estable no pulsa (±8 % de amplitud); un acorde conserva sus tres frecuencias; en loop, la posición nunca sale del tramo, el salto máximo entre muestras en el empalme no supera 1,6× el de la señal original (a 50, 100 y 150 %) y diez vueltas de 0,6 s duran 6,0 s; la pausa entre repeticiones deja un silencio de 0,45–0,6 s. Costo de CPU: ~100× tiempo real en promedio y, en régimen, el peor bloque de 128 muestras tarda 0,7 ms de los 2,7 ms disponibles (en un celular puede ser varias veces más lento).
+
+**Análisis** (`fft.ts`, `spectro.ts`, `pitch.ts`):
+- **Espectrograma** con eje de altura logarítmico (E2–C7, 3 filas por semitono), líneas en cada Do (o en cada "Do" escrito si se lee en Si♭) y las notas detectadas encima.
+- **Nota que suena** junto al cursor: suma de armónicos sobre el espectro, con estimación de desafinación en centésimas.
+- **Detección de notas de una selección**: suma de armónicos por cuadro + seguimiento de Viterbi + segmentación. **Es una estimación**: en señales sintéticas (trompeta con vibrato, 5 audios de 20 notas) encontró 99–100 % de las notas, con precisión de 100 % (sola), 92 % (bajo suave), 79 % (bajo tan fuerte como el solo) y 66 % (bajo al doble o timbre apagado); las notas sobrantes son armónicos del bajo. Con grabaciones reales va a rendir peor. El "corte de graves" del reproductor también se aplica a la detección. Se puede escuchar lo detectado con la trompeta de la app, ocultar las notas débiles y pasar la selección a Vocabulario (cuantizada a corcheas con el tempo de la grilla; el borrador viaja por `localStorage` y se abre en el editor).
+
+**Otras herramientas:** velocidad 25–200 %, afinación ±12 semitonos y ±100 centésimas, filtro de graves y agudos (dos biquad en cascada, 24 dB/oct), "quitar el centro" / "sólo el centro", preajuste "Aislar trompeta"; grilla de compases (tempo por toques, "el 1 está aquí", loops de 1/2/4/8 compases, ajuste de la selección a compases y a tiempos); marcadores con nombre; **entrenador de loops** (sube la velocidad cada N repeticiones hasta la meta, con pausa entre repeticiones); pasajes guardados con su velocidad; apuntes. Gestos: tocar = ir ahí, arrastrar = seleccionar, arrastrar un borde = ajustarlo, pellizco o rueda = zoom, franja general para moverse.
+
+**Lo que no pude verificar:** cómo suena. La calidad del estiramiento a velocidades bajas en música real (transitorios de la batería, piano), la latencia y los cortes en un Android real y el consumo de memoria con audios largos en un celular sólo se pueden juzgar escuchando y probando en el aparato.
 
 ### Lecciones: paso a paso y desglose de cada línea
 
