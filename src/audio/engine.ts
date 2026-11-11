@@ -60,7 +60,7 @@ interface Voice {
 }
 
 /** Nivel base de la salida (dB) y niveles de cada instrumento; se ajustaron midiendo la salida real. */
-const MASTER_DB = 18;
+const MASTER_DB = 15;
 /** Base del volumen del usuario (después del compresor). El control actúa respecto de este valor. */
 const BASE_TRIM_DB = 2;
 /** Nivel de cada bus con instrumentos reales y con los sintetizadores de respaldo. */
@@ -69,7 +69,7 @@ const BUS_DB = {
   synth: { piano: -9, bass: -18, horn: -14, drums: 8 },
 };
 /** Procesamiento de la salida "phone": corte de graves inaudibles, presencia y armónicos del bajo. */
-const PHONE = { highpass: 120, presenceDb: 3, exciterDb: 6 };
+const PHONE = { highpass: 120, presenceDb: 3, exciterDb: 4 };
 
 const SAMPLE_BASE = () => new URL('samples/', location.href.split('#')[0]).href;
 /** Nota de Tone → archivo (los sostenidos del piano se renombraron: D#3 → Ds3). */
@@ -170,9 +170,11 @@ class Instruments {
     this.hp = new Tone.Filter({ type: 'highpass', frequency: 20, rolloff: -24 });
     this.presence = new Tone.Filter({ type: 'peaking', frequency: 2200, Q: 0.7, gain: 0 });
     // compresión para subir el nivel medio sin que los transitorios (piano, bombo) saturen,
-    // limitador y un recortador suave final: la salida nunca supera ~0,91 (−0,8 dBFS)
+    // limitador y un recortador suave final: la salida nunca supera ~0,91 (−0,8 dBFS).
+    // Calibración de oído (celular): con más empuje (+18 dB, ratio 8, recorte desde 0,7) se oía saturar
+    // por momentos; ahora entra menos señal al recortador y el compresor bombea menos.
     const shaper = new Tone.WaveShaper((x: number) => {
-      const t = 0.7;
+      const t = 0.8;
       const a = Math.abs(x);
       return a < t ? x : Math.sign(x) * (t + (0.95 - t) * Math.tanh((a - t) / (0.95 - t)));
     }, 4096);
@@ -180,9 +182,9 @@ class Instruments {
     this.master.chain(
       this.hp,
       this.presence,
-      new Tone.Compressor({ threshold: -28, ratio: 8, attack: 0.003, release: 0.15 }),
+      new Tone.Compressor({ threshold: -24, ratio: 4, attack: 0.003, release: 0.15 }),
       this.trim,
-      new Tone.Limiter(-2),
+      new Tone.Limiter(-3),
       shaper,
       Tone.getDestination(),
     );

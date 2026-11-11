@@ -78,7 +78,7 @@ export function TuneLibrary({
 
   return (
     <section className="card library">
-      <details open={open || !!draft.id} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <details open={open || !!draft.id || !!message} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>
           Mis temas ({tunes.length}) · cargar un cifrado propio
         </summary>

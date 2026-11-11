@@ -53,7 +53,7 @@ code { background: var(--surface-2); padding: 0 .3em; border-radius: 4px; }
 .error { color: var(--bad); }
 .lbl { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 
-button, .button, select, textarea, input[type='text'] {
+button, .button, select, textarea, input[type='text'], input[type='password'] {
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
@@ -348,3 +348,8 @@ select, input[type='range'], input[type='text'], input[type='number'], textarea 
 .ced-slots input[aria-invalid="true"] { border-color: var(--bad); }
 .ced-pal button { min-width: 2.6em; min-height: 2.4em; }
 .ced-pal button.on, .ced-marks button.on { background: var(--accent); color: var(--accent-ink); }
+
+/* contraseña de acceso */
+.gate { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.gate form { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); }
+.gate h2 { margin: 0 0 6px; }

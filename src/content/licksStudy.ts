@@ -552,6 +552,293 @@ export const LICK_STUDY: Record<string, LickStudy> = {
     ],
     trumpet: ['Cada acorde cambia en dos tiempos: practicá la frase con el metrónomo en 2 y 4 y respirá siempre en el mismo lugar (antes del compás 3).'],
   },
+
+  'digital-1235': {
+    ideas: [
+      {
+        name: 'Dm7: la célula y su espejo',
+        from: 1,
+        to: 8,
+        text: 'D E F A sube (1, 9, ♭3, 5), llega a C (♭7) y baja por A F E.',
+        why: 'Las notas de los tiempos (D, F, C, F) son todas del acorde; la 9ª (E) aparece sólo en los contratiempos y al final, como color.',
+      },
+      {
+        name: 'G7: la misma forma',
+        from: 9,
+        to: 16,
+        text: 'G A B D sube, llega a F (♭7) y baja por D B A: exactamente los mismos grados que en el compás anterior.',
+        why: 'Pensar en grados y no en nombres de notas hace que una sola forma sirva para cualquier acorde de séptima.',
+      },
+      {
+        name: 'Cmaj7 y llegada a la 3ª',
+        from: 17,
+        to: 25,
+        text: 'C D E G sube, baja por E D C y la G (5ª) salta a la E grave: la 3ª queda sonando.',
+        why: 'Terminar en la 3ª define el acorde mayor; la 5ª anterior es una nota estable desde la que se llega por salto sin perder el centro.',
+      },
+    ],
+    why: [
+      'El patrón 1-2-3-5 es la manera más corta de decir "este es el acorde": tres notas del acorde y una tensión suave (la 9ª).',
+      'Repetir la misma forma en tres acordes obliga a saber dónde está cada fundamental: es un ejercicio de ubicación tanto como de lenguaje.',
+    ],
+    exercises: [
+      'Tocá sólo la primera mitad de cada compás (1-2-3-5) por el ciclo de cuartas, un acorde por compás.',
+      'Invertí la célula: 5-3-2-1 bajando en cada acorde, y después alterná un compás para arriba y uno para abajo.',
+      'Aplicala en "Tune Up" (Repertorio): tres ii–V–I que bajan por tonos.',
+    ],
+    trumpet: ['Patrón ideal para la articulación: primero ligado, después lengua suave "du" en cada corchea y por último ligando de a dos (du-u du-u).'],
+  },
+
+  'guide-tone-cycle': {
+    ideas: [
+      {
+        name: 'Am7 → Dm7',
+        from: 1,
+        to: 8,
+        text: 'C (3ª de Am7) baja a G (♭7) y pasa a F (♭3 de Dm7); de ahí sube a C, la ♭7.',
+        why: 'La ♭7 de un acorde baja un semitono o un tono a la 3ª del acorde siguiente: G → F es el primer eslabón de la cadena.',
+      },
+      {
+        name: 'G7 → Cmaj7',
+        from: 9,
+        to: 15,
+        text: 'B (3ª de G7) baja a F (♭7) y resuelve en E (3ª de Cmaj7); luego sube a B, la 7ª.',
+        why: 'El tritono B–F de G7 resuelve hacia adentro: F → E. Es la resolución más fuerte de la armonía tonal.',
+      },
+      {
+        name: 'Fmaj7 → Bm7♭5',
+        from: 16,
+        to: 22,
+        text: 'A (3ª de Fmaj7) baja hasta E (7ª) y pasa a D (♭3 de Bm7♭5); de ahí sube a A (♭7).',
+        why: 'El IV mayor y el ii semidisminuido comparten la nota A: la línea no tiene que saltar para cambiar de modo.',
+      },
+      {
+        name: 'E7♭9 → Am7',
+        from: 23,
+        to: 27,
+        text: 'G♯ (3ª de E7) baja por F (♭9) y E hasta D (♭7) y resuelve en C, la ♭3 de Am7.',
+        why: 'La G♯ es la sensible de A menor y la F, la ♭9 que baja a la E: el V menor se oye aunque falte el bajo.',
+      },
+    ],
+    why: [
+      'Cada compás empieza en la 3ª y la última nota está a un paso de la 3ª siguiente: la línea "canta" la armonía sola.',
+      'El ritmo (negra con puntillo, corchea, dos negras) se repite en casi cada compás: deja la atención libre para escuchar los cambios.',
+    ],
+    exercises: [
+      'Tocá sólo las notas del primer tiempo de cada compás (C F B E A D G♯ C) en redondas, con el play-along de "Fly Me to the Moon".',
+      'Hacé la misma línea empezando en la 7ª de cada acorde (G, C, F, B, E, A, D, G) y conectá cada una con la 3ª siguiente.',
+      'Improvisá un chorus entero de "Fly Me to the Moon" donde la primera nota de cada compás tenga que ser la 3ª.',
+    ],
+    trumpet: ['Línea en registro medio y notas largas: es el lugar para trabajar el sonido. Sostené cada nota larga con aire parejo y agregá vibrato sólo al final.'],
+  },
+
+  'dim-b9': {
+    ideas: [
+      {
+        name: 'Dm7 desde la 5ª',
+        from: 1,
+        to: 7,
+        text: 'A F D (arpegio hacia abajo), E (9ª) y vuelta a subir por F A C.',
+        why: 'Termina en C, la ♭7 de Dm7, que baja un semitono a la B: la llegada al V está preparada.',
+      },
+      {
+        name: 'Primer disminuido: B D F A♭',
+        from: 8,
+        to: 11,
+        text: 'Arpegio de B°7 sobre G7♭9: 3ª, 5ª, ♭7 y ♭9.',
+        why: 'B°7 es G7♭9 sin la fundamental: cada nota es parte del acorde.',
+      },
+      {
+        name: 'Segundo disminuido: G E C♯ B♭',
+        from: 12,
+        to: 15,
+        text: 'Desde G baja por otro acorde disminuido: fundamental, 13ª, ♯11 y ♯9.',
+        why: 'La escala semitono-tono contiene dos acordes disminuidos entrelazados; el segundo aporta las tensiones brillantes (13ª y ♯11).',
+      },
+      {
+        name: 'Resolución en Cmaj7',
+        from: 16,
+        to: 24,
+        text: 'La B♭ (♯9) baja a la A (6ª de C) y la línea baja hasta D y vuelve a subir por el arpegio hasta la E (3ª).',
+        why: 'El ♯9 resuelve por semitono hacia abajo; la frase termina en la 3ª, la nota que define el acorde mayor.',
+      },
+    ],
+    why: [
+      'La escala semitono-tono (G A♭ B♭ B C♯ D E F) es simétrica: se repite cada tres semitonos, así que una misma digitación sirve para cuatro dominantes.',
+      'Todas las notas sobre G7♭9 son del acorde o tensiones: no hay notas de paso que justificar.',
+    ],
+    exercises: [
+      'Tocá B°7 (B D F A♭) en las cuatro inversiones y escuchá que sobre G7 siempre suena a G7♭9.',
+      'Llevá el compás 2 a C7♭9, E♭7♭9 y G♭7♭9 sin cambiar la digitación: es la misma escala.',
+      'Usá la idea en el compás 8 del Bird blues (Am7♭5 D7♭9 hacia Gm7).',
+    ],
+    trumpet: ['El A♭ agudo y la C♯ requieren posiciones distintas: practicá el compás 2 lento y ligado, y verificá la afinación de la C♯ (tiende a quedar alta).'],
+  },
+
+  'upper-triads': {
+    ideas: [
+      {
+        name: 'Dm9 desde la 5ª',
+        from: 1,
+        to: 8,
+        text: 'A C E (5ª, ♭7, 9ª) suben a la F aguda y bajan por E D C hasta la A.',
+        why: 'La A queda medio tono arriba de la A♭ que sigue: el paso de Dm7 al acorde alterado se hace por semitono.',
+      },
+      {
+        name: 'Tríada de D♭',
+        from: 9,
+        to: 12,
+        text: 'A♭ D♭ F A♭: tríada de D♭ mayor sobre G7 = ♭9, ♭5 (♯11), ♭7, ♭9.',
+        why: 'La D♭ es el tritono de G: la tríada que se arma sobre ella es la sustitución tritonal tocada encima del V.',
+      },
+      {
+        name: 'Tríada de E♭',
+        from: 13,
+        to: 16,
+        text: 'G E♭ B♭ E♭: tríada de E♭ mayor sobre G7 = fundamental, ♭13, ♯9, ♭13.',
+        why: 'E♭ mayor aporta las otras dos alteraciones (♯9 y ♭13). Entre las dos tríadas está casi toda la escala alterada.',
+      },
+      {
+        name: 'Resolución',
+        from: 17,
+        to: 24,
+        text: 'La E♭ sube a la E (3ª de Cmaj7); la línea baja por D B G y vuelve a subir para terminar en E.',
+        why: 'La ♭13 sube por semitono a la 3ª del acorde de resolución: es el movimiento más fuerte que tiene una tensión alterada.',
+      },
+    ],
+    why: [
+      'La escala alterada (G A♭ B♭ B D♭ E♭ F) se puede pensar como tríadas mayores conocidas: más fácil de tocar rápido que siete notas sueltas.',
+      'Las tríadas tienen sonido de "estructura": una forma clara y cerrada, aunque las notas sean muy tensas sobre el bajo.',
+    ],
+    exercises: [
+      'Sobre un G7alt sostenido, alterná las tríadas de D♭ y E♭ en todas sus inversiones.',
+      'Encontrá las dos tríadas para C7alt (G♭ y A♭) y F7alt (B y D♭) y tocá la frase en esas tonalidades sin partitura.',
+      'Aplicalo en el compás 8 de "Stella by Starlight" o en el G7alt de "Blue Bossa".',
+    ],
+    trumpet: ['Los saltos de tríada piden labios flexibles: practicá las dos tríadas como ejercicio de flexibilidad, primero ligadas y lentas.'],
+  },
+
+  'chromatic-approach': {
+    ideas: [
+      {
+        name: 'Cm7: llegada cromática a la fundamental',
+        from: 1,
+        to: 7,
+        text: 'B → C (semitono abajo), E♭ (♭3) y bajada por D, D♭ (de paso) y C hasta B♭ (♭7).',
+        why: 'La D♭ cromática une D y C sin romper el pulso: las notas del acorde (C, B♭) siguen cayendo en los tiempos.',
+      },
+      {
+        name: 'F7: escala bebop',
+        from: 8,
+        to: 15,
+        text: 'A (3ª) sube por B♭ C E♭ hasta F y baja con la E de paso: F E E♭ y C♯.',
+        why: 'La E entre F y E♭ es la nota de paso de la escala bebop dominante; la C♯ es el semitono de abajo de la D que viene.',
+      },
+      {
+        name: 'B♭maj7: resolución y 7ª',
+        from: 16,
+        to: 22,
+        text: 'D (3ª) larga, bajada por C B♭ F, y A G♯ A: la G♯ rodea la 7ª.',
+        why: 'Terminar en la 7ª mayor (A) deja la frase abierta; llegar desde el semitono de abajo la vuelve inevitable.',
+      },
+    ],
+    why: [
+      'La regla práctica: una nota cromática en el "y" lleva a una nota del acorde en el tiempo siguiente. Así las disonancias se oyen como camino, no como error.',
+      'La B♭ final de Cm7 baja a la A de F7 y la C♯ de F7 sube a la D de B♭maj7: los cambios de acorde se escuchan en la línea.',
+    ],
+    exercises: [
+      'Elegí una nota del acorde y llegá a ella desde un semitono abajo en cada tiempo 1 durante un chorus de blues.',
+      'Agregá la nota de arriba: tocá enclosures (arriba, abajo, objetivo) a la 3ª de cada acorde.',
+      'Tocá la escala bebop dominante de F empezando en distintas notas del acorde y verificá que las notas del acorde caigan en el tiempo.',
+    ],
+    trumpet: ['Las notas cromáticas tienden a desafinar: practicalas con afinador y sin vibrato. La C♯ y la G♯ suelen quedar altas.'],
+  },
+
+  'side-slip': {
+    ideas: [
+      {
+        name: 'Adentro: pentatónica de D menor',
+        from: 1,
+        to: 7,
+        text: 'A C D C A G F: pentatónica de D menor alrededor de la 5ª.',
+        why: 'Notas del acorde y la 11ª: el oído queda bien ubicado en Dm7 antes de salir.',
+      },
+      {
+        name: 'Afuera: medio tono arriba',
+        from: 8,
+        to: 15,
+        text: 'G♭ A♭ B♭ D♭ E♭ y vuelta: la misma pentatónica, ahora de E♭ menor.',
+        why: 'La forma idéntica hace que la salida suene intencional: el oído reconoce el patrón aunque las notas choquen con el acorde.',
+      },
+      {
+        name: 'Regreso por semitono',
+        from: 16,
+        to: 23,
+        text: 'A♭ → A: se vuelve a D menor y la línea sube hasta F y baja.',
+        why: 'Volver por semitono es lo que convierte la tensión en resolución: cualquier nota de afuera está a medio tono de una de adentro.',
+      },
+      {
+        name: 'Cierre en la fundamental',
+        from: 24,
+        to: 27,
+        text: 'G F E D: escala dórica descendente hasta la D larga.',
+        why: 'Después de salir, el final más claro es el más simple: grados conjuntos hasta la fundamental.',
+      },
+    ],
+    why: [
+      'Sobre un acorde que dura mucho (modal), salir medio tono arriba o abajo y volver es la manera más usada de crear tensión sin cambiar la armonía.',
+      'La salida dura un solo compás y vuelve por grado: el oyente nunca pierde la referencia.',
+    ],
+    exercises: [
+      'Tocá la frase con la salida medio tono abajo (pentatónica de C♯ menor) en lugar de arriba.',
+      'En el modal de 32 compases ("Modal AABA" en Standards), tocá un compás de afuera cada cuatro, siempre volviendo por semitono.',
+      'Hacé lo mismo con una frase propia: tocala adentro, medio tono arriba y otra vez adentro.',
+    ],
+    trumpet: ['La G♭ y la A♭ graves usan las mismas posiciones que la F y la G: practicá el cambio de compás 1 a 2 lento para que la salida suene limpia.'],
+  },
+
+  'coltrane-cells': {
+    ideas: [
+      {
+        name: 'Dm7 – E♭7',
+        from: 1,
+        to: 8,
+        text: 'D E F A (1-2-3-5 de Dm7) y B♭ G F E♭ (5-3-2-1 de E♭7).',
+        why: 'La A de Dm7 sube un semitono a la B♭ de E♭7: el cambio de acorde se hace con el mínimo movimiento.',
+      },
+      {
+        name: 'A♭maj7 – B7',
+        from: 9,
+        to: 16,
+        text: 'A♭ B♭ C E♭ (1-2-3-5 de A♭) y F♯ D♯ C♯ B (5-3-2-1 de B7).',
+        why: 'Primera tonalidad nueva (A♭), y su dominante hacia E está una tercera menor arriba: la célula descendente la deja en B, la fundamental.',
+      },
+      {
+        name: 'Emaj7 – G7',
+        from: 17,
+        to: 24,
+        text: 'E F♯ G♯ B (1-2-3-5 de E) y D B A G (5-3-2-1 de G7).',
+        why: 'Segunda tonalidad (E), una tercera mayor abajo de A♭. La B, fundamental de B7, es la 5ª de E y también la 3ª de G7.',
+      },
+      {
+        name: 'Llegada a C',
+        from: 25,
+        to: 29,
+        text: 'C D E G y la E larga: la 3ª de la tonalidad de llegada.',
+        why: 'Tres tonalidades a distancia de tercera mayor (A♭, E, C) dividen la octava en partes iguales: es el sistema de "Giant Steps".',
+      },
+    ],
+    why: [
+      'Con un acorde cada dos tiempos no hay espacio para escalas: cuatro notas que definen cada acorde son lo justo.',
+      'Alternar células ascendentes y descendentes mantiene la línea en el mismo registro aunque las tonalidades salten.',
+    ],
+    exercises: [
+      'Tocá sólo las fundamentales de los siete acordes en negras hasta que las sepas de memoria (D E♭ A♭ B E G C).',
+      'Cambiá todas las células a ascendentes (1-2-3-5) y escuchá cuánto salta la línea.',
+      'Llevá la frase a "Ciclo de terceras mayores" (Avanzado) a 100 bpm y subí de a 4.',
+    ],
+    trumpet: ['Las tonalidades de B y E piden digitaciones incómodas: practicá los compases 2 y 3 por separado, lento, mirando la partitura en Si♭.'],
+  },
 };
 
 /** Pasos para aprender una frase, con el tempo de la propia frase. */
