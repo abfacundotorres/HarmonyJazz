@@ -5,6 +5,11 @@ Texto para pegar al empezar una conversación nueva.
 ## Proyecto
 Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jazz en trompeta (Si♭), nivel avanzado. Repo `abfacundotorres/HarmonyJazz`, desplegada en GitHub Pages desde `main`. Un solo usuario, **Android**, escucha por el altavoz del celular. iOS no importa.
 
+## Criterio legal (decidido: se mantiene lo seguro)
+- La app es sólo para el usuario, pero el repositorio es **público**: todo lo que se sube queda distribuido. Por eso: **sin melodías ni letras**, sin cifrados copiados de libros (Real Book, etc.), sin colecciones ni archivos de terceros en el repo.
+- El Repertorio tiene sólo armonía escrita a mano (de memoria), que en general no se protege por sí sola. Lo que el usuario quiera sumar lo carga él en "Mis temas" (texto o grilla); queda en su navegador.
+- **No se implementa la importación del formato de iReal Pro** (`irealb://`): decisión del usuario tras analizar el tema. Motivos: no se pudieron verificar los términos de uso de iReal, y las colecciones curadas de la app podrían tener condiciones propias. Si algún día cambia el uso (compartir o publicar la app), consultar a una persona abogada antes.
+
 ## Cómo trabajar
 - Respuestas sinceras, sin condescendencia. Preguntar antes si hay ambigüedad. Eficiencia antes que tener razón.
 - Todo legal: no publicar melodías ni letras con derechos de autor. Sólo armonía (acordes), frases originales y material de dominio público o con licencia libre. Los cifrados de Real Book los carga el usuario.
@@ -27,4 +32,4 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 3. Revisar de oído el Repertorio.
 4. Vocabulario desde fuentes libres: *A Guide to Exploring Jazz Improvisation* (open.maricopa.edu, CC BY 4.0) devolvió 403 desde este entorno. Si el usuario pega texto o ejemplos del libro, se pueden incorporar con atribución (los ejemplos musicales pueden tener excepciones a la licencia).
 5. En el celular: instalar la app (menú de Chrome → "Instalar app"), probar que abre sin señal, que la pantalla no se apaga con el atril y que la letra del atril se lee a distancia. Si el aviso de "versión nueva" molesta o no aparece, revisar `main.tsx`.
-6. Ideas siguientes: tocar mientras se edita la grilla, exportar/importar el formato de iReal (no se hizo: requiere definir qué formato y derechos), metrónomo y cuenta previa en Transcribir, exportar/importar pasajes entre dispositivos, mejoras de la detección de notas con grabaciones reales.
+6. Ideas siguientes: tocar mientras se edita la grilla, metrónomo y cuenta previa en Transcribir, exportar/importar pasajes entre dispositivos, mejoras de la detección de notas con grabaciones reales.

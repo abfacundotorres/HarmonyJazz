@@ -88,6 +88,8 @@ Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en l
 
 `content/standards.ts` tiene 28 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
 
+**Decisión sobre iReal Pro:** no se importa su formato. Aunque hay lectores abiertos hechos por la comunidad y las grillas sólo traen acordes, no se pudieron verificar sus términos de uso y el repositorio es público. El usuario puede cargar sus propios cifrados como texto o en la grilla.
+
 ### Transcribir
 
 Pestaña para sacar música de oído a partir de audios propios (`ui/pages/Transcribe.tsx`, `ui/components/transcribe/`, `transcribe/`). Los archivos se guardan en **IndexedDB**, sólo en el dispositivo; nada se sube. Cada audio guarda su posición, velocidad, afinación, filtros, selección, pasajes, marcadores, grilla, entrenador y apuntes, para seguir otro día.
