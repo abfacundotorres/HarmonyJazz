@@ -134,13 +134,12 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
         </span>
       </div>
 
-      <div className="ced-grid" role="list">
+      <div className="ced-grid" role="group" aria-label="Compases de la grilla">
         {bars.map((b, i) => {
           const bad = b.chords.some((c) => c === '' || !valid(c));
           return (
             <button
               key={i}
-              role="listitem"
               className={`ced-bar ${i === cur ? 'sel' : ''} ${b.repeatStart ? 'rs' : ''} ${b.repeatEnd ? 're' : ''} ${bad ? 'bad' : ''}`}
               onClick={() => { setSel(i); setSlot(0); }}
               aria-label={`Compás ${i + 1}: ${b.chords.join(' ') || 'vacío'}`}

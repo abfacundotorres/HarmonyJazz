@@ -17,7 +17,7 @@ describe('localizeNotes', () => {
   });
   it('sigue la tonalidad elegida', () => {
     expect(conc('Dm7 G7 Cmaj7', 'C', 'E♭'.replace('♭', 'b'))).toBe('Fm7 B♭7 E♭maj7');
-    expect(bb('Dm7 G7 Cmaj7', 'C', 'Eb')).toBe('Gm7 C7 F' + 'maj7');
+    expect(bb('Dm7 G7 Cmaj7', 'C', 'Eb')).toBe('Gm7 C7 Fmaj7');
   });
   it('no toca palabras, siglas ni símbolos que no son notas', () => {
     const t = 'Así, las cuartas de GT (guide tone) en el ii–V–I: ♭7, 3ª, 13ª y 9ª. Do menor, Fa, Re. Cuartas, Dórico, Estos, Aplicalos, Blues.';

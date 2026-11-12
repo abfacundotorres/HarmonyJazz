@@ -35,10 +35,11 @@ export function App() {
   }, []);
 
   // al cambiar de pantalla, cortar el audio
+  const sub = path[1];
   useEffect(() => {
     engine.stop();
     window.scrollTo(0, 0);
-  }, [page, path[1]]);
+  }, [page, sub]);
 
   return (
     <div className="app">

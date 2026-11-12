@@ -438,6 +438,7 @@ button.link { background: var(--surface-2); }
   input[type='range']::-moz-range-thumb { width: 28px; height: 28px; }
   .check, label:has(> input[type='checkbox']) { min-height: 44px; display: inline-flex; align-items: center; gap: .5em; }
   .tracklist li > button, .tracklist li > .link { min-height: 44px; }
+  .board .bar, .key, .ced-bar, .ced-pal button, .ced-slots button, .ced-acts button { min-height: 44px; }
 }
 
 /* accesibilidad */
