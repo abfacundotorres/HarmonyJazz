@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { engine } from '../audio/engine';
 import { useRoute, useSettings } from './hooks';
+import { Credits } from './pages/Credits';
 import { Lessons } from './pages/Lessons';
 import { Listen } from './pages/Listen';
 import { PlayAlong } from './pages/PlayAlong';
@@ -57,7 +58,7 @@ export function App() {
       )}
       <header className="top">
         <a href="#/hoy" className="brand">
-          <span className="bell" aria-hidden>◗</span> HarmonyJazz
+          <img src="./icon.svg" alt="" width="38" height="38" /> HarmonyJazz
         </a>
         <nav>
           {NAV.map(([id, label]) => (
@@ -83,19 +84,20 @@ export function App() {
         </div>
       </header>
       <main>
-        <h1 className="sr">{NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz'}</h1>
+        <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : (NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz')}</h1>
         {page === 'hoy' && <Today />}
         {page === 'playalong' && <PlayAlong />}
         {page === 'lecciones' && <Lessons />}
         {page === 'vocabulario' && <Vocab />}
         {page === 'transcribir' && <Transcribe />}
         {page === 'escucha' && <Listen />}
+        {page === 'creditos' && <Credits />}
       </main>
       <footer className="credits">
         Piano: Salamander Grand Piano V3 (Alexander Holm,{' '}
         <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>) · Batería: Salamander Drumkit (Alexander Holm,{' '}
         <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>) · Contrabajo y trompeta: FluidR3 (Frank Wen, MIT) ·{' '}
-        <a href="./samples/CREDITS.txt" target="_blank" rel="noopener noreferrer">Créditos y licencias</a>
+        <a href="#/creditos">Créditos y licencias</a>
       </footer>
     </div>
   );

@@ -100,10 +100,9 @@ const fromCache = async (req, opts) => {
 self.addEventListener('fetch', (e) => {
   const r = e.request;
   if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;
-  if (r.mode === 'navigate') {
-    e.respondWith(fromCache(new URL('index.html', self.location).href, { ignoreVary: true }).then((m) => m || fetch(r)));
-    return;
-  }
+  // Cada pedido se responde con lo suyo: la raíz de la app ("./" o index.html) con la pantalla principal, y cualquier
+  // otro archivo (por ejemplo samples/CREDITS.txt abierto en una pestaña) con ese archivo. Responder a TODA navegación
+  // con index.html dejaba una pantalla en blanco al abrir un archivo suelto.
   e.respondWith(fromCache(r, { ignoreSearch: true, ignoreVary: true }).then((m) => m || fetch(r)));
 });
 `;

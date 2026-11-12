@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Gate } from './ui/components/Gate';
+import '@fontsource/dm-serif-display/latin-400.css';
+import '@fontsource/dm-serif-display/latin-400-italic.css';
 import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
