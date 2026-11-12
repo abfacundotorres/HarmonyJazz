@@ -11,6 +11,7 @@ import {
   Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
 } from '../../theory/chart';
 import { Atril } from '../components/Atril';
+import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
@@ -129,6 +130,7 @@ export function PlayAlong() {
   const [recording, setRecording] = useState(false);
   const [count, setCount] = useState(0);
   const [take, setTake] = useState<Take | null>(null);
+  const [takeAudio, setTakeAudio] = useState<Blob | null>(null);
   const events = useRef<RawEvent[]>([]);
   const snapshot = useRef<Omit<Take, 'choruses'> | null>(null);
 
@@ -144,6 +146,7 @@ export function PlayAlong() {
       events.current = [];
       setCount(0);
       setTake(null);
+      setTakeAudio(null);
       snapshot.current = { chart: playChart, keyValue: baseKey ? key : null, mode: base.mode, tempo };
       setRecording(true);
     } else {
@@ -232,6 +235,7 @@ export function PlayAlong() {
             {useCustom && <option value="">Progresión propia (sin guardar)</option>}
             {(['Fundamentos', 'Blues', 'Standards', 'Repertorio', 'Avanzado', 'Mis temas'] as const).map((cat) => {
               const items = all.filter((p) => p.category === cat);
+              if (cat === 'Repertorio') items.sort((x, y) => x.name.localeCompare(y.name, 'es'));
               return items.length ? (
                 <optgroup key={cat} label={cat}>
                   {items.map((p) => (
@@ -303,13 +307,14 @@ export function PlayAlong() {
           chordIndex={ci}
           chorus={mine?.chorus ?? 0}
           tempo={tempo}
-          recorder={{ recording, toggle: toggleRecording, onEvent, count }}
+          recorder={{ recording, toggle: toggleRecording, onEvent, count, onAudio: setTakeAudio }}
         />
       </div>
 
       {recording && !engine.playing && (
         <p className="card muted">Grabando: dale play al acompañamiento y tocá. Las notas se ubican en la forma según el tiempo del play-along.</p>
       )}
+      {takeAudio && !recording && <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)} />}
       {take && (
         <Transcription
           chart={take.chart}

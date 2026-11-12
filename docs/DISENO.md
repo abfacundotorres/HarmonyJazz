@@ -86,7 +86,7 @@ Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en l
 
 ### Repertorio: sólo armonía
 
-`content/standards.ts` tiene 22 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
+`content/standards.ts` tiene 28 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
 
 ### Transcribir
 
@@ -117,6 +117,14 @@ Pestaña para sacar música de oído a partir de audios propios (`ui/pages/Trans
 - **Pantalla encendida** (`ui/wakeLock.ts`): mientras suena el play-along o un audio de Transcribir y mientras está abierto el atril. Si el navegador no admite la API, no hace nada. No se pudo verificar en un celular real.
 - **Modo atril** (`ui/components/Atril.tsx`): pantalla completa con el acorde actual enorme, el siguiente, los cuatro tiempos, la grilla en letra grande (ajustable con A−/A+, se recuerda), el compás que suena resaltado y siempre a la vista, el loop marcado, y los controles de ▶/■ y tempo. Usa pantalla completa si el navegador la permite.
 - **Copia de seguridad** (`state/backup.ts`, `ui/components/BackupCard.tsx`, en Hoy): un JSON con los temas, frases, progreso, ajustes y las fichas de los audios (pasajes, marcadores, grilla). **No** incluye la contraseña, los borradores ni los audios (pesan decenas de MB). Restaurar reemplaza los datos tras confirmar y valida el archivo (rechaza lo que no es una copia, claves raras y datos desmesurados). Avisa si hace 14 días o más que no se hace una copia.
+
+### Tu toma de audio
+
+Al usar "Grabar solo" en el play-along, además de las notas se graba el audio del micrófono con `MediaRecorder` (`pitch/mic.ts`). La toma se escucha en una tarjeta (`ui/components/TakeAudio.tsx`) y se puede guardar en Transcribir, que la abre sola. **Se convierte a WAV** (`pitch/wav.ts`): el audio crudo de una grabación dice que dura "Infinity", lo que rompe la barra de avance y el reproductor simple; se verificó con un micrófono simulado de Chromium (toma de 3,5 s → vista previa con duración finita → Transcribir con el motor preciso). Con auriculares se oye sólo la trompeta; sin ellos también se cuela el acompañamiento.
+
+### Pantallas táctiles
+
+En dispositivos con puntero "grueso" (`@media (pointer: coarse)`) los botones, selectores y resúmenes miden al menos 44 px, los deslizadores tienen un pulgar de 28 px y las casillas 24 px. Se detectó con un barrido de todas las pantallas a 360 px de ancho (antes: botones de 31 px, deslizadores de 16 px y casillas de 13 px); el mismo barrido no encontró desbordes horizontales, errores en consola ni controles sin nombre.
 
 ### Editor de grilla: atajos
 

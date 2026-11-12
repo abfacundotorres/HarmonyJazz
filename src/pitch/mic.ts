@@ -12,6 +12,10 @@ export interface PitchFrame {
 
 export interface MicListener {
   stop: () => void;
+  /** Empieza a guardar el audio del micrófono (para volver a escuchar la toma). */
+  startRecording: () => void;
+  /** Termina y devuelve el audio grabado (null si no se estaba grabando o no hubo nada). */
+  stopRecording: () => Promise<Blob | null>;
 }
 
 /**
@@ -50,8 +54,36 @@ export async function listen(
   };
   raf = requestAnimationFrame(tick);
 
+  // grabación de audio (MediaRecorder): independiente de la detección de notas
+  let rec: MediaRecorder | null = null;
+  let chunks: Blob[] = [];
+  const startRecording = () => {
+    if (rec || typeof MediaRecorder === 'undefined') return;
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported?.(t));
+    chunks = [];
+    try {
+      rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    } catch {
+      rec = null;
+      return;
+    }
+    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+    rec.start(1000);
+  };
+  const stopRecording = () =>
+    new Promise<Blob | null>((res) => {
+      const r = rec;
+      rec = null;
+      if (!r || r.state === 'inactive') return res(chunks.length ? new Blob(chunks, { type: r?.mimeType }) : null);
+      r.onstop = () => res(chunks.length ? new Blob(chunks, { type: r.mimeType }) : null);
+      r.stop();
+    });
+
   return {
+    startRecording,
+    stopRecording,
     stop: () => {
+      if (rec && rec.state !== 'inactive') rec.stop();
       stopped = true;
       cancelAnimationFrame(raf);
       stream.getTracks().forEach((t) => t.stop());

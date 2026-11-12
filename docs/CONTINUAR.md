@@ -14,7 +14,7 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 ## Qué existe
 - Play-along con loops, transposición, "Mis temas" (localStorage, exportar/importar, carga masiva) y editor de grilla estilo iReal.
 - Audio con muestras reales (piano, bajo, trompeta, batería), swing según tempo, salida "celular" (`PHONE` en `src/audio/engine.ts`).
-- **Repertorio** (`src/content/standards.ts`): 22 temas con **sólo la armonía**. Escritos de memoria: contrastarlos de oído. Botón "Copiar a Mis temas".
+- **Repertorio** (`src/content/standards.ts`): 28 temas con **sólo la armonía** (los de blues, con la forma habitual; "All of Me" tiene los últimos compases variables). Escritos de memoria: contrastarlos de oído. Botón "Copiar a Mis temas".
 - **Vocabulario**: sin frases propias de la app; el usuario las carga a mano (`phrases.ts`, `pages/Vocab.tsx`) en Si♭ o concierto, con teclado de entrada y vista previa en partitura.
 - **Transcribir** (`pages/Transcribe.tsx`, `ui/components/transcribe/`, `src/transcribe/`): motor propio (WSOLA en AudioWorklet) con loops sin cortes, velocidad con tono preservado, afinación fina, filtros, espectrograma, nota que suena, detección de notas (estimación), compases, marcadores, entrenador de loops y pasajes guardados. Ver `docs/DISENO.md`. Respaldo con el reproductor del navegador para audios largos.
 - **Contraseña de acceso** (`src/auth/access.ts`, `scripts/access-hash.mjs`): contraseña provisoria activa (no figura en el repo, sólo su derivación). Es una traba del lado del navegador, no seguridad real. Para cambiarla: `node scripts/access-hash.mjs "clave"` y pegar el resultado en `ACCESS_HASH`.
