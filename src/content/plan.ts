@@ -24,7 +24,7 @@ const dayNumber = (d: Date) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth()
 export const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-const TUNES = PROGRESSIONS.filter((p) => ['Standards', 'Repertorio', 'Blues', 'Avanzado'].includes(p.category));
+const TUNES = PROGRESSIONS.filter((p) => ['Formas', 'Blues', 'Avanzado'].includes(p.category));
 
 /** Tonalidad del día: recorre el ciclo de cuartas, una por día. */
 export function keyOfDay(d: Date) {

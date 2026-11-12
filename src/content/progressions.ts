@@ -1,12 +1,11 @@
 import type { Style } from '../audio/engine';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
-import { STANDARDS, standardToProgression } from './standards';
 import { degreeNote, noteName, parseNote, simplify } from '../theory/notes';
 
 export interface Progression {
   id: string;
   name: string;
-  category: 'Fundamentos' | 'Blues' | 'Standards' | 'Repertorio' | 'Avanzado' | 'Mis temas';
+  category: 'Fundamentos' | 'Blues' | 'Formas' | 'Avanzado' | 'Mis temas';
   /** Tonalidad de referencia en concierto (para transponer). null = recorre varias tonalidades. */
   key: string | null;
   /** Modo de la tonalidad, para la armadura. */
@@ -124,7 +123,7 @@ export const PROGRESSIONS: Progression[] = [
   {
     id: 'rhythm',
     name: 'Rhythm changes en B♭',
-    category: 'Standards',
+    category: 'Formas',
     key: 'Bb',
     mode: 'major',
     chart:
@@ -137,47 +136,34 @@ export const PROGRESSIONS: Progression[] = [
     listen: ['Sonny Stitt – "The Eternal Triangle"', 'Dizzy Gillespie / Sonny Stitt – "I Know That You Know"'],
   },
   {
-    id: 'autumn',
-    name: 'Autumn Leaves (cambios)',
-    category: 'Standards',
-    key: 'G',
-    mode: 'minor',
+    id: 'cadena-mayor-menor',
+    name: 'Cadena de ii–V mayores y menores (32 compases)',
+    category: 'Formas',
+    key: 'C',
+    mode: 'major',
     chart:
-      'Cm7 | F7 | Bbmaj7 | Ebmaj7 | Am7b5 | D7b9 | Gm6 | Gm6 | ' +
-      'Cm7 | F7 | Bbmaj7 | Ebmaj7 | Am7b5 | D7b9 | Gm6 | Gm6 | ' +
-      'Am7b5 | D7b9 | Gm6 | Gm6 | Cm7 | F7 | Bbmaj7 | Ebmaj7 | ' +
-      'Am7b5 | D7b9 | Gm7 C7 | Fm7 Bb7 | Am7b5 | D7b9 | Gm6 | Gm6',
+      'Dm7 | G7 | Cmaj7 | Cmaj7 | Bm7b5 | E7b9 | Am7 | Am7 | ' +
+      'Dm7 | G7 | Cmaj7 | A7b9 | Dm7 | Dm7 | G7 | G7 | ' +
+      'Em7b5 | A7b9 | Dm7 | Dm7 | Dm7b5 | G7b9 | Cmaj7 | Cmaj7 | ' +
+      'Fmaj7 | Bb7 | Em7 | A7b9 | Dm7 | G7 | Cmaj7 | G7',
     tempo: 140,
-    notes: 'ii–V–I mayor y menor relativos en la misma forma. El clásico para aprender a cambiar de modo.',
-    listen: ['Cannonball Adderley con Miles Davis – "Somethin\' Else"', 'Chet Baker – "She Was Too Good to Me"'],
+    notes: 'Forma de ejercicio (no es un tema): ii–V–I mayores y menores que se alternan, con un ii–V a la subdominante. Sirve para aprender a cambiar de modo sin perder el hilo.',
   },
   {
-    id: 'blue-bossa',
-    name: 'Blue Bossa (cambios)',
-    category: 'Standards',
-    key: 'C',
+    id: 'menor-modulante',
+    name: 'Menor con ii–V a la relativa mayor (16 compases)',
+    category: 'Formas',
+    key: 'A',
     mode: 'minor',
     style: 'bossa',
-    chart: 'Cm7 | Cm7 | Fm7 | Fm7 | Dm7b5 | G7alt | Cm7 | Cm7 | Ebm7 | Ab7 | Dbmaj7 | Dbmaj7 | Dm7b5 | G7alt | Cm7 | Dm7b5 G7alt',
-    tempo: 150,
-    notes: 'ii–V–i menor y una modulación de un compás a D♭ mayor. Corcheas rectas: el fraseo cambia por completo.',
-    listen: ['Kenny Dorham – "Blue Bossa" (Joe Henderson, Page One)'],
-  },
-  {
-    id: 'solar',
-    name: 'Solar (cambios)',
-    category: 'Standards',
-    key: 'C',
-    mode: 'minor',
-    chart: 'CmMaj7 | CmMaj7 | Gm7 | C7 | Fmaj7 | Fmaj7 | Fm7 | Bb7 | Ebmaj7 | Ebm7 Ab7 | Dbmaj7 | Dm7b5 G7alt',
-    tempo: 170,
-    notes: 'Doce compases, cada cuatro una tonalidad nueva y ii–V que bajan por tonos. Exige saber dónde estás siempre.',
-    listen: ['Miles Davis – "Solar"', 'Bill Evans Trio – "Solar" (Sunday at the Village Vanguard)'],
+    chart: 'Am7 | Am7 | Dm7 | Dm7 | Bm7b5 | E7b9 | Am7 | Am7 | Dm7 | G7 | Cmaj7 | Cmaj7 | Bm7b5 | E7b9 | Am7 | Bm7b5 E7b9',
+    tempo: 140,
+    notes: 'Forma de ejercicio (no es un tema): tónica menor, iv menor, ii–V–i y un paso breve por la relativa mayor. Corcheas rectas: el fraseo cambia por completo.',
   },
   {
     id: 'ballad',
     name: 'Balada en E♭ (forma de 8 compases)',
-    category: 'Standards',
+    category: 'Formas',
     key: 'Eb',
     mode: 'major',
     style: 'ballad',
@@ -189,7 +175,7 @@ export const PROGRESSIONS: Progression[] = [
   {
     id: 'modal',
     name: 'Modal AABA (D dórico / E♭ dórico)',
-    category: 'Standards',
+    category: 'Formas',
     key: 'D',
     mode: 'minor',
     chart: 'Dm7 | % | % | % | % | % | % | % | Dm7 | % | % | % | % | % | % | % | Ebm7 | % | % | % | % | % | % | % | Dm7 | % | % | % | % | % | % | %',
@@ -217,20 +203,6 @@ export const PROGRESSIONS: Progression[] = [
     tempo: 120,
     notes: 'Substitución por terceras mayores (Countdown / 26-2). Patrones 1-2-3-5 sobre cada acorde.',
   },
-  {
-    id: 'giant',
-    name: 'Ciclo de terceras mayores (16 compases)',
-    category: 'Avanzado',
-    key: 'B',
-    mode: 'major',
-    chart:
-      'Bmaj7 D7 | Gmaj7 Bb7 | Ebmaj7 | Am7 D7 | Gmaj7 Bb7 | Ebmaj7 F#7 | Bmaj7 | Fm7 Bb7 | ' +
-      'Ebmaj7 | Am7 D7 | Gmaj7 | C#m7 F#7 | Bmaj7 | Fm7 Bb7 | Ebmaj7 | C#m7 F#7',
-    tempo: 140,
-    notes: 'Los cambios de Giant Steps. Empezá a 120 con 1-2-3-5 y guide tones; subí de a 4 bpm.',
-    listen: ['John Coltrane – "Giant Steps"'],
-  },
-  ...STANDARDS.map(standardToProgression),
 ];
 
 export const progressionById = (id: string) => PROGRESSIONS.find((p) => p.id === id)!;

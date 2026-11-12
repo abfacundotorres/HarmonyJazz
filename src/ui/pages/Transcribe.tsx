@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { addTrack, getBlob, listTracks, removeTrack, saveMeta, TrackMeta } from '../../transcribe/audioStore';
 import { fmtTime } from '../../transcribe/regions';
+import { OPEN_TRACK_KEY } from '../components/TakeAudio';
 import { TrackPlayer } from '../components/transcribe/TrackPlayer';
 
 const mb = (n: number) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
@@ -31,6 +32,21 @@ export function Transcribe() {
     // pide que el navegador no borre los audios si falta espacio
     void navigator.storage?.persist?.().catch(() => undefined);
   }, [refresh]);
+
+  // si se llegó desde "Guardar en Transcribir", se abre esa toma
+  useEffect(() => {
+    if (!tracks) return;
+    let id: string | null = null;
+    try {
+      id = sessionStorage.getItem(OPEN_TRACK_KEY);
+      if (id) sessionStorage.removeItem(OPEN_TRACK_KEY);
+    } catch {
+      /* sin sessionStorage */
+    }
+    const m = id ? tracks.find((t) => t.id === id) : null;
+    if (m) void openTrack(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks]);
 
   const openTrack = async (m: TrackMeta) => {
     setError(null);

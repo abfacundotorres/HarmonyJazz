@@ -84,9 +84,11 @@ Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en l
 
 **Fuentes libres:** se evaluó el libro abierto *A Guide to Exploring Jazz Improvisation* (open.maricopa.edu, CC BY 4.0); desde este entorno el sitio devolvió 403 y no se pudo leer. No se incorporó contenido de él.
 
-### Repertorio: sólo armonía
+### Sin repertorio propio
 
-`content/standards.ts` tiene 22 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
+La app **no trae standards**: ni melodías, ni letras, ni cifrados de temas de terceros. Las progresiones incluidas son **formas y ejercicios** (ii–V–I en las 12 tonalidades, blues de jazz, rhythm changes, forma modal, una cadena de ii–V mayores y menores y una progresión menor con ii–V a la relativa, sustituciones, cambios de Coltrane) y no se presentan como temas. Los temas que el usuario estudia los carga él en "Mis temas" (con la grilla o pegando texto), y quedan en su navegador. Se había armado un Repertorio de 28 temas con sólo la armonía, escrito de memoria; el usuario decidió quitarlo para evitar el riesgo de que pareciera contenido de terceros.
+
+**Decisión sobre iReal Pro:** no se importa su formato. Aunque hay lectores abiertos hechos por la comunidad y las grillas sólo traen acordes, no se pudieron verificar sus términos de uso y el repositorio es público.
 
 ### Transcribir
 
@@ -117,6 +119,14 @@ Pestaña para sacar música de oído a partir de audios propios (`ui/pages/Trans
 - **Pantalla encendida** (`ui/wakeLock.ts`): mientras suena el play-along o un audio de Transcribir y mientras está abierto el atril. Si el navegador no admite la API, no hace nada. No se pudo verificar en un celular real.
 - **Modo atril** (`ui/components/Atril.tsx`): pantalla completa con el acorde actual enorme, el siguiente, los cuatro tiempos, la grilla en letra grande (ajustable con A−/A+, se recuerda), el compás que suena resaltado y siempre a la vista, el loop marcado, y los controles de ▶/■ y tempo. Usa pantalla completa si el navegador la permite.
 - **Copia de seguridad** (`state/backup.ts`, `ui/components/BackupCard.tsx`, en Hoy): un JSON con los temas, frases, progreso, ajustes y las fichas de los audios (pasajes, marcadores, grilla). **No** incluye la contraseña, los borradores ni los audios (pesan decenas de MB). Restaurar reemplaza los datos tras confirmar y valida el archivo (rechaza lo que no es una copia, claves raras y datos desmesurados). Avisa si hace 14 días o más que no se hace una copia.
+
+### Tu toma de audio
+
+Al usar "Grabar solo" en el play-along, además de las notas se graba el audio del micrófono con `MediaRecorder` (`pitch/mic.ts`). La toma se escucha en una tarjeta (`ui/components/TakeAudio.tsx`) y se puede guardar en Transcribir, que la abre sola. **Se convierte a WAV** (`pitch/wav.ts`): el audio crudo de una grabación dice que dura "Infinity", lo que rompe la barra de avance y el reproductor simple; se verificó con un micrófono simulado de Chromium (toma de 3,5 s → vista previa con duración finita → Transcribir con el motor preciso). Con auriculares se oye sólo la trompeta; sin ellos también se cuela el acompañamiento.
+
+### Pantallas táctiles
+
+En dispositivos con puntero "grueso" (`@media (pointer: coarse)`) los botones, selectores y resúmenes miden al menos 44 px, los deslizadores tienen un pulgar de 28 px y las casillas 24 px. Se detectó con un barrido de todas las pantallas a 360 px de ancho (antes: botones de 31 px, deslizadores de 16 px y casillas de 13 px); el mismo barrido no encontró desbordes horizontales, errores en consola ni controles sin nombre.
 
 ### Editor de grilla: atajos
 
@@ -150,14 +160,13 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 
 **Hecho en la iteración 3:** instrumentos reales (piano, contrabajo, trompeta), mezcla medida, más volumen sin saturar, humanización, control de volumen, y corrección de dos carreras del motor (stop).
 
-**Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), Blue Bossa, Solar y balada en E♭, transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
+**Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), balada en E♭ (los temas con nombre propio se quitaron después), transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
 
 **Corto plazo**
 - Batería real (ride, bombo, caja, hi-hat): falta una fuente con licencia verificable.
 - Elegir y comparar otros bancos de piano y contrabajo; más capas de velocidad.
 - Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
-- Más formas de standards (revisadas de oído).
 - Estilos: latin, double-time.
 
 **Mediano plazo**

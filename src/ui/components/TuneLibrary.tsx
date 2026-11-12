@@ -90,7 +90,7 @@ export function TuneLibrary({
         <div className="formgrid">
           <label>
             Nombre
-            <input type="text" value={draft.name} maxLength={80} onChange={(e) => set('name', e.target.value)} placeholder="Ej.: Autumn Leaves" />
+            <input type="text" value={draft.name} maxLength={80} onChange={(e) => set('name', e.target.value)} placeholder="Ej.: Mi tema" />
           </label>
           <label>
             Compositor (opcional)
@@ -194,20 +194,18 @@ export function TuneLibrary({
   );
 }
 
-const EXAMPLE = `# Autumn Leaves
-compositor: J. Kosma
-tonalidad: G menor
-tempo: 140
+const EXAMPLE = `# Mi tema de ejemplo
+compositor: (el que corresponda)
+tonalidad: C mayor
+tempo: 120
 estilo: swing
-[A] Cm7 | F7 | Bbmaj7 | Ebmaj7 |
-Am7b5 | D7 | Gm | %
-[B] Am7b5 | D7 | Gm | % |
-Cm7 | F7 | Bbmaj7 | Ebmaj7
+[A] Dm7 | G7 | Cmaj7 | % |
+Am7 | D7 | Dm7 | G7
 
-# Blue Bossa
-tonalidad: C menor
+# Otro ejemplo
+tonalidad: A menor
 estilo: bossa
-Cm7 | % | Fm7 | % | Dm7b5 | G7 | Cm7 | %`;
+Am7 | % | Dm7 | % | Bm7b5 | E7 | Am7 | %`;
 
 /** Carga masiva: pegar o subir un texto con varios temas, revisar y recién ahí importar. */
 function BulkImport({ existing, onImport }: { existing: UserTune[]; onImport: (t: UserTune[]) => void }) {

@@ -5,12 +5,12 @@ import {
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, emptyBar } from '../../content/chartDoc';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
-import { standardById, standardDoc } from '../../content/standards';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
   Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
 } from '../../theory/chart';
 import { Atril } from '../components/Atril';
+import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
@@ -129,6 +129,7 @@ export function PlayAlong() {
   const [recording, setRecording] = useState(false);
   const [count, setCount] = useState(0);
   const [take, setTake] = useState<Take | null>(null);
+  const [takeAudio, setTakeAudio] = useState<Blob | null>(null);
   const events = useRef<RawEvent[]>([]);
   const snapshot = useRef<Omit<Take, 'choruses'> | null>(null);
 
@@ -144,6 +145,7 @@ export function PlayAlong() {
       events.current = [];
       setCount(0);
       setTake(null);
+      setTakeAudio(null);
       snapshot.current = { chart: playChart, keyValue: baseKey ? key : null, mode: base.mode, tempo };
       setRecording(true);
     } else {
@@ -230,7 +232,7 @@ export function PlayAlong() {
             aria-label="Tema"
           >
             {useCustom && <option value="">Progresión propia (sin guardar)</option>}
-            {(['Fundamentos', 'Blues', 'Standards', 'Repertorio', 'Avanzado', 'Mis temas'] as const).map((cat) => {
+            {(['Fundamentos', 'Blues', 'Formas', 'Avanzado', 'Mis temas'] as const).map((cat) => {
               const items = all.filter((p) => p.category === cat);
               return items.length ? (
                 <optgroup key={cat} label={cat}>
@@ -303,13 +305,14 @@ export function PlayAlong() {
           chordIndex={ci}
           chorus={mine?.chorus ?? 0}
           tempo={tempo}
-          recorder={{ recording, toggle: toggleRecording, onEvent, count }}
+          recorder={{ recording, toggle: toggleRecording, onEvent, count, onAudio: setTakeAudio }}
         />
       </div>
 
       {recording && !engine.playing && (
         <p className="card muted">Grabando: dale play al acompañamiento y tocá. Las notas se ubican en la forma según el tiempo del play-along.</p>
       )}
+      {takeAudio && !recording && <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)} />}
       {take && (
         <Transcription
           chart={take.chart}
@@ -338,23 +341,6 @@ export function PlayAlong() {
         </div>
         <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
-        {!useCustom && selected.category === 'Repertorio' && (
-          <p>
-            <button
-              onClick={() => {
-                const st = standardById(selected.id);
-                if (!st) return;
-                setDraft({ name: st.name, composer: st.composer, key: st.key, mode: st.mode, tempo: st.tempo, style: st.style ?? 'swing' });
-                setDoc(standardDoc(st));
-                setEditorKey((k) => k + 1);
-                setLibMsg(`"${st.name}" copiado al editor de "Mis temas": corregilo y guardalo.`);
-                setTimeout(() => document.querySelector('.library')?.scrollIntoView({ behavior: 'smooth' }), 0);
-              }}
-            >
-              Copiar a "Mis temas" para editar
-            </button>
-          </p>
-        )}
       </section>
 
       <TuneLibrary

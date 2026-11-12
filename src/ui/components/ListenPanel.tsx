@@ -35,7 +35,7 @@ export function ListenPanel({
   chorus: number;
   tempo: number;
   /** Si está, se muestra el botón de grabar y se le pasan las notas con su tiempo. */
-  recorder?: { recording: boolean; toggle: () => void; onEvent: (midi: number | null, time: number) => void; count: number };
+  recorder?: { recording: boolean; toggle: () => void; onEvent: (midi: number | null, time: number) => void; count: number; /** Recibe el audio de la toma cuando termina. */ onAudio?: (b: Blob) => void };
 }) {
   const { iv } = useReading();
   const [on, setOn] = useState(false);
@@ -61,6 +61,15 @@ export function ListenPanel({
   }, [chordIndex, chorus, on, tempo]);
 
   useEffect(() => () => mic.current?.stop(), []);
+
+  // el audio de la toma se graba mientras dura "Grabar solo"
+  const wasRecording = useRef(false);
+  useEffect(() => {
+    const rec = !!recorder?.recording;
+    if (rec && !wasRecording.current) mic.current?.startRecording();
+    if (!rec && wasRecording.current) void mic.current?.stopRecording().then((b) => b && recRef.current?.onAudio?.(b));
+    wasRecording.current = rec;
+  }, [recorder?.recording]);
 
   const start = async () => {
     setError(null);
