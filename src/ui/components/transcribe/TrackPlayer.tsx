@@ -5,7 +5,7 @@ import { saveMeta, SavedLoop, TrackMeta } from '../../../transcribe/audioStore';
 import { createEngine, PlayerEngine } from '../../../transcribe/engine';
 import { Filters, NO_FILTERS, TRUMPET_FILTERS } from '../../../transcribe/filters';
 import { Grid, loopOfBars, Marker, MAX_BPM, MIN_BPM, snapRegion, snapTime, tapTempo, viewForRegion } from '../../../transcribe/grid';
-import { analyzeFrame, DetectedNote, detectNotes, FrameResult } from '../../../transcribe/pitch';
+import { analyzeFrame, DetectedNote, detectNotes, estimateTuning, FrameResult, TuningEstimate } from '../../../transcribe/pitch';
 import { clampView, fitRegion, fmtTime, followView, normRegion, parseTime, Region, View, zoomView } from '../../../transcribe/regions';
 import { notesToLine } from '../../../transcribe/toPhrase';
 import { rateAfter, repsToTarget, roundRate, Trainer } from '../../../transcribe/trainer';
@@ -120,6 +120,9 @@ function Loaded({
   const [grid, setGrid] = useState<Grid | null>(meta.grid);
   const [trainer, setTrainer] = useState<Trainer>(meta.trainer);
   const [text, setText] = useState(meta.text);
+  const [clickOn, setClickOn] = useState(meta.clickOn);
+  const [clickGain, setClickGain] = useState(meta.clickGain);
+  const [tuneEst, setTuneEst] = useState<TuningEstimate | 'none' | 'working' | null>(null);
   const [mode, setMode] = useState<ViewMode>(meta.viewMode);
   const [view, setView] = useState<View>(() => (meta.region ? fitRegion(meta.region, duration) : { start: 0, dur: duration }));
   const [playing, setPlaying] = useState(false);
@@ -144,11 +147,11 @@ function Loaded({
   const trainerRef = useRef(trainer);
   const trainBase = useRef(0);
   const taps = useRef<number[]>([]);
-  const snapshot = useRef({ rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, simple });
+  const snapshot = useRef({ rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, simple, clickOn, clickGain });
   viewRef.current = view;
   rateRef.current = rate;
   trainerRef.current = trainer;
-  snapshot.current = { rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, simple };
+  snapshot.current = { rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, simple, clickOn, clickGain };
 
   // ---- guardado (para seguir otro día)
   const persist = useCallback(() => {
@@ -170,6 +173,8 @@ function Loaded({
       text: s.text,
       viewMode: s.mode,
       simple: s.simple,
+      clickOn: s.clickOn,
+      clickGain: s.clickGain,
       opened: Date.now(),
     };
     onMeta(m);
@@ -178,7 +183,7 @@ function Loaded({
   useEffect(() => {
     const t = setTimeout(persist, 700);
     return () => clearTimeout(t);
-  }, [rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, persist]);
+  }, [rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, clickOn, clickGain, persist]);
   useEffect(() => {
     const onHide = () => persist();
     window.addEventListener('pagehide', onHide);
@@ -197,6 +202,7 @@ function Loaded({
     engine.setFilters(meta.filters);
     engine.setLoop(meta.loopOn && meta.region ? meta.region : null);
     engine.setGap(meta.trainer.on ? meta.trainer.gap : 0);
+    engine.setClick(meta.clickOn && meta.grid ? { ...meta.grid, gain: meta.clickGain } : null);
     engine.seek(meta.pos);
     const offs = [
       engine.on('state', () => setPlaying(engine.playing)),
@@ -217,6 +223,7 @@ function Loaded({
   useEffect(() => engine.setFilters(filters), [engine, filters]);
   useEffect(() => engine.setLoop(loopOn && region ? region : null), [engine, loopOn, region]);
   useEffect(() => engine.setGap(trainer.on ? trainer.gap : 0), [engine, trainer.on, trainer.gap]);
+  useEffect(() => engine.setClick(clickOn && grid ? { bpm: grid.bpm, offset: grid.offset, beats: grid.beats, gain: clickGain } : null), [engine, clickOn, clickGain, grid]);
 
   const resetTraining = useCallback(() => {
     trainBase.current = engine.loops;
@@ -368,6 +375,15 @@ function Loaded({
       setMode('spec');
       setDetecting(false);
       setMsg(found.length ? `${found.length} notas detectadas entre ${fmtTime(a)} y ${fmtTime(b)}.` : 'No se detectaron notas en ese tramo.');
+    }, 30);
+  };
+  const estimate = () => {
+    const an = engine.analysis;
+    if (!an) return;
+    setTuneEst('working');
+    window.setTimeout(() => {
+      const e = estimateTuning(an.mono, an.sampleRate, { hp: filters.hp, lp: filters.lp || undefined });
+      setTuneEst(e ?? 'none');
     }, 30);
   };
   const shown = notes ? notes.filter((n) => n.strength >= sens) : null;
@@ -588,6 +604,22 @@ function Loaded({
             <button onClick={() => setSemis((s) => Math.min(12, s + 1))} aria-label="Un semitono más agudo">♯</button>
             <button onClick={() => { setSemis(0); setCents(0); }} disabled={semis === 0 && cents === 0}>Original</button>
           </div>
+          <div className="row">
+            <button onClick={estimate} disabled={!engine.analysis || tuneEst === 'working'}>{tuneEst === 'working' ? 'Midiendo…' : 'Estimar la afinación del disco'}</button>
+            {tuneEst === 'none' && <span className="muted small">No hay notas claras y parejas para medirla (música percusiva, ruido o varios instrumentos desafinados entre sí).</span>}
+            {tuneEst && typeof tuneEst === 'object' && (
+              <>
+                <span className="small" role="status">
+                  Parece estar {tuneEst.cents > 0 ? 'alto' : tuneEst.cents < 0 ? 'bajo' : 'afinado'}: {tuneEst.cents > 0 ? '+' : ''}{tuneEst.cents}¢ (La ≈ {(440 * Math.pow(2, tuneEst.cents / 1200)).toFixed(1)} Hz; ±{tuneEst.spread}¢ con {tuneEst.frames} muestras).
+                </span>
+                {Math.abs(tuneEst.cents) >= 5 && (
+                  <button className="primary" onClick={() => { setSemis(0); setCents(Math.max(-100, Math.min(100, -tuneEst.cents))); }}>
+                    Corregir ({-tuneEst.cents > 0 ? '+' : ''}{-tuneEst.cents}¢)
+                  </button>
+                )}
+              </>
+            )}
+          </div>
           <label className="block">
             <span className="muted small">Ajuste fino: {cents > 0 ? '+' : ''}{cents} centésimas (para discos que no están a 440 Hz)</span>
             <input type="range" min={-100} max={100} step={5} value={cents} onChange={(e) => setCents(Number(e.target.value))} style={{ width: '100%' }} aria-label="Ajuste fino en centésimas" />
@@ -639,6 +671,16 @@ function Loaded({
         <p className="muted small">
           Tocá el botón al compás de la música (3 o más veces) para medir el tempo; con la música sonando, "El 1 está aquí" fija dónde empieza un compás. Después podés repetir compases enteros.
         </p>
+        {grid && (
+          <div className="row">
+            <label>
+              <input type="checkbox" checked={clickOn} disabled={!engine.canTune} onChange={(e) => setClickOn(e.target.checked)} /> Click de metrónomo sobre la grilla
+            </label>
+            <input type="range" min={0.05} max={1} step={0.05} value={clickGain} disabled={!engine.canTune || !clickOn} onChange={(e) => setClickGain(Number(e.target.value))} aria-label="Volumen del click" style={{ flex: '1 1 100px' }} />
+            {!engine.canTune && <span className="muted small">Necesita el motor preciso.</span>}
+          </div>
+        )}
+        {grid && clickOn && <p className="muted small">Si el click no cae con la música, corregí el tempo o el "1" hasta que coincidan: es la mejor forma de comprobar la grilla de oído.</p>}
         {grid && (
           <div className="row">
             <span className="muted small">Repetir desde el compás del cursor:</span>

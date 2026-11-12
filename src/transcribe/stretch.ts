@@ -35,6 +35,15 @@ const FADE = 96;
 
 export type CenterMode = 0 | 1 | 2; // 0 = estéreo, 1 = quitar el centro, 2 = sólo el centro
 
+/** Click de metrónomo que sigue la posición del audio original (en segundos de origen). */
+export interface ClickOpts {
+  bpm: number;
+  /** Instante (s) del primer tiempo del compás 1. */
+  offset: number;
+  beats: number;
+  gain: number;
+}
+
 const HANN = (() => {
   const w = new Float32Array(N);
   for (let i = 0; i < N; i++) w[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N);
@@ -97,6 +106,12 @@ export class PlayerCore {
   private anchorA = new Float64Array(64);
   private anchorT = new Float64Array(64);
   private gapMarks: number[] = [];
+  private click: ClickOpts | null = null;
+  private clickQ: { j: number; accent: boolean }[] = [];
+  private clickLeft = 0;
+  private clickLen = 0;
+  private clickFreq = 1000;
+  private clickPhase = 0;
   private srcDone = false;
   private tmp: Float32Array[];
   private mono = new Float32Array(2 * TOL + HS + 8);
@@ -129,6 +144,9 @@ export class PlayerCore {
   }
   setCenter(m: CenterMode) {
     this.center = m;
+  }
+  setClick(c: ClickOpts | null) {
+    this.click = c && c.bpm > 0 ? c : null;
   }
   setGap(seconds: number) {
     this.gap = Math.max(0, Math.round(seconds * this.sr));
@@ -381,9 +399,38 @@ export class PlayerCore {
   }
 
   private sample = { l: 0, r: 0 };
+  /**
+   * Ubica los clicks de este bloque: cada tiempo de la grilla que cae dentro del tramo de origen que se va a oír
+   * (con la vuelta del loop si la hay) se convierte en la muestra de salida donde suena, según la velocidad.
+   */
+  private scheduleClicks(n: number) {
+    this.clickQ.length = 0;
+    const c = this.click;
+    if (!c || !this.active || this.silence > 0) return;
+    const sr = this.sr;
+    const r = this.rate;
+    const beat = 60 / c.bpm;
+    const p0 = this.getPosition() / sr;
+    const add = (a: number, b: number, j0: number) => {
+      for (let k = Math.max(0, Math.ceil((a - c.offset) / beat - 1e-9)); c.offset + k * beat < b; k++) {
+        const j = j0 + Math.round(((c.offset + k * beat - a) / r) * sr);
+        if (j >= 0 && j < n) this.clickQ.push({ j, accent: k % c.beats === 0 });
+      }
+    };
+    const end = p0 + ((n / sr) * r);
+    const le = this.loopE / sr;
+    if (this.looping && end > le) {
+      add(p0, le, 0);
+      add(this.loopS / sr, this.loopS / sr + (end - le), Math.round(((le - p0) / r) * sr));
+    } else add(p0, end, 0);
+  }
+
   /** Llena un bloque de salida (estéreo). */
   process(L: Float32Array, R: Float32Array) {
     const n = L.length;
+    this.scheduleClicks(n);
+    let qi = 0;
+    this.clickQ.sort((a, b) => a.j - b.j);
     for (let i = 0; i < n; i++) {
       if (!this.active) {
         L[i] = 0;
@@ -438,6 +485,20 @@ export class PlayerCore {
       } else if (this.srcDone) this.finish();
       if (this.center === 1) l = r = 0.5 * (l - r);
       else if (this.center === 2) l = r = 0.5 * (l + r);
+      while (qi < this.clickQ.length && this.clickQ[qi].j <= i) {
+        const q = this.clickQ[qi++];
+        this.clickLen = this.clickLeft = Math.round(this.sr * 0.018);
+        this.clickFreq = q.accent ? 1800 : 1200;
+        this.clickPhase = 0;
+      }
+      if (this.clickLeft > 0 && this.click) {
+        const env = this.clickLeft / this.clickLen;
+        const v = Math.sin(this.clickPhase) * env * env * this.click.gain;
+        this.clickPhase += (2 * Math.PI * this.clickFreq) / this.sr;
+        this.clickLeft--;
+        l += v;
+        r += v;
+      }
       L[i] = l * this.fade;
       R[i] = r * this.fade;
     }

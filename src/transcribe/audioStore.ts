@@ -43,6 +43,9 @@ export interface TrackMeta {
   viewMode: 'wave' | 'spec';
   /** Usar el reproductor simple del navegador. */
   simple: boolean;
+  /** Click de metrónomo sobre la grilla. */
+  clickOn: boolean;
+  clickGain: number;
 }
 
 const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : d);
@@ -64,6 +67,8 @@ export function normalizeMeta(raw: TrackMeta): TrackMeta {
     text: typeof r.text === 'string' ? r.text.slice(0, 5000) : '',
     viewMode: r.viewMode === 'spec' ? 'spec' : 'wave',
     simple: r.simple === true,
+    clickOn: r.clickOn === true,
+    clickGain: num(r.clickGain, 0.05, 1, 0.5),
   };
 }
 
@@ -151,6 +156,8 @@ export async function addTrack(file: File): Promise<TrackMeta> {
     text: '',
     viewMode: 'wave',
     simple: false,
+    clickOn: false,
+    clickGain: 0.5,
   };
   await tx(['meta', 'blobs'], 'readwrite', (t) => {
     t.objectStore('blobs').put(file, meta.id);
