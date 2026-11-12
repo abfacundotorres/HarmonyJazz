@@ -117,5 +117,5 @@ self.addEventListener('fetch', (e) => {
 export default defineConfig({
   base: './',
   plugins: [react(), csp(), offline()],
-  test: { environment: 'node' },
+  test: { environment: 'node', include: ['src/**/*.test.ts'] },
 } as any);
