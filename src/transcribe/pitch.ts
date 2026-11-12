@@ -247,3 +247,38 @@ export function detectNotes(x: Float32Array, sr: number, t0: number, t1: number,
   // fuera notas de menos de 50 ms
   return notes.filter((n) => n.end - n.start >= 0.05);
 }
+
+export interface TuningEstimate {
+  /** Desvío típico del disco respecto de A = 440 Hz, en centésimas (−50…+50). */
+  cents: number;
+  /** Cuántos instantes claros se usaron. */
+  frames: number;
+  /** Dispersión (centésimas): cuanto menor, más confiable. */
+  spread: number;
+}
+
+/**
+ * Estima si el audio está afinado más alto o más bajo que A = 440 Hz (discos viejos, cintas, cambios de velocidad).
+ * Mide la desafinación de unos 240 instantes repartidos por todo el audio y promedia en un círculo de 100
+ * centésimas (para que +45 y −45 no se cancelen). Devuelve null si no hay suficientes notas claras o si no
+ * coinciden entre sí (música percusiva, ruido o instrumentos desafinados entre sí).
+ */
+export function estimateTuning(x: Float32Array, sr: number, o: PitchOptions = {}): TuningEstimate | null {
+  const N = 240;
+  const d: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const r = analyzeFrame(x, sr, ((i + 0.5) / N) * x.length, o);
+    if (r && r.strength >= 0.55) d.push((r.midi - Math.round(r.midi)) * 100);
+  }
+  if (d.length < 12) return null;
+  let c = 0;
+  let s = 0;
+  for (const v of d) {
+    c += Math.cos((v / 100) * 2 * Math.PI);
+    s += Math.sin((v / 100) * 2 * Math.PI);
+  }
+  const R = Math.hypot(c, s) / d.length;
+  if (R < 0.55) return null;
+  const mean = (Math.atan2(s, c) / (2 * Math.PI)) * 100;
+  return { cents: Math.round(mean), frames: d.length, spread: Math.round((Math.sqrt(-2 * Math.log(R)) / (2 * Math.PI)) * 100) };
+}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
 import type { PhraseLibrary } from '../../content/phrases';
 import { streak, usePersistent } from '../../state/storage';
+import { BackupCard } from '../components/BackupCard';
 import { useLog, useReading, useSettings } from '../hooks';
 
 export function Today() {
@@ -87,6 +88,8 @@ export function Today() {
           La tonalidad cambia cada día siguiendo el ciclo de cuartas: en 12 días pasás por todas. El foco de armonía se elige en Lecciones ("Fijar como foco"); si no hay ninguno, rota cada 3 días.
         </p>
       </section>
+
+      <BackupCard />
     </div>
   );
 }

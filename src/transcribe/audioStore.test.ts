@@ -16,6 +16,8 @@ describe('fichas guardadas', () => {
     expect(m.trainer.on).toBe(false);
     expect(m.viewMode).toBe('wave');
     expect(m.simple).toBe(false);
+    expect(m.clickOn).toBe(false);
+    expect(m.clickGain).toBe(0.5);
   });
 
   it('descarta valores dañados o fuera de rango', () => {

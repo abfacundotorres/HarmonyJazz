@@ -1,5 +1,6 @@
 import workletUrl from './engine.worklet.ts?worker&url';
 import type { WorkletIn, WorkletPos } from './engine.worklet';
+import type { ClickOpts } from './stretch';
 import { decodePeaks } from './audioStore';
 import type { Filters } from './filters';
 import { Peaks, peaksFromChannels, Region } from './regions';
@@ -41,6 +42,8 @@ export interface PlayerEngine {
   setLoop(r: Region | null): void;
   setGap(seconds: number): void;
   setFilters(f: Filters): void;
+  /** Click de metrónomo alineado con el audio (null lo apaga). Sólo con el motor preciso. */
+  setClick(c: ClickOpts | null): void;
   on(ev: EngineEvent, fn: (arg?: number | string) => void): () => void;
   dispose(): void;
 }
@@ -246,6 +249,9 @@ export class BufferEngine extends Emitter implements PlayerEngine {
     for (const b of this.lp) b.frequency.setTargetAtTime(lp, t, 0.01);
     this.post({ type: 'center', mode: f.center === 'remove' ? 1 : f.center === 'only' ? 2 : 0 });
   }
+  setClick(c: ClickOpts | null) {
+    this.post({ type: 'click', click: c });
+  }
   dispose() {
     this.isPlaying = false;
     try {
@@ -354,6 +360,9 @@ export class MediaEngine extends Emitter implements PlayerEngine {
     this.gap = s;
   }
   setFilters() {
+    /* no disponible en este modo */
+  }
+  setClick() {
     /* no disponible en este modo */
   }
   dispose() {

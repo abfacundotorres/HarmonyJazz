@@ -10,6 +10,9 @@ Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-alon
 - **Transcribir:** cargá un audio, bajale la velocidad sin cambiar el tono, marcá pasajes en loop y guardalos para seguir otro día.
 - **Repertorio:** 22 standards, sólo con los acordes (sin melodía ni letra).
 - **Mis temas:** cargá tus propios cifrados de a uno o en masa desde un texto, con loop de compases y transposición.
+- **Modo atril:** la grilla y el acorde actual en letra grande a pantalla completa, para el celular en el atril.
+- **Sin conexión:** se instala como app en Android y funciona sin señal; la pantalla se queda encendida mientras suena.
+- **Copia de seguridad:** guardá y restaurá tus temas, frases, progreso y pasajes.
 - **Afinador:** afinación, medición de estabilidad en notas largas y notas de referencia.
 
 ## Desarrollo

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { ChartDoc, DocBar, emptyBar, MAX_CHORD_CHARS, playedBars, QUALITY_BUTTONS, ROOTS, SECTIONS } from '../../content/chartDoc';
+import { diatonic, TEMPLATES, templateBars, transposeBars } from '../../content/chartTemplates';
 import { parseChord } from '../../theory/chords';
 import { MAX_BARS } from '../../theory/chart';
 import { prettyAcc as pretty } from '../../theory/notes';
@@ -26,6 +27,8 @@ const split = (s: string) => {
 export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: ChartDoc) => void }) {
   const [sel, setSel] = useState(0);
   const [slot, setSlot] = useState(0);
+  const [tkey, setTkey] = useState('C');
+  const [tminor, setTminor] = useState(false);
   const past = useRef<ChartDoc[]>([]);
   const future = useRef<ChartDoc[]>([]);
   const [, force] = useState(0);
@@ -94,6 +97,22 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
     patchBar(cur, { chords: bar.chords.slice(0, -1) });
     setSlot(Math.min(curSlot, bar.chords.length - 2));
   };
+
+  /** Inserta compases después del seleccionado (o reemplaza la grilla si todavía está vacía). */
+  const insertTemplate = (id: string) => {
+    const add = templateBars(id, tkey);
+    const empty = bars.length === 1 && bars[0].chords.every((c) => c === '');
+    const base = empty ? [] : bars;
+    const at = empty ? 0 : cur + 1;
+    const room = MAX_BARS - base.length;
+    if (room <= 0) return;
+    const use = add.slice(0, room);
+    commit({ bars: [...base.slice(0, at), ...use, ...base.slice(at)] });
+    setSel(at);
+    setSlot(0);
+  };
+  const setWholeChord = (sym: string) => setChord(cur, curSlot, sym);
+  const shiftAll = (semis: number) => commit({ bars: transposeBars(bars, semis) });
 
   const pickRoot = (r: string) => setChord(cur, curSlot, r + split(bar.chords[curSlot]).rest);
   const pickQuality = (suffix: string) => {
@@ -201,6 +220,43 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
             </select>
           </label>
         </div>
+
+        <details className="ced-shortcuts">
+          <summary>Atajos: acordes de la tonalidad y plantillas</summary>
+          <div className="ced-marks">
+            <label>
+              Tonalidad{' '}
+              <select value={tkey} onChange={(e) => setTkey(e.target.value)} aria-label="Tonalidad de los atajos">
+                {ROOTS.map((r) => <option key={r} value={r}>{pretty(r)}</option>)}
+              </select>
+            </label>
+            <div className="seg" role="group" aria-label="Modo">
+              <button className={!tminor ? 'on' : ''} onClick={() => setTminor(false)}>Mayor</button>
+              <button className={tminor ? 'on' : ''} onClick={() => setTminor(true)}>Menor</button>
+            </div>
+          </div>
+          <p className="muted small">Un toque pone el acorde en el casillero elegido:</p>
+          <div className="ced-pal" role="group" aria-label="Acordes de la tonalidad">
+            {diatonic(tkey, tminor).map((d) => (
+              <button key={d.numeral} onClick={() => setWholeChord(d.sym)} title={d.sym}>
+                <small>{pretty(d.numeral)}</small> {pretty(d.sym)}
+              </button>
+            ))}
+          </div>
+          <p className="muted small">Plantillas (se agregan después del compás elegido, en {pretty(tkey)}):</p>
+          <div className="ced-pal" role="group" aria-label="Plantillas">
+            {TEMPLATES.map((t) => (
+              <button key={t.id} onClick={() => insertTemplate(t.id)} disabled={bars.length >= MAX_BARS}>{t.name}</button>
+            ))}
+          </div>
+          <div className="ced-marks">
+            <span className="muted small">Transponer toda la grilla:</span>
+            <button onClick={() => shiftAll(-1)} aria-label="Bajar toda la grilla un semitono">− ½ tono</button>
+            <button onClick={() => shiftAll(1)} aria-label="Subir toda la grilla un semitono">+ ½ tono</button>
+            <button onClick={() => shiftAll(-5)} aria-label="Bajar toda la grilla una cuarta">↓ cuarta</button>
+            <button onClick={() => shiftAll(5)} aria-label="Subir toda la grilla una cuarta">↑ cuarta</button>
+          </div>
+        </details>
 
         <div className="ced-acts">
           <button onClick={() => insertAt(cur)}>Insertar antes</button>

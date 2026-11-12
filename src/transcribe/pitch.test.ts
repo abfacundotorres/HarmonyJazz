@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { midiToHz } from './fft';
-import { analyzeFrame, detectNotes } from './pitch';
+import { analyzeFrame, detectNotes, estimateTuning } from './pitch';
 
 const SR = 11025;
 
@@ -129,5 +129,37 @@ describe('nota en un instante', () => {
 
   it('en silencio no devuelve nada', () => {
     expect(analyzeFrame(new Float32Array(SR), SR, 5000)).toBeNull();
+  });
+});
+
+describe('afinación del disco', () => {
+  const melody = (detune: number, seed = 1) => {
+    const x = new Float32Array(14 * SR);
+    const r = rng(seed);
+    let t = 0.2;
+    for (let i = 0; i < 24; i++) {
+      const midi = 56 + Math.floor((r() + 0.5) * 22);
+      addTrumpet(x, { midi: midi + detune / 100, start: t, dur: 0.45 }, 0.1);
+      t += 0.55;
+    }
+    return x;
+  };
+  it('detecta un disco alto (+27 centésimas) y uno bajo (−35)', () => {
+    for (const d of [27, -35, 0, 12]) {
+      const e = estimateTuning(melody(d), SR);
+      expect(e, `detune ${d}`).not.toBeNull();
+      expect(Math.abs(e!.cents - d), `detune ${d} → ${e!.cents}`).toBeLessThanOrEqual(8);
+    }
+  });
+  it('no inventa nada con ruido ni con silencio', () => {
+    const r = rng(9);
+    const noise = new Float32Array(10 * SR).map(() => 0.2 * r());
+    expect(estimateTuning(noise, SR)).toBeNull();
+    expect(estimateTuning(new Float32Array(10 * SR), SR)).toBeNull();
+  });
+  it('el desvío de +45 y −45 no se cancela (promedio circular)', () => {
+    const e = estimateTuning(melody(44), SR);
+    expect(e).not.toBeNull();
+    expect(Math.abs(Math.abs(e!.cents) - 44)).toBeLessThanOrEqual(8);
   });
 });

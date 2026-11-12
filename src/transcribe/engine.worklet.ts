@@ -2,7 +2,7 @@
  * AudioWorklet del transcriptor. Corre PlayerCore (stretch.ts) fuera del hilo de la interfaz.
  * Se carga con `audioWorklet.addModule(url)`; vite empaqueta este archivo con sus importaciones.
  */
-import { CenterMode, PlayerCore } from './stretch';
+import { CenterMode, ClickOpts, PlayerCore } from './stretch';
 
 declare const sampleRate: number;
 declare const currentTime: number;
@@ -21,7 +21,8 @@ export type WorkletIn =
   | { type: 'pitch'; value: number }
   | { type: 'loop'; start: number | null; end: number }
   | { type: 'gap'; seconds: number }
-  | { type: 'center'; mode: CenterMode };
+  | { type: 'center'; mode: CenterMode }
+  | { type: 'click'; click: ClickOpts | null };
 
 export interface WorkletPos {
   type: 'pos';
@@ -58,6 +59,7 @@ class HjPlayer extends AudioWorkletProcessor {
       else if (m.type === 'loop') c.setLoop(m.start, m.end);
       else if (m.type === 'gap') c.setGap(m.seconds);
       else if (m.type === 'center') c.setCenter(m.mode);
+      else if (m.type === 'click') c.setClick(m.click);
       this.report();
     };
   }

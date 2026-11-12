@@ -303,3 +303,70 @@ describe('datos en 16 bits', () => {
     expect(Math.max(...L)).toBeGreaterThan(0.1);
   });
 });
+
+describe('click de metrónomo', () => {
+  /** Instantes (s de salida) en que empieza cada click: sube de silencio a sonido. */
+  const onsets = (x: Float32Array, from = 0) => {
+    const out: number[] = [];
+    let quiet = 1e9; // antes de empezar se considera silencio
+    for (let i = Math.round(from * SR); i < x.length; i++) {
+      if (Math.abs(x[i]) > 0.02 && quiet > 0.05 * SR) {
+        out.push(i / SR);
+        quiet = 0;
+      } else if (Math.abs(x[i]) <= 0.02) quiet++;
+      else quiet = 0;
+    }
+    return out;
+  };
+  const silent = (s: number) => new PlayerCore({ channels: [new Float32Array(s * SR), new Float32Array(s * SR)], sampleRate: SR });
+
+  for (const rate of [1, 0.5, 1.5]) {
+    it(`a ${rate * 100} %: cada tiempo de la grilla suena donde le toca (±15 ms)`, () => {
+      const c = silent(20);
+      c.setRate(rate);
+      c.setClick({ bpm: 120, offset: 0.1, beats: 4, gain: 0.5 });
+      c.play();
+      const { L } = render(c, 6);
+      const got = onsets(L, 0.05);
+      const exp: number[] = [];
+      for (let k = 0; 0.1 + k * 0.5 < 6 * rate - 0.3; k++) exp.push((0.1 + k * 0.5) / rate);
+      expect(got.length).toBeGreaterThanOrEqual(exp.length - 1);
+      for (let i = 0; i < Math.min(got.length, exp.length); i++) expect(Math.abs(got[i] - exp[i]), `click ${i}`).toBeLessThan(0.015);
+    });
+  }
+
+  it('en loop, el click sigue la grilla también después de la vuelta', () => {
+    const c = silent(20);
+    c.setLoop(1 * SR, 3 * SR); // dos segundos = 4 tiempos a 120 bpm
+    c.setClick({ bpm: 120, offset: 0, beats: 4, gain: 0.5 });
+    c.seek(1 * SR);
+    c.play();
+    const { L } = render(c, 6);
+    const got = onsets(L, 0.05);
+    // un click cada 0,5 s de salida (la grilla cae justo en el empalme)
+    for (let i = 1; i < got.length; i++) expect(Math.abs(got[i] - got[i - 1] - 0.5), `intervalo ${i}`).toBeLessThan(0.02);
+    expect(got.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('apagado no suena y el acento (tiempo 1) es más agudo', () => {
+    const c = silent(5);
+    c.play();
+    expect(Math.max(...render(c, 1).L.map(Math.abs))).toBe(0);
+    const d = silent(20);
+    d.setClick({ bpm: 120, offset: 0, beats: 4, gain: 0.5 });
+    d.play();
+    const { L } = render(d, 2.2);
+    // cruces por cero en 15 ms: el click del tiempo 1 (1800 Hz) tiene más que el del tiempo 2 (1200 Hz)
+    const zc = (a: number) => { let n = 0; for (let i = Math.round(a * SR) + 1; i < Math.round((a + 0.015) * SR); i++) if (L[i - 1] < 0 && L[i] >= 0) n++; return n; };
+    expect(zc(0.002)).toBeGreaterThan(zc(0.502));
+  });
+
+  it('con "quitar el centro" el click se sigue oyendo', () => {
+    const c = silent(20);
+    c.setCenter(1);
+    c.setClick({ bpm: 120, offset: 0, beats: 4, gain: 0.5 });
+    c.play();
+    const { L } = render(c, 1.2);
+    expect(Math.max(...L.map(Math.abs))).toBeGreaterThan(0.1);
+  });
+});
