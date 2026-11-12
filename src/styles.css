@@ -420,3 +420,7 @@ button.link { background: var(--surface-2); }
 .atril-bar .play { width: 64px; height: 64px; font-size: 1.6rem; }
 .atril-ctl { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
 .atril-ctl button { min-width: 3em; min-height: 2.6em; }
+
+.ced-shortcuts { margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; padding: 0 .8em .6em; }
+.ced-shortcuts > summary { cursor: pointer; padding: .6em 0; font-weight: 600; }
+.ced-pal small { color: var(--muted); font-weight: 400; margin-right: .2em; }
