@@ -99,8 +99,8 @@ describe('parseKeySpec', () => {
 });
 
 describe('parseBulk', () => {
-  const text = `# Autumn Leaves
-compositor: J. Kosma
+  const text = `# Tema de prueba
+compositor: Autor de prueba
 tonalidad: G menor
 tempo: 140
 estilo: swing
@@ -126,12 +126,12 @@ Dm7 | G7
 
   it('separa los temas y reporta la línea de cada uno', () => {
     expect(r.map((e) => [e.line, e.name])).toEqual([
-      [1, 'Autumn Leaves'], [9, 'Un blues sin tonalidad'], [12, 'Termina en tónica'], [15, 'Mal cifrado'], [18, 'Sin cifrado'], [21, ''],
+      [1, 'Tema de prueba'], [9, 'Un blues sin tonalidad'], [12, 'Termina en tónica'], [15, 'Mal cifrado'], [18, 'Sin cifrado'], [21, ''],
     ]);
   });
   it('lee los metadatos y limpia el cifrado', () => {
     const t = r[0].tune!;
-    expect(t).toMatchObject({ name: 'Autumn Leaves', composer: 'J. Kosma', key: 'G', mode: 'minor', tempo: 140, style: 'swing' });
+    expect(t).toMatchObject({ name: 'Tema de prueba', composer: 'Autor de prueba', key: 'G', mode: 'minor', tempo: 140, style: 'swing' });
     expect(t.chart).toBe('Cm7 | F7 | Bbmaj7 | Ebmaj7 | Am7b5 | D7 | Gm | %');
     expect(r[0].bars).toBe(8);
   });
