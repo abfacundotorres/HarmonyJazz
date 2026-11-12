@@ -195,7 +195,7 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 - La detección de altura es monofónica y necesita auriculares para no confundirse con el acompañamiento.
 
 ## Estética vintage y créditos
-- **Identidad:** trompeta de latón sobre fondo beige con rayos (`public/icon.svg`; PNG de 192/512 y uno *maskable* sin marco, con la trompeta dentro de la zona segura). Misma marca en la cabecera. `theme_color`/`background_color` = `#ecdfc0`.
+- **Identidad:** trompa francesa de trazo grueso (latón y tinta marrón) sobre fondo beige con rayos (`public/icon.svg`; PNG de 192/512 y uno *maskable* sin marco, con la trompeta dentro de la zona segura). Misma marca en la cabecera. `theme_color`/`background_color` = `#ecdfc0`.
 - **Tipografía:** DM Serif Display (OFL 1.1, paquete `@fontsource`, se sirve desde el propio sitio y el service worker la guarda) para títulos, marca y cifras grandes; el resto sigue en sans del sistema.
 - **Paleta:** claro = papel beige y tinta marrón (acento `#7d4f0c`, contraste verificado con axe); oscuro = "club de noche" marrón cálido con latón. Textura de papel con ruido SVG en data-URI (permitido por la CSP). Tarjetas con doble filete; cabecera con filete doble.
 - **Créditos:** pantalla propia `#/creditos` (enlace en el pie) con licencias de sonido, tipografía y programas. Antes abría un archivo suelto y daba pantalla blanca porque el service worker respondía **toda** navegación con `index.html`; ahora cada pedido recibe su propio archivo (test e2e de regresión en `e2e/creditos.spec.ts`).

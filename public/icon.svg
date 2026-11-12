@@ -41,25 +41,21 @@
     <rect x="16" y="16" width="480" height="480" rx="98" fill="none" stroke="#9c7a3c" stroke-width="5" opacity="0.7"/>
     <rect x="28" y="28" width="456" height="456" rx="88" fill="none" stroke="#9c7a3c" stroke-width="2" opacity="0.5"/>
 
-    <g filter="url(#sombra)" transform="translate(256 250) rotate(-24) scale(1.14) translate(-256 -262)">
-      <!-- tubos: contorno oscuro, latón y brillo -->
-      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <use href="#tubos" stroke="#3a2410" stroke-width="30"/>
-        <use href="#tubos" stroke="url(#brass)" stroke-width="20"/>
-        <use href="#tubos" stroke="#fff3c4" stroke-width="3" opacity="0.6" transform="translate(0 -5)"/>
-      </g>
-      <!-- campana -->
-      <path d="M330 238 C376 234 404 208 428 160 L428 352 C404 304 376 278 330 274 Z" fill="url(#brass)" stroke="#3a2410" stroke-width="8" stroke-linejoin="round"/>
-      <ellipse cx="428" cy="256" rx="20" ry="96" fill="url(#bore)" stroke="#3a2410" stroke-width="8"/>
-      <ellipse cx="424" cy="256" rx="10" ry="74" fill="none" stroke="#f1c862" stroke-width="3" opacity="0.7"/>
-      <!-- boquilla -->
-      <path d="M96 246 h-18 q-18 0 -18 10 q0 10 18 10 h18z" fill="url(#brass)" stroke="#3a2410" stroke-width="7" stroke-linejoin="round"/>
-      <!-- pistones -->
-      <g stroke="#3a2410" stroke-width="7" stroke-linejoin="round">
-        <use href="#piston" x="226"/>
-        <use href="#piston" x="258"/>
-        <use href="#piston" x="290"/>
-      </g>
-    </g>
-  </g>
+    <g filter="url(#sombra)" transform="translate(236 252) scale(0.8) translate(-255 -250)"><g stroke="#2b1a0c" stroke-linecap="round" stroke-linejoin="round" stroke-width="22">
+  <path d="M232,248 L560,420" fill="none" stroke="none"/>
+  <path d="M300,445 L478,445" stroke-width="50" fill="none"/>
+  <path d="M300,445 L478,445" stroke="#e99a2e" stroke-width="20" fill="none"/>
+  <rect x="418" y="418" width="48" height="56" rx="14" fill="#f6cc47"/>
+  <path d="M50,52 C100,64 130,120 132,175 L122,262 L176,262 L168,190 C172,115 200,72 230,52 Z" fill="#f2a63a"/>
+  <rect x="26" y="18" width="226" height="36" rx="18" fill="#fbf3dc"/>
+  <circle cx="139" cy="36" r="5" fill="#2b1a0c" stroke-width="6"/>
+  <circle cx="268" cy="328" r="140" fill="#fbf3dc" stroke-width="22"/>
+  <path d="M205,205 C150,225 128,275 128,328 C128,385 155,432 205,452 Z" fill="#f2a63a" stroke="none"/>
+  <circle cx="268" cy="328" r="140" fill="none" stroke-width="66"/>
+  <circle cx="268" cy="328" r="140" fill="none" stroke="#f6cc47" stroke-width="30"/>
+  <path d="M205,215 L205,445" stroke-width="16" fill="none"/>
+  <rect x="246" y="246" width="82" height="164" rx="41" fill="#fbf3dc" stroke-width="16"/>
+  <g stroke-width="16" fill="none"><path d="M205,282 H352"/><path d="M205,328 H352"/><path d="M205,374 H352"/></g>
+</g></g>
+</g>
 </svg>
