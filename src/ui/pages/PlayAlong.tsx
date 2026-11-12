@@ -10,13 +10,14 @@ import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcrib
 import {
   Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
 } from '../../theory/chart';
+import { Atril } from '../components/Atril';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
-import { navigate, usePersistentLibrary, usePosition, useRoute } from '../hooks';
+import { navigate, useReading, usePersistentLibrary, usePosition, useRoute } from '../hooks';
 
 const OWNER = 'playalong';
 /** Retardo de la detección: estabilización (60 ms) + media ventana de análisis (~25 ms). */
@@ -107,6 +108,9 @@ export function PlayAlong() {
   const offset = loopValid ? Math.max(0, chart.chords.findIndex((c) => c.bar >= loopValid[0])) : 0;
 
   const pos = usePosition();
+  const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
+  const [atril, setAtril] = useState(false);
+  const { keyLabel } = useReading();
   const mine = pos && pos.owner === OWNER ? pos : null;
   const ci = mine && !mine.countIn ? mine.chordIndex : -1;
   const chord = ci >= 0 ? playChart.chords[ci]?.chord ?? null : null;
@@ -267,8 +271,30 @@ export function PlayAlong() {
           style={base.style}
           owner={OWNER}
           defaultMetronome={query.get('m') === '1'}
+          controlRef={control}
         />
+        <p>
+          <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
+        </p>
       </section>
+
+      {atril && (
+        <Atril
+          title={useCustom ? 'Progresión propia' : selected.name}
+          keyLabel={baseKey ? keyLabel(key) : null}
+          chart={chart}
+          current={ci >= 0 ? ci + offset : -1}
+          chord={chord}
+          next={next}
+          pos={mine}
+          loop={loopValid}
+          tempo={tempo}
+          onTempo={setTempo}
+          playing={!!mine && mine.chorus >= 0}
+          onToggle={() => control.current?.toggle()}
+          onClose={() => setAtril(false)}
+        />
+      )}
 
       <div className="grid2">
         <CurrentChord chord={chord} next={next} />

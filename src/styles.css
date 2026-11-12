@@ -393,3 +393,30 @@ button.link { background: var(--surface-2); }
 .notelist .link { padding: .25em .6em; }
 .viewbar { margin: 0 0 8px; }
 .wave.spec { background: #14101e; }
+
+/* aviso de versión nueva */
+.updatebar { position: sticky; top: 0; z-index: 50; background: var(--accent); color: var(--accent-ink); padding: .5em 1em; display: flex; gap: .8em; align-items: center; justify-content: center; font-weight: 600; }
+.updatebar button { background: var(--accent-ink); color: var(--accent); border-color: var(--accent-ink); }
+
+/* modo atril */
+.atril { position: fixed; inset: 0; z-index: 100; background: var(--bg); color: var(--text); overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 0 14px 96px; }
+.atril-head { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0 6px; border-bottom: 1px solid var(--line); }
+.atril-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 1.05rem; }
+.atril-top button { margin-left: auto; }
+.atril-now { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 2px 4px; }
+.atril-sym { font-size: clamp(3.5rem, 17vw, 10rem); font-weight: 800; line-height: 1.05; letter-spacing: -.03em; color: var(--accent); }
+.atril-side { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.atril-next { font-size: clamp(1.4rem, 6vw, 3rem); color: var(--muted); }
+.atril-next b { color: var(--text); }
+.atril-beats { display: flex; gap: 8px; }
+.atril-beats i { width: 1.2rem; height: 1.2rem; border-radius: 50%; border: 2px solid var(--line); }
+.atril-beats i.on { background: var(--accent); border-color: var(--accent); }
+.atril .board { grid-template-columns: repeat(auto-fill, minmax(calc(var(--asz) * 4.4), 1fr)); }
+.atril .board .bar { font-size: var(--asz); min-height: calc(var(--asz) * 2.2); padding: .35em .3em; align-items: center; flex-wrap: wrap; cursor: default; }
+.atril .board .barno { font-size: .8rem; }
+.atril .board .bar.now { background: var(--accent); color: var(--accent-ink); }
+.atril .board .bar.now .cur { text-decoration: underline; text-underline-offset: .15em; color: inherit; }
+.atril-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px; background: var(--surface); border-top: 1px solid var(--line); }
+.atril-bar .play { width: 64px; height: 64px; font-size: 1.6rem; }
+.atril-ctl { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
+.atril-ctl button { min-width: 3em; min-height: 2.6em; }

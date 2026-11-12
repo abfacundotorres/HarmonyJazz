@@ -11,6 +11,7 @@ import { notesToLine } from '../../../transcribe/toPhrase';
 import { rateAfter, repsToTarget, roundRate, Trainer } from '../../../transcribe/trainer';
 import { midiName, prettyAcc } from '../../../theory/notes';
 import { navigate, useReading } from '../../hooks';
+import { useWakeLock } from '../../wakeLock';
 import { ViewMode, WaveView } from './WaveView';
 
 const RATE_PRESETS = [50, 60, 70, 80, 90, 100];
@@ -132,6 +133,7 @@ function Loaded({
   const [snapOn, setSnapOn] = useState(true);
   const [loopName, setLoopName] = useState('');
   const [msg, setMsg] = useState('');
+  useWakeLock(playing);
   const [refPc, setRefPc] = useState(0);
   const [refOct, setRefOct] = useState(4);
 

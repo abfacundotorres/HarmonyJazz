@@ -1,4 +1,7 @@
-import { defineConfig, type Plugin } from 'vite';
+import { createHash } from 'node:crypto';
+import { readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { defineConfig, type Plugin, type ResolvedConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 /**
@@ -36,9 +39,68 @@ const csp = (): Plugin => ({
   },
 });
 
+/**
+ * Modo sin conexión: genera `sw.js` con la lista de todo lo que la app necesita (código, estilos, el worklet
+ * del transcriptor, íconos y las muestras de instrumentos, ~4 MB). El service worker las guarda al instalarse
+ * y desde entonces responde primero desde el almacenamiento: la app abre y suena sin señal.
+ * La versión del caché sale de un hash de los nombres y tamaños, así que cada despliegue renueva el caché.
+ */
+const offline = (): Plugin => {
+  let cfg: ResolvedConfig;
+  const walk = (dir: string, out: { rel: string; size: number }[] = []) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full, out);
+      else out.push({ rel: relative(cfg.publicDir, full).split('\\').join('/'), size: st.size });
+    }
+    return out;
+  };
+  return {
+    name: 'harmonyjazz-offline',
+    apply: 'build',
+    configResolved(c) {
+      cfg = c;
+    },
+    generateBundle: {
+      // al final: así el HTML ya está en el paquete
+      order: 'post',
+      handler(_o, bundle) {
+      const pub = walk(cfg.publicDir);
+      const files = [...new Set(['./', 'index.html', ...Object.keys(bundle), ...pub.map((f) => f.rel)])].filter((f) => f !== 'sw.js').sort();
+      const version = createHash('sha1')
+        .update(files.join('|') + pub.map((f) => f.size).join(','))
+        .update(Object.values(bundle).map((b) => ('code' in b ? b.code.length : 0)).join(','))
+        .digest('hex')
+        .slice(0, 10);
+      const source = `/* generado por vite.config.ts: no editar */
+const CACHE = 'harmonyjazz-${version}';
+const FILES = ${JSON.stringify(files)};
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new URL(f, self.location).href))).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('harmonyjazz-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', (e) => {
+  const r = e.request;
+  if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;
+  if (r.mode === 'navigate') {
+    e.respondWith(caches.match(new URL('index.html', self.location).href, { ignoreVary: true }).then((m) => m || fetch(r)));
+    return;
+  }
+  e.respondWith(caches.match(r, { ignoreSearch: true, ignoreVary: true }).then((m) => m || fetch(r)));
+});
+`;
+      this.emitFile({ type: 'asset', fileName: 'sw.js', source });
+      },
+    },
+  };
+};
+
 // base relativo para que funcione en GitHub Pages o en cualquier subcarpeta
 export default defineConfig({
   base: './',
-  plugins: [react(), csp()],
+  plugins: [react(), csp(), offline()],
   test: { environment: 'node' },
 } as any);

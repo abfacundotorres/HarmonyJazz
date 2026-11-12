@@ -1,9 +1,19 @@
 {
   "name": "HarmonyJazz · Trompeta",
   "short_name": "HarmonyJazz",
+  "description": "Práctica de jazz para trompeta en Si♭: play-along, vocabulario, transcripción y más.",
+  "lang": "es",
   "start_url": "./#/hoy",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#14110f",
   "theme_color": "#14110f",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "categories": ["music", "education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
 }

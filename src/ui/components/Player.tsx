@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { MutableRefObject, useEffect, useId, useRef, useState } from 'react';
 import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine';
 import type { MelNote } from '../../exercises/generators';
 import type { Chart } from '../../theory/chart';
 import { useSettings } from '../hooks';
+import { useWakeLock } from '../wakeLock';
 
 export interface PlayerProps {
   chart: Chart;
@@ -16,9 +17,11 @@ export interface PlayerProps {
   /** Identificador estable para saber si este reproductor es el que suena. */
   owner?: string;
   onPlayingChange?: (playing: boolean) => void;
+  /** Para que otra pantalla (el modo atril) pueda iniciar y detener este reproductor. */
+  controlRef?: MutableRefObject<{ toggle: () => void; playing: boolean } | null>;
 }
 
-export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange }: PlayerProps) {
+export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange, controlRef }: PlayerProps) {
   const autoId = useId();
   const id = owner ?? autoId;
   const [settings, setSettings] = useSettings();
@@ -40,6 +43,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   }) as () => void, [id, playing]);
 
   useEffect(() => onPlayingChange?.(playing), [playing, onPlayingChange]);
+  useWakeLock(playing);
 
   // aplicar cambios en vivo (reinicia el chorus)
   const first = useRef(true);
@@ -100,6 +104,8 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       setStarting(false);
     }
   };
+
+  if (controlRef) controlRef.current = { toggle: () => void toggle(), playing };
 
   const tog = (k: keyof Mix) => setMix((m) => ({ ...m, [k]: !m[k] }));
 

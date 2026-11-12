@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { engine } from '../audio/engine';
 import { useRoute, useSettings } from './hooks';
 import { Lessons } from './pages/Lessons';
@@ -21,6 +21,12 @@ export function App() {
   const { path } = useRoute();
   const page = path[0] ?? 'hoy';
   const [settings, setSettings] = useSettings();
+  const [updated, setUpdated] = useState(false);
+  useEffect(() => {
+    const f = () => setUpdated(true);
+    window.addEventListener('hj-update', f);
+    return () => window.removeEventListener('hj-update', f);
+  }, []);
 
   // al cambiar de pantalla, cortar el audio
   useEffect(() => {
@@ -30,6 +36,12 @@ export function App() {
 
   return (
     <div className="app">
+      {updated && (
+        <div className="updatebar" role="status">
+          Hay una versión nueva de la app.{' '}
+          <button onClick={() => window.location.reload()}>Recargar</button>
+        </div>
+      )}
       <header className="top">
         <a href="#/hoy" className="brand">
           <span className="bell" aria-hidden>◗</span> HarmonyJazz
