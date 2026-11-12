@@ -70,7 +70,7 @@ function resolve(bars: DocBar[]): DocBar[] {
       try {
         parseChord(c);
       } catch (e) {
-        throw new Error(`Compás ${i + 1}: ${(e as Error).message}`);
+        throw new Error(`Compás ${i + 1}: ${(e as Error).message}`, { cause: e });
       }
     });
     out.push({ ...b, chords });

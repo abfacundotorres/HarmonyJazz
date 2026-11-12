@@ -425,7 +425,7 @@ export class JazzEngine {
 
   /** Volumen general en dB respecto del nivel base (−14…+2; más arriba empieza a distorsionar). */
   setVolume(db: number) {
-    this.volumeDb = Math.max(-14, Math.min(2, db));
+    this.volumeDb = Math.max(-14, Math.min(2, Number.isFinite(db) ? db : 0));
     if (this.inst) this.inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
   }
 

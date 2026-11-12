@@ -386,6 +386,14 @@ export async function createEngine(blob: Blob, simple = false): Promise<EngineCh
     return { engine: await BufferEngine.create(blob) };
   } catch (e) {
     const engine = await MediaEngine.create(blob);
-    return { engine, reason: `${(e as Error).message} Se usa el reproductor simple: el loop se corta un instante y no hay afinación ni filtros.` };
+    const msg = (e as Error).message || '';
+    // si el módulo del motor no carga, casi siempre es porque la app se actualizó con esta pestaña abierta
+    const updated = /worklet|module script|MIME/i.test(msg);
+    return {
+      engine,
+      reason: updated
+        ? 'La app se actualizó mientras estaba abierta. Recargá la página para volver al motor preciso (por ahora suena con el reproductor simple: el loop se corta un instante y no hay afinación ni filtros).'
+        : `${msg} Se usa el reproductor simple: el loop se corta un instante y no hay afinación ni filtros.`,
+    };
   }
 }

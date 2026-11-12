@@ -22,20 +22,33 @@ export function App() {
   const page = path[0] ?? 'hoy';
   const [settings, setSettings] = useSettings();
   const [updated, setUpdated] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {
     const f = () => setUpdated(true);
+    const g = () => setSaveFailed(true);
     window.addEventListener('hj-update', f);
-    return () => window.removeEventListener('hj-update', f);
+    window.addEventListener('hj-save-failed', g);
+    return () => {
+      window.removeEventListener('hj-update', f);
+      window.removeEventListener('hj-save-failed', g);
+    };
   }, []);
 
   // al cambiar de pantalla, cortar el audio
+  const sub = path[1];
   useEffect(() => {
     engine.stop();
     window.scrollTo(0, 0);
-  }, [page, path[1]]);
+  }, [page, sub]);
 
   return (
     <div className="app">
+      {saveFailed && (
+        <div className="updatebar warn" role="alert">
+          No se pudo guardar el último cambio: el almacenamiento del navegador está lleno o bloqueado. Bajá una copia de tus datos (en Hoy) y liberá espacio.{' '}
+          <button onClick={() => setSaveFailed(false)}>Entendido</button>
+        </div>
+      )}
       {updated && (
         <div className="updatebar" role="status">
           Hay una versión nueva de la app.{' '}
@@ -70,6 +83,7 @@ export function App() {
         </div>
       </header>
       <main>
+        <h1 className="sr">{NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz'}</h1>
         {page === 'hoy' && <Today />}
         {page === 'playalong' && <PlayAlong />}
         {page === 'lecciones' && <Lessons />}

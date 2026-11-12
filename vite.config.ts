@@ -73,23 +73,38 @@ const offline = (): Plugin => {
         .update(Object.values(bundle).map((b) => ('code' in b ? b.code.length : 0)).join(','))
         .digest('hex')
         .slice(0, 10);
+      // la hora de compilación (10 cifras) hace que ordenar los nombres sea ordenar por antigüedad
+      const stamp = String(Math.floor(Date.now() / 1000));
       const source = `/* generado por vite.config.ts: no editar */
-const CACHE = 'harmonyjazz-${version}';
+const CACHE = 'harmonyjazz-${stamp}-${version}';
 const FILES = ${JSON.stringify(files)};
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new URL(f, self.location).href))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('harmonyjazz-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  // se conserva la versión anterior: una pestaña abierta antes de la actualización todavía puede pedir sus archivos
+  // (por ejemplo el motor de audio de Transcribir); las anteriores a esa se borran
+  e.waitUntil(
+    caches.keys().then((ks) => {
+      const mine = ks.filter((k) => k.startsWith('harmonyjazz-')).sort();
+      const keep = new Set([CACHE, ...mine.filter((k) => k !== CACHE).slice(-1)]);
+      return Promise.all(mine.filter((k) => !keep.has(k)).map((k) => caches.delete(k)));
+    }).then(() => self.clients.claim()),
+  );
 });
+// primero el caché de esta versión; si falta, el de la anterior; y por último la red
+const fromCache = async (req, opts) => {
+  const cur = await caches.open(CACHE);
+  return (await cur.match(req, opts)) || (await caches.match(req, opts));
+};
 self.addEventListener('fetch', (e) => {
   const r = e.request;
   if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;
   if (r.mode === 'navigate') {
-    e.respondWith(caches.match(new URL('index.html', self.location).href, { ignoreVary: true }).then((m) => m || fetch(r)));
+    e.respondWith(fromCache(new URL('index.html', self.location).href, { ignoreVary: true }).then((m) => m || fetch(r)));
     return;
   }
-  e.respondWith(caches.match(r, { ignoreSearch: true, ignoreVary: true }).then((m) => m || fetch(r)));
+  e.respondWith(fromCache(r, { ignoreSearch: true, ignoreVary: true }).then((m) => m || fetch(r)));
 });
 `;
       this.emitFile({ type: 'asset', fileName: 'sw.js', source });
@@ -102,5 +117,5 @@ self.addEventListener('fetch', (e) => {
 export default defineConfig({
   base: './',
   plugins: [react(), csp(), offline()],
-  test: { environment: 'node' },
+  test: { environment: 'node', include: ['src/**/*.test.ts'] },
 } as any);

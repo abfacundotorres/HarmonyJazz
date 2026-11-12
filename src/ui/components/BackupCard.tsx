@@ -48,6 +48,7 @@ export function BackupCard() {
       );
       if (!ok) return;
       const n = applyLocal(localStorage, parsed.data);
+      const dropped = parsed.dropped?.length ? ` Se ignoraron datos dañados de la copia: ${parsed.dropped.join(', ')}.` : '';
       let back = 0;
       for (const m of parsed.audios) {
         if (await getBlob(m.id).catch(() => null)) {
@@ -55,7 +56,7 @@ export function BackupCard() {
           back++;
         }
       }
-      setMsg(`Restaurado: ${n} grupos de datos y los pasajes de ${back} audios. Recargando…`);
+      setMsg(`Restaurado: ${n} grupos de datos y los pasajes de ${back} audios.${dropped} Recargando…`);
       setTimeout(() => window.location.reload(), 900);
     } finally {
       setBusy(false);
@@ -65,7 +66,7 @@ export function BackupCard() {
   const stale = info && hasData(info) && (days === null || days >= 14);
   return (
     <section className="card">
-      <h3>Copia de seguridad</h3>
+      <h2 className="h3like">Copia de seguridad</h2>
       <p className="muted small">
         Tus temas, frases, progreso y ajustes viven sólo en este navegador. Si se borran los datos del sitio o cambiás de celular, se pierden: guardá una copia de vez en cuando.
         {info && hasData(info) ? ` Hoy tenés ${info.tunes} temas, ${info.phrases} frases y ${info.audios} audios.` : ''}

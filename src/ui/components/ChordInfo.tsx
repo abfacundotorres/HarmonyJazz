@@ -38,10 +38,9 @@ export function ChordBoard({
             className={cls}
             onClick={() => onBarClick?.(i)}
             disabled={!onBarClick}
-            aria-label={`Compás ${i + 1}: ${b.map((x) => x.sym).join(' ')}`}
             aria-pressed={inLoop}
           >
-            <small className="barno">{i + 1}</small>
+            <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
             {b.map((x) => (
               <span key={x.idx} className={x.idx === current ? 'cur' : ''}>
                 {x.sym}

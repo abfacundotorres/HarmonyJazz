@@ -1,4 +1,5 @@
 import type { TrackMeta } from '../transcribe/audioStore';
+import { sanitizeKey } from './sanitize';
 
 /**
  * Copia de seguridad de los datos del usuario (temas, frases, progreso, ajustes y las fichas de los audios de
@@ -20,6 +21,8 @@ export interface BackupFile {
   /** Claves de la app (sin el prefijo) con su valor ya interpretado. */
   data: Record<string, unknown>;
   audios: TrackMeta[];
+  /** Claves de la copia que venían dañadas y se descartaron al leerla (no se guarda en el archivo). */
+  dropped?: string[];
 }
 
 type ReadStorage = Pick<Storage, 'length' | 'key' | 'getItem'>;
@@ -61,6 +64,7 @@ export function parseBackup(text: string): BackupFile | string {
   if (!f || typeof f !== 'object' || f.app !== 'harmonyjazz') return 'Este archivo no es una copia de HarmonyJazz';
   if (typeof f.data !== 'object' || f.data === null || Array.isArray(f.data)) return 'La copia no tiene datos';
   const data: Record<string, unknown> = {};
+  const dropped: string[] = [];
   let total = 0;
   for (const [k, v] of Object.entries(f.data)) {
     if (!KEY_RE.test(k) || SKIP.has(k) || k === '__proto__') continue;
@@ -68,10 +72,13 @@ export function parseBackup(text: string): BackupFile | string {
     if (s === undefined || s.length > MAX_VALUE_CHARS) return `El dato "${k}" es demasiado grande`;
     total += s.length;
     if (total > MAX_TOTAL_CHARS) return 'La copia es demasiado grande';
-    data[k] = v;
+    // cada dato se valida: una copia dañada o de otra versión no debe dejar la app inutilizable
+    const clean = sanitizeKey(k, v);
+    if (clean === null) dropped.push(k);
+    else data[k] = clean;
   }
   const audios = Array.isArray(f.audios) ? f.audios.filter((a): a is TrackMeta => !!a && typeof a === 'object' && typeof (a as TrackMeta).id === 'string').slice(0, 500) : [];
-  return { app: 'harmonyjazz', version: 2, created: typeof f.created === 'string' ? f.created : '', data, audios };
+  return { app: 'harmonyjazz', version: 2, created: typeof f.created === 'string' ? f.created : '', data, audios, dropped };
 }
 
 /** Escribe los datos de la copia (reemplaza las claves que trae). Devuelve cuántas escribió. */

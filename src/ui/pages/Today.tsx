@@ -52,7 +52,7 @@ export function Today() {
         </div>
         <div>
           <span className="lbl">Sesión</span>
-          <select value={settings.minutes} onChange={(e) => setSettings({ minutes: Number(e.target.value) })}>
+          <select aria-label="Duración de la sesión" value={settings.minutes} onChange={(e) => setSettings({ minutes: Number(e.target.value) })}>
             {[30, 45, 60, 90, 120].map((m) => (
               <option key={m} value={m}>{m} min</option>
             ))}
@@ -76,7 +76,7 @@ export function Today() {
       </div>
 
       <section className="card">
-        <h3>Últimas 4 semanas</h3>
+        <h2 className="h3like">Últimas 4 semanas</h2>
         <div className="heat" role="img" aria-label="Minutos practicados por día">
           {days.map((d) => (
             <div key={d.k} title={`${d.k}: ${d.m} min`} className={d.k === plan.date ? 'today' : ''}>
@@ -121,7 +121,7 @@ function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<type
     <article className={`card block ${done ? 'done' : ''}`}>
       <header>
         <span className="num">{n}</span>
-        <h3>{block.title}</h3>
+        <h2 className="h3like">{block.title}</h2>
         <span className="mins">{block.minutes} min</span>
       </header>
       <ul>{block.detail.map((d, i) => <li key={i}>{d}</li>)}</ul>

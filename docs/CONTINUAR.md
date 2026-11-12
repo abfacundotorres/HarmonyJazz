@@ -14,7 +14,7 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 - Respuestas sinceras, sin condescendencia. Preguntar antes si hay ambigüedad. Eficiencia antes que tener razón.
 - Todo legal: no publicar melodías ni letras con derechos de autor. Sólo armonía (acordes), frases originales y material de dominio público o con licencia libre. Los cifrados de Real Book los carga el usuario.
 - No abrir PR salvo que se pida. Ramas: usar la que indique la sesión.
-- Antes de commitear: `npx tsc -b` y `npx vitest run`.
+- Antes de commitear: `npx tsc -b`, `npm run lint` y `npx vitest run`; para cambios de interfaz, también `npm run e2e` (pruebas de navegador, en la carpeta `e2e/`).
 
 ## Qué existe
 - Play-along con loops, transposición, "Mis temas" (localStorage, exportar/importar, carga masiva) y editor de grilla estilo iReal.

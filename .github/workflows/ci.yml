@@ -19,5 +19,31 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # Pruebas de navegador (Playwright) contra el sitio compilado: pantallas, accesibilidad, datos dañados,
+  # sin conexión, atril, copia de seguridad, editor y Transcribir (audio y micrófono simulados por Chromium).
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          CI: 'true'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: informe-e2e
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
