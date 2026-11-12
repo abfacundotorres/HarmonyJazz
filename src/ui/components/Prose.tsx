@@ -20,7 +20,7 @@ export function Prose({ lines }: { lines: string[] }) {
       continue;
     }
     flush();
-    if (l.startsWith('## ')) out.push(<h4 key={out.length}>{l.slice(3)}</h4>);
+    if (l.startsWith('## ')) out.push(<h3 key={out.length} className="h4like">{l.slice(3)}</h3>);
     else out.push(<p key={out.length}>{inline(l)}</p>);
   }
   flush();

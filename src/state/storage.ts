@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
+import { sanitizeKey } from './sanitize';
 
 const PREFIX = 'harmonyjazz:';
 
 export function load<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(PREFIX + key);
-    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+    if (!raw) return fallback;
+    // lo guardado se valida: datos dañados o de otra versión no deben romper la app
+    const clean = sanitizeKey(key, JSON.parse(raw));
+    return clean && typeof clean === 'object' && !Array.isArray(clean) ? { ...fallback, ...(clean as object) } : fallback;
   } catch {
     return fallback;
   }
@@ -15,7 +19,8 @@ export function save<T>(key: string, value: T) {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
   } catch {
-    /* almacenamiento no disponible: la app sigue funcionando sin persistencia */
+    // almacenamiento lleno o bloqueado: la app sigue funcionando, pero se avisa que lo último no quedó guardado
+    window.dispatchEvent(new Event('hj-save-failed'));
   }
 }
 

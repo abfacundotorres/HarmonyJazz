@@ -25,7 +25,7 @@
     --line: #ddd2c3;
     --text: #221b14;
     --muted: #74675a;
-    --accent: #b0731a;
+    --accent: #905e15; /* ≥ 4,5:1 con texto blanco y sobre el fondo crema */
     --accent-ink: #fff;
     --tension: #2f6fae;
     --paper: #fffdf9;
@@ -44,8 +44,8 @@ body {
 a { color: var(--accent); text-decoration: none; }
 h2, h3, h4 { margin: 0 0 .4em; line-height: 1.2; }
 h2 { font-size: 1.35rem; }
-h3 { font-size: 1.08rem; }
-h4 { font-size: .95rem; margin-top: 1.2em; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+h3, .h3like { font-size: 1.08rem; }
+h4, .h4like { font-size: .95rem; margin-top: 1.2em; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
 p { margin: .4em 0; }
 code { background: var(--surface-2); padding: 0 .3em; border-radius: 4px; }
 .muted { color: var(--muted); }
@@ -155,7 +155,7 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
 /* partitura */
 .paper { background: var(--paper); color: var(--paper-ink); border-radius: 10px; padding: 6px; margin-top: 10px; overflow: hidden; }
 .paper svg { display: block; }
-.paper .hj-current { fill: #b0731a; }
+.paper .hj-current { fill: #905e15; }
 
 /* lecciones */
 .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
@@ -439,3 +439,9 @@ button.link { background: var(--surface-2); }
   .check, label:has(> input[type='checkbox']) { min-height: 44px; display: inline-flex; align-items: center; gap: .5em; }
   .tracklist li > button, .tracklist li > .link { min-height: 44px; }
 }
+
+/* accesibilidad */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.credits a, .muted a, .prose a, .lesson a, p a { text-decoration: underline; text-underline-offset: .15em; }
+.updatebar.warn { background: var(--bad); color: #fff; }
+.updatebar.warn button { background: #fff; color: var(--bad); border-color: #fff; }

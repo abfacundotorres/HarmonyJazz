@@ -69,11 +69,11 @@ function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string
         <h2>{lesson.title}</h2>
         <p className="lead">{loc(lesson.summary)}</p>
         <Prose lines={lesson.body.map(loc)} />
-        <h4>En la trompeta</h4>
+        <h3 className="h4like">En la trompeta</h3>
         <ul>{lesson.trumpet.map((t, i) => <li key={i}>{loc(t)}</li>)}</ul>
         {lesson.listen && (
           <>
-            <h4>Para escuchar</h4>
+            <h3 className="h4like">Para escuchar</h3>
             <ul>{lesson.listen.map((t, i) => <li key={i}>{t}</li>)}</ul>
           </>
         )}
