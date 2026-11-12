@@ -5,7 +5,6 @@ import {
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, emptyBar } from '../../content/chartDoc';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
-import { standardById, standardDoc } from '../../content/standards';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
   Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
@@ -233,9 +232,8 @@ export function PlayAlong() {
             aria-label="Tema"
           >
             {useCustom && <option value="">Progresión propia (sin guardar)</option>}
-            {(['Fundamentos', 'Blues', 'Standards', 'Repertorio', 'Avanzado', 'Mis temas'] as const).map((cat) => {
+            {(['Fundamentos', 'Blues', 'Formas', 'Avanzado', 'Mis temas'] as const).map((cat) => {
               const items = all.filter((p) => p.category === cat);
-              if (cat === 'Repertorio') items.sort((x, y) => x.name.localeCompare(y.name, 'es'));
               return items.length ? (
                 <optgroup key={cat} label={cat}>
                   {items.map((p) => (
@@ -343,23 +341,6 @@ export function PlayAlong() {
         </div>
         <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
-        {!useCustom && selected.category === 'Repertorio' && (
-          <p>
-            <button
-              onClick={() => {
-                const st = standardById(selected.id);
-                if (!st) return;
-                setDraft({ name: st.name, composer: st.composer, key: st.key, mode: st.mode, tempo: st.tempo, style: st.style ?? 'swing' });
-                setDoc(standardDoc(st));
-                setEditorKey((k) => k + 1);
-                setLibMsg(`"${st.name}" copiado al editor de "Mis temas": corregilo y guardalo.`);
-                setTimeout(() => document.querySelector('.library')?.scrollIntoView({ behavior: 'smooth' }), 0);
-              }}
-            >
-              Copiar a "Mis temas" para editar
-            </button>
-          </p>
-        )}
       </section>
 
       <TuneLibrary

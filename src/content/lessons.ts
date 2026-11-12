@@ -52,10 +52,10 @@ export const LESSONS: Lesson[] = [
     ],
     exercises: [
       { label: 'Guide tones en Rhythm changes', generator: 'guide', progression: 'rhythm', tempo: 160 },
-      { label: '3 → 7 → 3 en blancas, Autumn Leaves', generator: 'guide2', progression: 'autumn', tempo: 140 },
+      { label: '3 → 7 → 3 en blancas, cadena mayor–menor', generator: 'guide2', progression: 'cadena-mayor-menor', tempo: 140 },
       { label: 'Guide tones en Bird blues', generator: 'guide', progression: 'blues-bird', tempo: 140 },
       { label: 'Guide tones en blancas, blues de F', generator: 'guide2', progression: 'blues-f', tempo: 140 },
-      { label: 'Guide tones en Blue Bossa', generator: 'guide', progression: 'blue-bossa', tempo: 130 },
+      { label: 'Guide tones en la menor con ii–V a la relativa', generator: 'guide', progression: 'menor-modulante', tempo: 130 },
     ],
     trumpet: [
       'Tocalo en dos octavas: la de abajo te obliga a centrar el registro grave, la de arriba trabaja resistencia sin forzar.',
@@ -91,9 +91,9 @@ export const LESSONS: Lesson[] = [
     ],
     exercises: [
       { label: '1-3-5-7-9 sobre ii–V–I por las 12', generator: 'arp', progression: 'ii-v-i-12', tempo: 120 },
-      { label: '3-5-7-9 en Autumn Leaves', generator: 'arp3', progression: 'autumn', tempo: 140 },
-      { label: '3-5-7-9 en el ciclo de terceras mayores', generator: 'arp3', progression: 'giant', tempo: 110 },
-      { label: 'Arpegios desde la 3ª en Blue Bossa', generator: 'arp3', progression: 'blue-bossa', tempo: 130 },
+      { label: '3-5-7-9 en la cadena mayor–menor', generator: 'arp3', progression: 'cadena-mayor-menor', tempo: 140 },
+      { label: '3-5-7-9 en los cambios de Coltrane', generator: 'arp3', progression: 'coltrane', tempo: 110 },
+      { label: 'Arpegios desde la 3ª en la menor con ii–V a la relativa', generator: 'arp3', progression: 'menor-modulante', tempo: 130 },
       { label: 'Arpegios desde la 3ª en el turnaround', generator: 'arp3', progression: 'turnaround', tempo: 130 },
     ],
     trumpet: [
@@ -132,7 +132,7 @@ export const LESSONS: Lesson[] = [
       { label: 'Enclosure a la 3ª: ii–V–I por las 12', generator: 'enclosure', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Enclosure en el turnaround', generator: 'enclosure', progression: 'turnaround', tempo: 130 },
       { label: 'Enclosures en Rhythm changes', generator: 'enclosure', progression: 'rhythm', tempo: 160 },
-      { label: 'Enclosures en Autumn Leaves', generator: 'enclosure', progression: 'autumn', tempo: 140 },
+      { label: 'Enclosures en la cadena mayor–menor', generator: 'enclosure', progression: 'cadena-mayor-menor', tempo: 140 },
     ],
     trumpet: [
       'Las cromáticas en contratiempo, articuladas con lengua ligera, le dan el swing. Las notas objetivo, un poco más largas.',
@@ -168,7 +168,7 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Bebop descendente: ii–V–I por las 12', generator: 'bebop', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Bebop en el blues de F', generator: 'bebop', progression: 'blues-f', tempo: 150 },
-      { label: 'Bebop en Autumn Leaves', generator: 'bebop', progression: 'autumn', tempo: 140 },
+      { label: 'Bebop en la cadena mayor–menor', generator: 'bebop', progression: 'cadena-mayor-menor', tempo: 140 },
       { label: 'Bebop en el turnaround', generator: 'bebop', progression: 'turnaround', tempo: 140 },
     ],
     trumpet: [
@@ -191,7 +191,7 @@ export const LESSONS: Lesson[] = [
     why: [
       'Una célula fija se aprende una vez y se transporta a cualquier acorde: sirve cuando los acordes cambian rápido y no hay tiempo de pensar escalas.',
       '1-2-3-5 y 3-5-7-9 cubren las cuatro notas más importantes del acorde (fundamental, 3ª, 5ª y 7ª) más la 9ª.',
-      'Es una forma clásica de estudiar los cambios de Giant Steps.',
+      'Es una forma clásica de estudiar los cambios de Coltrane.',
     ],
     body: [
       'En cambios rápidos no hay tiempo para escalas: una célula fija (1-2-3-5, 3-5-7-9, 5-3-2-1) aplicada a cada acorde produce líneas coherentes y te deja la mente libre para escuchar.',
@@ -201,8 +201,8 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: '1-2-3-5 / 3-5-7-9 sobre ii–V–I por las 12', generator: 'digital', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Cambios de Coltrane', generator: 'digital', progression: 'coltrane', tempo: 110 },
-      { label: 'Ciclo de terceras mayores (Giant Steps)', generator: 'digital', progression: 'giant', tempo: 120 },
-      { label: 'Digitales en Autumn Leaves', generator: 'digital', progression: 'autumn', tempo: 120 },
+      { label: 'Cambios de Coltrane (terceras mayores)', generator: 'digital', progression: 'coltrane', tempo: 120 },
+      { label: 'Digitales en la cadena mayor–menor', generator: 'digital', progression: 'cadena-mayor-menor', tempo: 120 },
       { label: 'Digitales en Rhythm changes', generator: 'digital', progression: 'rhythm', tempo: 150 },
     ],
     trumpet: ['Empezá ligado para pensar la digitación, después articulá cada nota: la coordinación lengua-dedos es el cuello de botella en la trompeta.'],
@@ -271,7 +271,7 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Pares de tríadas sobre modal', generator: 'triads', progression: 'modal', tempo: 170 },
       { label: 'Pares de tríadas en ii–V–I por las 12', generator: 'triads', progression: 'ii-v-i-12', tempo: 110 },
-      { label: 'Pares de tríadas en Autumn Leaves', generator: 'triads', progression: 'autumn', tempo: 120 },
+      { label: 'Pares de tríadas en la cadena mayor–menor', generator: 'triads', progression: 'cadena-mayor-menor', tempo: 120 },
       { label: 'Pares de tríadas en el blues menor', generator: 'triads', progression: 'blues-minor', tempo: 140 },
     ],
     trumpet: ['Los saltos de 4ª y 6ª de las inversiones son ideales como flexibilidad: tocalo ligado primero.'],
@@ -306,7 +306,7 @@ export const LESSONS: Lesson[] = [
     exercises: [
       { label: 'Pentatónicas sobre ii–V–I menor por las 12', generator: 'pent', progression: 'ii-v-i-minor-12', tempo: 110 },
       { label: 'Pentatónicas sobre el blues menor', generator: 'pent', progression: 'blues-minor', tempo: 150 },
-      { label: 'Pentatónicas en Blue Bossa', generator: 'pent', progression: 'blue-bossa', tempo: 130 },
+      { label: 'Pentatónicas en la menor con ii–V a la relativa', generator: 'pent', progression: 'menor-modulante', tempo: 130 },
       { label: 'Pentatónicas en el ii–V–I', generator: 'pent', progression: 'ii-v-i', tempo: 110 },
     ],
     trumpet: ['Las cuartas son un desafío de flexibilidad. Usalas como ejercicio diario de lip slurs en el calentamiento.'],
@@ -339,7 +339,7 @@ export const LESSONS: Lesson[] = [
     ],
     exercises: [
       { label: 'Side-slipping sobre modal', generator: 'sideslip', progression: 'modal', tempo: 160 },
-      { label: 'Side-slipping en Autumn Leaves', generator: 'sideslip', progression: 'autumn', tempo: 130 },
+      { label: 'Side-slipping en la cadena mayor–menor', generator: 'sideslip', progression: 'cadena-mayor-menor', tempo: 130 },
       { label: 'Side-slipping en el blues menor', generator: 'sideslip', progression: 'blues-minor', tempo: 140 },
       { label: 'Side-slipping en el ii–V–i menor', generator: 'sideslip', progression: 'ii-v-i-minor-12', tempo: 120 },
     ],
@@ -376,7 +376,7 @@ export const LESSONS: Lesson[] = [
       { label: '1-2-3-5 desplazado: ii–V–I por las 12', generator: 'displaced', progression: 'ii-v-i-12', tempo: 120 },
       { label: 'Desplazamiento en Rhythm changes', generator: 'displaced', progression: 'rhythm', tempo: 160 },
       { label: 'Desplazamiento en el blues de F', generator: 'displaced', progression: 'blues-f', tempo: 140 },
-      { label: 'Desplazamiento en Autumn Leaves', generator: 'displaced', progression: 'autumn', tempo: 140 },
+      { label: 'Desplazamiento en la cadena mayor–menor', generator: 'displaced', progression: 'cadena-mayor-menor', tempo: 140 },
     ],
     trumpet: ['El doodle tonguing ("doo-dl") es la herramienta para el bebop rápido: practicalo lento sobre una sola nota con el metrónomo en 2 y 4.'],
     listen: ['Clifford Brown – "Cherokee"', 'Lee Morgan – "Moanin\'" (Art Blakey)'],

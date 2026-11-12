@@ -84,11 +84,11 @@ Las frases de prueba del analizador (`exercises/fixtures.ts`) sólo se usan en l
 
 **Fuentes libres:** se evaluó el libro abierto *A Guide to Exploring Jazz Improvisation* (open.maricopa.edu, CC BY 4.0); desde este entorno el sitio devolvió 403 y no se pudo leer. No se incorporó contenido de él.
 
-### Repertorio: sólo armonía
+### Sin repertorio propio
 
-`content/standards.ts` tiene 28 temas con **sólo la sucesión de acordes** (sin melodía ni letra). La armonía no tiene derecho de autor por sí sola, pero los cifrados están escritos de memoria y pueden diferir de la grabación: cada tema tiene el botón "Copiar a Mis temas" para corregirlo en el editor. Los de dominio público (publicados hasta 1930) están marcados.
+La app **no trae standards**: ni melodías, ni letras, ni cifrados de temas de terceros. Las progresiones incluidas son **formas y ejercicios** (ii–V–I en las 12 tonalidades, blues de jazz, rhythm changes, forma modal, una cadena de ii–V mayores y menores y una progresión menor con ii–V a la relativa, sustituciones, cambios de Coltrane) y no se presentan como temas. Los temas que el usuario estudia los carga él en "Mis temas" (con la grilla o pegando texto), y quedan en su navegador. Se había armado un Repertorio de 28 temas con sólo la armonía, escrito de memoria; el usuario decidió quitarlo para evitar el riesgo de que pareciera contenido de terceros.
 
-**Decisión sobre iReal Pro:** no se importa su formato. Aunque hay lectores abiertos hechos por la comunidad y las grillas sólo traen acordes, no se pudieron verificar sus términos de uso y el repositorio es público. El usuario puede cargar sus propios cifrados como texto o en la grilla.
+**Decisión sobre iReal Pro:** no se importa su formato. Aunque hay lectores abiertos hechos por la comunidad y las grillas sólo traen acordes, no se pudieron verificar sus términos de uso y el repositorio es público.
 
 ### Transcribir
 
@@ -160,14 +160,13 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 
 **Hecho en la iteración 3:** instrumentos reales (piano, contrabajo, trompeta), mezcla medida, más volumen sin saturar, humanización, control de volumen, y corrección de dos carreras del motor (stop).
 
-**Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), Blue Bossa, Solar y balada en E♭, transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
+**Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), balada en E♭ (los temas con nombre propio se quitaron después), transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
 
 **Corto plazo**
 - Batería real (ride, bombo, caja, hi-hat): falta una fuente con licencia verificable.
 - Elegir y comparar otros bancos de piano y contrabajo; más capas de velocidad.
 - Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
-- Más formas de standards (revisadas de oído).
 - Estilos: latin, double-time.
 
 **Mediano plazo**

@@ -39,7 +39,7 @@ describe('walking bass', () => {
     expect(a).not.toBe(d);
   });
 
-  for (const id of ['ii-v-i', 'autumn', 'rhythm', 'blues-f', 'coltrane', 'giant', 'solar', 'blue-bossa']) {
+  for (const id of ['ii-v-i', 'cadena-mayor-menor', 'rhythm', 'blues-f', 'coltrane', 'menor-modulante']) {
     describe(id, () => {
       const chart = chartOf(id);
       const seeds = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -97,7 +97,7 @@ describe('walking bass', () => {
 
   it('el tercer tiempo es siempre una nota del acorde (3ª, 5ª, 7ª o fundamental)', () => {
     let checked = 0;
-    for (const id of ['autumn', 'rhythm', 'coltrane', 'giant']) {
+    for (const id of ['cadena-mayor-menor', 'rhythm', 'coltrane']) {
       const chart = chartOf(id);
       for (let s = 1; s <= 12; s++) {
         for (const hit of bassLine(chart, 'swing', mulberry32(s), 40).hits) {
@@ -131,7 +131,7 @@ describe('walking bass', () => {
 });
 
 describe('piano', () => {
-  const chart = chartOf('autumn');
+  const chart = chartOf('cadena-mayor-menor');
   const hits = (seed: number, style = 'swing' as const) => compLine(chart, style, mulberry32(seed), 1, newCompState());
 
   it('los voicings están en un registro cómodo y sin la fundamental grave', () => {
