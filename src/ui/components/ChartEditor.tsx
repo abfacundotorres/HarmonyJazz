@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
 import { ChartDoc, DocBar, emptyBar, MAX_CHORD_CHARS, playedBars, QUALITY_BUTTONS, ROOTS, SECTIONS } from '../../content/chartDoc';
+import { copyRange, pasteBars, range, removeRange, repeatRange } from '../../content/barOps';
 import { diatonic, TEMPLATES, templateBars, transposeBars } from '../../content/chartTemplates';
 import { parseChord } from '../../theory/chords';
 import { MAX_BARS } from '../../theory/chart';
 import { prettyAcc as pretty } from '../../theory/notes';
+import { usePersistent } from '../../state/storage';
 
 const valid = (c: string) => {
   if (c === '%') return true;
@@ -26,6 +28,10 @@ const split = (s: string) => {
  */
 export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: ChartDoc) => void }) {
   const [sel, setSel] = useState(0);
+  const [anchor, setAnchor] = useState(0);
+  const [rangeMode, setRangeMode] = useState(false);
+  const [clip, setClip] = useState<DocBar[]>([]);
+  const [cfg, setCfg] = usePersistent<{ auto: boolean }>('editor', { auto: true });
   const [slot, setSlot] = useState(0);
   const [tkey, setTkey] = useState('C');
   const [tminor, setTminor] = useState(false);
@@ -37,6 +43,46 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
   const cur = Math.min(sel, bars.length - 1);
   const bar = bars[cur];
   const curSlot = Math.min(slot, bar.chords.length - 1);
+  const [lo, hi] = rangeMode ? range(bars, anchor, cur) : [cur, cur];
+  const count = hi - lo + 1;
+
+  const selectBar = (i: number, k = 0) => {
+    setSel(i);
+    setSlot(k);
+    if (!rangeMode) setAnchor(i);
+  };
+  const toggleRange = () => {
+    setRangeMode((r) => !r);
+    setAnchor(cur);
+  };
+  const doCopy = () => setClip(copyRange(bars, lo, hi));
+  const doCut = () => {
+    setClip(copyRange(bars, lo, hi, true));
+    commit({ bars: removeRange(bars, lo, hi) });
+    setRangeMode(false);
+    selectBar(Math.max(0, lo - (lo >= bars.length - count ? 1 : 0)));
+  };
+  const doPaste = () => {
+    const r = pasteBars(bars, hi + 1, clip);
+    if (!r.added) return;
+    commit({ bars: r.bars });
+    setAnchor(hi + 1);
+    setSel(hi + r.added);
+    setRangeMode(true);
+  };
+  const doRepeat = () => {
+    const r = repeatRange(bars, lo, hi);
+    if (!r.added) return;
+    commit({ bars: r.bars });
+    setAnchor(hi + 1);
+    setSel(hi + r.added);
+    setRangeMode(true);
+  };
+  const doDelete = () => {
+    commit({ bars: removeRange(bars, lo, hi) });
+    setRangeMode(false);
+    selectBar(Math.max(0, Math.min(lo, bars.length - count - 1)));
+  };
 
   const commit = (next: ChartDoc) => {
     past.current.push(doc);
@@ -73,11 +119,6 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
     commit({ bars: [...bars.slice(0, i), b, ...bars.slice(i)] });
     setSel(i);
     setSlot(0);
-  };
-  const remove = () => {
-    if (bars.length === 1) return commit({ bars: [emptyBar()] });
-    commit({ bars: bars.filter((_, k) => k !== cur) });
-    setSel(Math.max(0, cur - 1));
   };
   const move = (d: -1 | 1) => {
     const j = cur + d;
@@ -117,7 +158,14 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
   const pickRoot = (r: string) => setChord(cur, curSlot, r + split(bar.chords[curSlot]).rest);
   const pickQuality = (suffix: string) => {
     const { root } = split(bar.chords[curSlot]);
-    if (root) setChord(cur, curSlot, root + suffix);
+    if (!root) return;
+    setChord(cur, curSlot, root + suffix);
+    if (cfg.auto) advance();
+  };
+  /** Pasa al siguiente casillero (o al primer acorde del compás que sigue). */
+  const advance = () => {
+    if (curSlot < bar.chords.length - 1) setSlot(curSlot + 1);
+    else if (cur < bars.length - 1) selectBar(cur + 1);
   };
 
   const played = playedBars(doc);
@@ -140,8 +188,8 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
           return (
             <button
               key={i}
-              className={`ced-bar ${i === cur ? 'sel' : ''} ${b.repeatStart ? 'rs' : ''} ${b.repeatEnd ? 're' : ''} ${bad ? 'bad' : ''}`}
-              onClick={() => { setSel(i); setSlot(0); }}
+              className={`ced-bar ${i === cur ? 'sel' : ''} ${i >= lo && i <= hi ? 'insel' : ''} ${b.repeatStart ? 'rs' : ''} ${b.repeatEnd ? 're' : ''} ${bad ? 'bad' : ''}`}
+              onClick={(e) => selectBar(i, Number((e.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.dataset.slot ?? 0))}
               aria-label={`Compás ${i + 1}: ${b.chords.join(' ') || 'vacío'}`}
               aria-pressed={i === cur}
             >
@@ -153,7 +201,7 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
               )}
               <span className="ced-chords">
                 {b.chords.map((c, k) => (
-                  <span key={k} className={c !== '' && !valid(c) ? 'err' : ''}>{c ? pretty(c) : '·'}</span>
+                  <span key={k} data-slot={k} className={`${c !== '' && !valid(c) ? 'err' : ''} ${i === cur && k === curSlot && b.chords.length > 1 ? 'curslot' : ''}`}>{c ? pretty(c) : '·'}</span>
                 ))}
               </span>
             </button>
@@ -162,11 +210,7 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
         <button className="ced-bar add" onClick={() => insertAt(bars.length)} disabled={bars.length >= MAX_BARS} aria-label="Agregar compás al final">+</button>
       </div>
 
-      <div className="ced-panel card-inner">
-        <p className="small">
-          <b>Compás {cur + 1}</b>{' '}
-          <span className="muted">· tocá el acorde a editar, elegí la raíz y la calidad (o escribilo).</span>
-        </p>
+      <div className="ced-keypad">
         <div className="ced-slots">
           {bar.chords.map((c, k) => (
             <input
@@ -184,11 +228,10 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
               aria-invalid={c !== '' && !valid(c)}
             />
           ))}
-          <button onClick={addChord} disabled={bar.chords.length >= 4} aria-label="Agregar acorde al compás">+ acorde</button>
-          <button onClick={removeChord} disabled={bar.chords.length <= 1} aria-label="Quitar acorde del compás">− acorde</button>
-          <button onClick={() => patchBar(cur, { chords: ['%'] })} disabled={cur === 0} title="Repite el compás anterior">%</button>
+          <button onClick={() => selectBar(Math.max(0, cur - 1))} disabled={cur === 0} aria-label="Compás anterior">◂</button>
+          <span className="ced-barno" aria-live="polite">{cur + 1}/{bars.length}</span>
+          <button onClick={() => selectBar(Math.min(bars.length - 1, cur + 1))} disabled={cur === bars.length - 1} aria-label="Compás siguiente">▸</button>
         </div>
-
         <div className="ced-pal" role="group" aria-label="Raíz">
           {ROOTS.map((r) => (
             <button key={r} onClick={() => pickRoot(r)} className={split(bar.chords[curSlot]).root === r ? 'on' : ''}>{pretty(r)}</button>
@@ -199,7 +242,18 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
             <button key={label} onClick={() => pickQuality(suf)} disabled={!split(bar.chords[curSlot]).root}>{label}</button>
           ))}
         </div>
+      </div>
 
+      <div className="ced-panel card-inner">
+        <p className="muted small">Compás {cur + 1}: tocá el acorde a editar, elegí raíz y calidad (o escribilo).</p>
+        <div className="ced-marks">
+          <button onClick={addChord} disabled={bar.chords.length >= 4} aria-label="Agregar acorde al compás">+ acorde</button>
+          <button onClick={removeChord} disabled={bar.chords.length <= 1} aria-label="Quitar acorde del compás">− acorde</button>
+          <button onClick={() => patchBar(cur, { chords: ['%'] })} disabled={cur === 0} title="Repite el compás anterior">%</button>
+          <label className="small">
+            <input type="checkbox" checked={cfg.auto} onChange={(e) => setCfg({ auto: e.target.checked })} /> Avanzar solo
+          </label>
+        </div>
         <div className="ced-marks">
           <label>
             Sección{' '}
@@ -218,6 +272,17 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
               <option value="2">2.º</option>
             </select>
           </label>
+        </div>
+
+        <div className="ced-range" role="group" aria-label="Edición de compases">
+          <button className={rangeMode ? 'on' : ''} aria-pressed={rangeMode} onClick={toggleRange}>
+            {rangeMode ? `Rango: ${count} ${count === 1 ? 'compás' : 'compases'} (tocá el final)` : 'Elegir rango'}
+          </button>
+          <button onClick={doCopy}>Copiar</button>
+          <button onClick={doCut}>Cortar</button>
+          <button onClick={doPaste} disabled={!clip.length || bars.length >= MAX_BARS}>Pegar{clip.length ? ` (${clip.length})` : ''}</button>
+          <button onClick={doRepeat} disabled={bars.length >= MAX_BARS}>Repetir</button>
+          <button onClick={doDelete}>Borrar{count > 1 ? ` ${count}` : ''}</button>
         </div>
 
         <details className="ced-shortcuts">
@@ -260,11 +325,8 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
         <div className="ced-acts">
           <button onClick={() => insertAt(cur)}>Insertar antes</button>
           <button onClick={() => insertAt(cur + 1)}>Insertar después</button>
-          <button onClick={() => insertAt(cur + 1, { ...bar, section: undefined, repeatStart: undefined, repeatEnd: undefined, ending: undefined })}>Duplicar</button>
           <button onClick={() => move(-1)} disabled={cur === 0} aria-label="Mover compás a la izquierda">◀</button>
           <button onClick={() => move(1)} disabled={cur === bars.length - 1} aria-label="Mover compás a la derecha">▶</button>
-          <button onClick={() => setSel(Math.min(bars.length - 1, cur + 1))} disabled={cur === bars.length - 1}>Siguiente compás ▸</button>
-          <button onClick={remove}>Borrar compás</button>
         </div>
       </div>
       {!chordsOk && <p className="muted small">Hay compases con acordes vacíos o inválidos (en rojo).</p>}

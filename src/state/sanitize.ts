@@ -67,6 +67,8 @@ export const sanitizeAtril: Sanitizer = (raw) => {
   return size === undefined ? {} : { size };
 };
 
+export const sanitizeEditor: Sanitizer = (raw) => (isObj(raw) ? (typeof raw.auto === 'boolean' ? { auto: raw.auto } : {}) : null);
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -74,6 +76,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   library: sanitizeLibrary,
   phrases: sanitizePhrases,
   atril: sanitizeAtril,
+  editor: sanitizeEditor,
 };
 
 /**
