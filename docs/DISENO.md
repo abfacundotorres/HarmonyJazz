@@ -46,7 +46,7 @@ src/
 - El swing se aplica posicionando el contratiempo en `beat + swing` (0,5 = recto, 0,67 = tresillo).
 - El bajo camina con fundamental, notas del acorde o de la escala, y una aproximación cromática o por 5ª a la siguiente fundamental.
 - El piano usa la forma A o B del voicing rootless, la que menos se mueve respecto del anterior, con ritmos tipo Charleston y anticipaciones.
-- **Instrumentos reales:** piano (Salamander Grand Piano V3), contrabajo y trompeta (FluidR3), unas 34 muestras (~3 MB) servidas desde el propio sitio. Se piden al abrir la pantalla; `Tone.Sampler` interpola las notas intermedias. Si no cargan (por ejemplo, sin conexión) se usan los sintetizadores de respaldo y la interfaz lo avisa. La **batería sigue siendo sintetizada**: no hay un kit de jazz con licencia verificada. Créditos y licencias en `public/samples/CREDITS.txt` y en el pie de la app (el piano es CC BY 3.0 y exige atribución).
+- **Instrumentos reales:** piano (Salamander Grand Piano V3), contrabajo y trompeta (FluidR3), unas 34 muestras (~3 MB) servidas desde el propio sitio. Se piden al abrir la pantalla; `Tone.Sampler` interpola las notas intermedias. Si no cargan (por ejemplo, sin conexión) se usan los sintetizadores de respaldo y la interfaz lo avisa. La **batería usa muestras reales** (Salamander Drumkit, CC BY-SA 3.0: ride, hi-hat, bombo, caja y notas fantasma); sólo el respaldo sin conexión es sintético. Créditos y licencias en `public/samples/CREDITS.txt` y en el pie de la app (el piano es CC BY 3.0 y exige atribución).
 - **Mezcla y volumen:** cada instrumento pasa por un bus; la salida va a un compresor, un limitador y un recortador suave que garantiza un techo de ~0,91 (sin saturar). Los niveles se ajustaron **midiendo la salida real** (rms por instrumento y del conjunto), no a oído. El control de volumen va **después** del compresor (si no, éste aplasta lo que se sube) y va de −14 a +2 dB respecto de una base de +2 dB; el conjunto queda en ≈ −9,7 dBFS de rms (la versión original estaba en −16,8) y, al máximo, ~3 % de las muestras roza el techo.
 - **Humanización:** microvariaciones de tiempo por instrumento (piano apenas atrás, bajo apenas adelante; melodía y clic exactos), variación de intensidad y una dinámica que crece en los primeros coros.
 - **Robustez:** los avisos visuales llevan un número de generación y se descartan si el motor se detuvo o reinició (Tone no puede cancelar uno que ya pasó a `requestAnimationFrame`); `play()` se cancela solo si hubo un stop durante la preparación; en móviles pide la sesión de audio `playback` y mantiene un `<audio>` silencioso.
@@ -156,6 +156,10 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 - **Sin el Real Book:** la app no trae contenido con derechos de autor (melodías ni cifrados de libros comerciales). El usuario carga los suyos.
 - **Diagnóstico de audio:** el reproductor muestra un medidor del sonido que genera la app y avisa si el audio del navegador está pausado o si todo está apagado; en móviles pide la sesión de audio "playback" y mantiene un `<audio>` silencioso.
 
+### Grilla de reproducción (estilo iReal Pro)
+
+`ChordBoard` dibuja 4 compases por fila (también en el celular; la letra se adapta al ancho con unidades de contenedor). Si el tema tiene su grilla escrita (`doc`), `docLayout` indica de qué compás escrito sale cada compás que se toca (`unrollOrder`), y el tablero muestra la forma escrita con rótulos de sección, barras de repetición y casillas 1.º/2.º; el compás que suena se resalta en cualquiera de sus pasadas y el siguiente se tiñe suave. Un tema pegado como texto se muestra plano. Los loops siguen usando índices de la carta desplegada. El cifrado se dibuja al estilo iReal (`theory/chordFormat.ts`: Δ7, -7, ø7, °7, alteraciones en superíndice); el ajuste "Estilo de cifrado" (en "Más") vuelve a maj7/m7/m7♭5.
+
 ## Seguridad y privacidad
 
 - **Sin red:** la app no hace peticiones a terceros. Una CSP (meta tag, sólo en el build) lo impone: `connect-src 'self'`, sin scripts inline, `object-src 'none'`. `abcjs` trae URLs de soundfonts que no se usan; la CSP las deja inertes.
@@ -172,7 +176,6 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 **Hecho en la iteración 2:** estilos (balada, bossa, swing en 2), balada en E♭ (los temas con nombre propio se quitaron después), transcripción y análisis del solo, despliegue en GitHub Pages y manifest para instalarla.
 
 **Corto plazo**
-- Batería real (ride, bombo, caja, hi-hat): falta una fuente con licencia verificable.
 - Elegir y comparar otros bancos de piano y contrabajo; más capas de velocidad.
 - Guardar las tomas transcriptas para seguir el progreso en el tiempo.
 - Resaltar la nota actual en la partitura durante la reproducción.
@@ -190,7 +193,7 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 
 ## Limitaciones conocidas
 
-- Piano, contrabajo y trompeta son muestras reales, pero el **acompañamiento sigue siendo generado**, no un trío grabado, y la **batería es sintetizada**. La calidad musical (fraseo del bajo, comping) no se puede evaluar sin escucharla: los números del documento miden niveles y tiempos, no gusto.
+- Piano, contrabajo y trompeta son muestras reales, pero el **acompañamiento sigue siendo generado**, no un trío grabado, y la batería, aunque son muestras reales, toca patrones generados. La calidad musical (fraseo del bajo, comping) no se puede evaluar sin escucharla: los números del documento miden niveles y tiempos, no gusto.
 - Si se cambia el tempo durante la reproducción, el chorus vuelve a empezar.
 - La detección de altura es monofónica y necesita auriculares para no confundirse con el acompañamiento.
 

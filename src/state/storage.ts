@@ -66,9 +66,11 @@ export interface Settings {
   volume: number;
   /** Salida: 'auto' = altavoz del celular si la pantalla es táctil. */
   output: 'auto' | 'phone' | 'normal';
+  /** Cifrado en la grilla: estilo iReal Pro (Δ7, -7, ø7) o completo (maj7, m7, m7♭5). */
+  chordStyle: 'ireal' | 'full';
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto' };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal' };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

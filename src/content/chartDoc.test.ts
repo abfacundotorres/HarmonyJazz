@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseChord } from '../theory/chords';
-import { compileDoc, ChartDoc, DocBar, docFromChart, playedBars, QUALITY_BUTTONS, ROOTS, sanitizeDoc, unroll } from './chartDoc';
+import { compileDoc, ChartDoc, DocBar, docFromChart, docLayout, playedBars, QUALITY_BUTTONS, ROOTS, sanitizeDoc, unroll } from './chartDoc';
 
 const b = (sym: string, extra: Partial<DocBar> = {}): DocBar => ({ chords: sym.split(' '), ...extra });
 const names = (bars: DocBar[]) => bars.map((x) => x.chords.join(' ')).join(' | ');
@@ -108,5 +108,18 @@ describe('docFromChart y sanitizeDoc', () => {
 describe('paleta', () => {
   it('todas las combinaciones raíz + calidad son acordes válidos', () => {
     for (const r of ROOTS) for (const [, suf] of QUALITY_BUTTONS) expect(() => parseChord(r + suf)).not.toThrow();
+  });
+});
+
+describe('docLayout', () => {
+  it('indica de qué compás escrito sale cada compás que se toca', () => {
+    const bars = [b('C', { repeatStart: true }), b('F', { ending: 1 }), b('G', { ending: 1, repeatEnd: true }), b('Am', { ending: 2 })];
+    const l = docLayout({ bars });
+    expect(l?.order).toEqual([0, 1, 2, 0, 3]);
+    expect(l?.bars).toHaveLength(4);
+  });
+  it('sin repeticiones el orden es el escrito, y un documento inválido da null', () => {
+    expect(docLayout({ bars: [b('C'), b('F')] })?.order).toEqual([0, 1]);
+    expect(docLayout({ bars: [b('Xx')] })).toBeNull();
   });
 });

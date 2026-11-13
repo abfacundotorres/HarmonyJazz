@@ -85,9 +85,9 @@ function resolve(bars: DocBar[]): DocBar[] {
  *  - `repeatEnd` marca el último compás de lo que se repite. Un grupo de compases con final 1 se cierra
  *    solo con repetición; en la segunda vuelta se lo salta y sigue en el final 2.
  */
-export function unroll(bars: DocBar[]): DocBar[] {
+export function unrollOrder(bars: DocBar[]): number[] {
   const n = bars.length;
-  const out: DocBar[] = [];
+  const out: number[] = [];
   const done = new Set<number>();
   let i = 0;
   let s = 0;
@@ -101,7 +101,7 @@ export function unroll(bars: DocBar[]): DocBar[] {
       pass = 1;
       continue;
     }
-    out.push(b);
+    out.push(i);
     const lastOfEnding1 = b.ending === 1 && bars[i + 1]?.ending !== 1;
     if ((b.repeatEnd || lastOfEnding1) && !done.has(i)) {
       done.add(i);
@@ -118,6 +118,27 @@ export function unroll(bars: DocBar[]): DocBar[] {
     i++;
   }
   return out;
+}
+
+export const unroll = (bars: DocBar[]): DocBar[] => unrollOrder(bars).map((i) => bars[i]);
+
+/**
+ * Cómo se lee la grilla escrita: los compases (con "%" ya resuelto) y, para cada compás que se toca, el índice
+ * del compás escrito del que sale. Sirve para dibujar secciones, repeticiones y finales sobre lo que suena.
+ * Devuelve null si el documento no es válido.
+ */
+export interface DocLayout {
+  bars: DocBar[];
+  order: number[];
+}
+export function docLayout(doc: ChartDoc): DocLayout | null {
+  try {
+    compileDoc(doc);
+    const bars = resolve(doc.bars);
+    return { bars, order: unrollOrder(bars) };
+  } catch {
+    return null;
+  }
 }
 
 /** Cifrado plano ("|" y espacios) que toca el play-along. Lanza un Error con mensaje legible si algo no es válido. */

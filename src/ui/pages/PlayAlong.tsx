@@ -3,7 +3,7 @@ import { engine } from '../../audio/engine';
 import {
   Library, MAX_TUNES, normalizeChartText, parseImport, tuneToProgression, UserTune, validateTune,
 } from '../../content/library';
-import { ChartDoc, compileDoc, docFromChart, emptyBar } from '../../content/chartDoc';
+import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
@@ -106,6 +106,11 @@ export function PlayAlong() {
   const loopValid = loop && loop[1] < chart.bars ? loop : null;
   const playChart = useMemo(() => (loopValid ? sliceChart(chart, loopValid[0], loopValid[1]) : chart), [chart, loopValid]);
   const offset = loopValid ? Math.max(0, chart.chords.findIndex((c) => c.bar >= loopValid[0])) : 0;
+
+  const layout = useMemo(() => {
+    const d = useCustom ? doc : selected.doc;
+    return d ? docLayout(d) : null;
+  }, [useCustom, doc, selected]);
 
   const pos = usePosition();
   const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
@@ -285,6 +290,7 @@ export function PlayAlong() {
           title={useCustom ? 'Progresión propia' : selected.name}
           keyLabel={baseKey ? keyLabel(key) : null}
           chart={chart}
+          layout={layout}
           current={ci >= 0 ? ci + offset : -1}
           chord={chord}
           next={next}
@@ -339,7 +345,7 @@ export function PlayAlong() {
           )}
           {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
         </div>
-        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} />
+        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
       </section>
 

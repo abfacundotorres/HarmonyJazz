@@ -1,49 +1,114 @@
+import { useEffect, useRef } from 'react';
+import type { DocBar, DocLayout } from '../../content/chartDoc';
+import { chordParts } from '../../theory/chordFormat';
 import { Chord, chordSymbol, qdef, transposeChord } from '../../theory/chords';
 import type { Chart } from '../../theory/chart';
 import { degreeNote, noteName, simplify, transposeNote } from '../../theory/notes';
 import { SCALES } from '../../theory/scales';
-import { useReading } from '../hooks';
+import { useReading, useSettings } from '../hooks';
 
 /**
  * Cuadrícula de compases tipo lead sheet, con el acorde actual resaltado.
  * Cada compás es clickeable para armar un loop: primer clic = inicio, segundo clic = final.
  */
+/** Un acorde dibujado: estilo iReal (Δ7, -7, ø7, alteraciones en superíndice) o completo, según el ajuste. */
+export function ChordText({ chord }: { chord: Chord }) {
+  const { iv } = useReading();
+  const [settings] = useSettings();
+  const w = transposeChord(chord, iv);
+  if (settings.chordStyle === 'full') return <>{chordSymbol(w, true)}</>;
+  const p = chordParts(w);
+  return (
+    <>
+      {p.root}
+      {p.main}
+      {p.sup && <sup>{p.sup}</sup>}
+      {p.bass && <span className="slash">/{p.bass}</span>}
+    </>
+  );
+}
+
+interface BoardBar {
+  /** Índices de los compases tocados (en la carta desplegada) que salen de este compás escrito. */
+  plays: number[];
+  mark?: DocBar;
+}
+
 export function ChordBoard({
   chart,
   current,
   loop,
   pending,
   onBarClick,
+  layout,
 }: {
   chart: Chart;
   current: number;
   loop?: [number, number] | null;
   pending?: number | null;
   onBarClick?: (bar: number) => void;
+  /** Estructura escrita de la grilla: si coincide con la carta se muestran secciones, repeticiones y finales. */
+  layout?: DocLayout | null;
 }) {
-  const { iv } = useReading();
-  const bars: { idx: number; sym: string }[][] = Array.from({ length: chart.bars }, () => []);
-  chart.chords.forEach((cc, i) => bars[cc.bar].push({ idx: i, sym: chordSymbol(transposeChord(cc.chord, iv), true) }));
+  const ref = useRef<HTMLDivElement>(null);
+  const byBar: { idx: number; chord: Chord }[][] = Array.from({ length: chart.bars }, () => []);
+  chart.chords.forEach((cc, i) => byBar[cc.bar].push({ idx: i, chord: cc.chord }));
+
+  const useLayout = !!layout && layout.order.length === chart.bars;
+  const written: BoardBar[] = useLayout
+    ? layout.bars.map((mark) => ({ plays: [] as number[], mark }))
+    : byBar.map((_, i) => ({ plays: [i] }));
+  if (useLayout) layout.order.forEach((w, k) => written[w].plays.push(k));
+
+  const curBar = current >= 0 ? chart.chords[current]?.bar ?? -1 : -1;
+  const curPos = curBar >= 0 ? byBar[curBar].findIndex((x) => x.idx === current) : -1;
+  const nextBar = curBar >= 0 ? (curBar + 1) % chart.bars : -1;
+  const sections = new Set<number>();
+  if (useLayout) layout.bars.forEach((b, i) => b.section && (i === 0 || layout.bars[i - 1].section !== b.section) && sections.add(i));
+
+  // el compás que suena queda a la vista
+  useEffect(() => {
+    if (curBar < 0 || onBarClick === undefined) return;
+    const el = ref.current?.querySelector('.bar.now');
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }, [curBar, onBarClick]);
+
   return (
-    <div className="board">
-      {bars.map((b, i) => {
-        const inLoop = !!loop && i >= loop[0] && i <= loop[1];
-        const cls = ['bar', b.some((x) => x.idx === current) ? 'now' : '', inLoop ? 'inloop' : '', pending === i ? 'pending' : '']
-          .filter(Boolean)
-          .join(' ');
+    <div className="board" ref={ref}>
+      {written.map((wb, i) => {
+        const first = wb.plays[0];
+        const chords = byBar[first];
+        const inLoop = !!loop && wb.plays.some((k) => k >= loop[0] && k <= loop[1]);
+        const isNow = wb.plays.includes(curBar);
+        const m = wb.mark;
+        const cls = [
+          'bar',
+          isNow ? 'now' : '',
+          !isNow && wb.plays.includes(nextBar) ? 'next' : '',
+          inLoop ? 'inloop' : '',
+          pending !== null && pending !== undefined && wb.plays.includes(pending) ? 'pending' : '',
+          m?.repeatStart ? 'rs' : '',
+          m?.repeatEnd ? 're' : '',
+          m?.ending ? `end end${m.ending}` : '',
+          chords.length > 2 ? 'many' : '',
+        ].filter(Boolean).join(' ');
+        const showEnd = m?.ending && layout?.bars[i - 1]?.ending !== m.ending;
         return (
           <button
             key={i}
             type="button"
             className={cls}
-            onClick={() => onBarClick?.(i)}
+            onClick={() => onBarClick?.(first)}
             disabled={!onBarClick}
             aria-pressed={inLoop}
           >
             <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
-            {b.map((x) => (
-              <span key={x.idx} className={x.idx === current ? 'cur' : ''}>
-                {x.sym}
+            {sections.has(i) && <b className="sec" title={`Sección ${m?.section}`}>{m?.section}</b>}
+            {showEnd && <i className="endno">{m?.ending}.</i>}
+            {chords.map((x, j) => (
+              <span key={x.idx} className={isNow && j === curPos ? 'cur' : ''}>
+                <ChordText chord={x.chord} />
               </span>
             ))}
           </button>

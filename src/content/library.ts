@@ -115,6 +115,7 @@ export function tuneToProgression(t: UserTune): Progression {
     chart: t.chart,
     tempo: t.tempo,
     style: t.style,
+    doc: t.doc,
     notes: t.composer ? `De ${t.composer}. Cifrado cargado por vos.` : 'Cifrado cargado por vos.',
   };
 }

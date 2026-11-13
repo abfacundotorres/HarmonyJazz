@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import type { Position } from '../../audio/engine';
-import { Chord, chordSymbol, transposeChord } from '../../theory/chords';
+import type { Chord } from '../../theory/chords';
 import type { Chart } from '../../theory/chart';
 import { usePersistent } from '../../state/storage';
-import { useReading } from '../hooks';
 import { useWakeLock } from '../wakeLock';
-import { ChordBoard } from './ChordInfo';
+import type { DocLayout } from '../../content/chartDoc';
+import { ChordBoard, ChordText } from './ChordInfo';
 
 /**
  * Modo atril: la grilla y el acorde actual en pantalla completa y en letra grande, para leer a distancia con el
@@ -15,6 +15,7 @@ export function Atril({
   title,
   keyLabel,
   chart,
+  layout,
   current,
   chord,
   next,
@@ -29,6 +30,7 @@ export function Atril({
   title: string;
   keyLabel: string | null;
   chart: Chart;
+  layout?: DocLayout | null;
   /** Índice del acorde que suena en `chart` (−1 si no suena). */
   current: number;
   chord: Chord | null;
@@ -41,7 +43,6 @@ export function Atril({
   onToggle: () => void;
   onClose: () => void;
 }) {
-  const { iv } = useReading();
   const [cfg, setCfg] = usePersistent<{ size: number }>('atril', { size: 2 });
   const size = Math.min(5, Math.max(1.2, cfg.size));
   useWakeLock(true);
@@ -64,7 +65,6 @@ export function Atril({
     document.querySelector('.atril .bar.now')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [pos?.bar, pos?.chorus]);
 
-  const sym = (c: Chord) => chordSymbol(transposeChord(c, iv), true);
   const beat = pos && !pos.countIn ? pos.beat : -1;
 
   return (
@@ -79,19 +79,19 @@ export function Atril({
       </div>
 
       <div className="atril-now" aria-live="off">
-        <div className="atril-sym">{chord ? sym(chord) : '—'}</div>
+        <div className="atril-sym">{chord ? <ChordText chord={chord} /> : '—'}</div>
         <div className="atril-side">
           <div className="atril-beats" aria-hidden>
             {[0, 1, 2, 3].map((b) => (
               <i key={b} className={b === beat ? 'on' : ''} />
             ))}
           </div>
-          {next && <div className="atril-next">sigue <b>{sym(next)}</b></div>}
+          {next && <div className="atril-next">sigue <b><ChordText chord={next} /></b></div>}
         </div>
       </div>
       </div>
 
-      <ChordBoard chart={chart} current={current} loop={loop} />
+      <ChordBoard chart={chart} current={current} loop={loop} layout={layout} />
 
       <div className="atril-bar">
         <button className={`play ${playing ? 'on' : ''}`} onClick={onToggle} aria-label={playing ? 'Detener' : 'Reproducir'}>
