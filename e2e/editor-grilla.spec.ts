@@ -61,3 +61,41 @@ test.describe('editor de grilla: comodidad', () => {
     await page.screenshot({ path: process.env.SHOT ?? 'test-results/editor.png' });
   });
 });
+
+test.describe('editor de grilla: escuchar mientras se edita', () => {
+  test('suena, resalta el compás que toca y una edición entra en la vuelta siguiente sin cortar', async ({ page }) => {
+    await page.goto('/#/playalong');
+    await page.getByText(/Mis temas/).first().click();
+    await page.getByLabel('Tempo').fill('320');
+    const slot = (n: number) => page.getByLabel(`Acorde 1 del compás ${n}`);
+    await slot(1).fill('Dm7');
+    await page.getByRole('button', { name: 'Agregar compás al final' }).click();
+    await slot(2).fill('G7');
+    await page.getByRole('button', { name: 'Escuchar la grilla' }).click();
+    await expect(page.getByRole('button', { name: 'Detener' })).toBeVisible();
+    await expect(page.locator('.ced-bar.now')).toHaveCount(1, { timeout: 15_000 });
+    // se agrega un tercer compás mientras suena: no se detiene
+    await page.getByRole('button', { name: 'Agregar compás al final' }).click();
+    await slot(3).fill('Cmaj7');
+    // en la vuelta siguiente entra el compás nuevo
+    await expect(page.locator('.ced-bar').nth(2)).toHaveClass(/now/, { timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Detener' })).toBeVisible();
+    await page.getByRole('button', { name: 'Detener' }).click();
+    await expect(page.getByRole('button', { name: 'Escuchar la grilla' })).toBeVisible();
+    await expect(page.locator('.ced-bar.now')).toHaveCount(0);
+  });
+
+  test('con acordes vacíos avisa y no empieza; volver a tocar después de detener funciona', async ({ page }) => {
+    await page.goto('/#/playalong');
+    await page.getByText(/Mis temas/).first().click();
+    await page.getByRole('button', { name: 'Escuchar la grilla' }).click();
+    await expect(page.getByRole('alert')).toContainText('acordes válidos');
+    await page.getByLabel('Tempo').fill('320');
+    await page.getByLabel('Acorde 1 del compás 1').fill('Cmaj7');
+    await page.getByRole('button', { name: 'Escuchar la grilla' }).click();
+    await page.getByRole('button', { name: 'Detener' }).click();
+    await page.getByRole('button', { name: 'Escuchar la grilla' }).click();
+    await expect(page.getByRole('button', { name: 'Detener' })).toBeVisible();
+    await expect(page.locator('.ced-bar.now')).toHaveCount(1, { timeout: 15_000 });
+  });
+});
