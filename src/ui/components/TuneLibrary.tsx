@@ -131,7 +131,7 @@ export function TuneLibrary({
           <button className={!doc ? 'on' : ''} onClick={() => { if (doc) { onChartText(unrolledText(doc)); onDoc(null); } }}>Texto</button>
         </div>
         {doc ? (
-          <ChartEditor key={editorKey} doc={doc} onChange={onDoc} />
+          <ChartEditor key={editorKey} doc={doc} onChange={onDoc} tempo={draft.tempo} style={draft.style} />
         ) : (
           <textarea
             rows={5}

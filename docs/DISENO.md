@@ -160,6 +160,10 @@ Cada una de las 12 lecciones tiene, además del texto, un **paso a paso** (5–6
 
 La grilla del editor también muestra 4 compases por fila. El **teclado** (casillero del acorde, ◂ ▸, raíz y calidad en filas con desplazamiento horizontal) queda fijo abajo (`position: sticky`) mientras se recorre la grilla. Con "Avanzar solo" (se recuerda), al elegir la calidad pasa al casillero o compás siguiente. Tocar un acorde de un compás partido elige ese casillero. **Rango:** "Elegir rango" fija el inicio y el siguiente toque marca el final; Copiar, Cortar, Pegar (después del rango), Repetir y Borrar actúan sobre el rango (`content/barOps.ts`). Copiar y Repetir no arrastran secciones, repeticiones ni finales; Cortar sí, para poder mover un bloque.
 
+### Tocar mientras se edita
+
+El botón ▶ del teclado del editor toca la grilla que se está armando (en concierto, con el tempo y el estilo del tema) y resalta el compás que suena. Cada chorus agenda el siguiente (`runChorus` en `engine.play`), así que `engine.queueChart(chart)` hace entrar la grilla editada **en la vuelta siguiente**, sin reiniciar y aunque cambie la cantidad de compases. Si la grilla queda incompleta (acordes vacíos o inválidos) se sigue tocando la última versión válida. Cambiar el tempo o el estilo sí reinicia.
+
 ### Grilla de reproducción (estilo iReal Pro)
 
 `ChordBoard` dibuja 4 compases por fila (también en el celular; la letra se adapta al ancho con unidades de contenedor). Si el tema tiene su grilla escrita (`doc`), `docLayout` indica de qué compás escrito sale cada compás que se toca (`unrollOrder`), y el tablero muestra la forma escrita con rótulos de sección, barras de repetición y casillas 1.º/2.º; el compás que suena se resalta en cualquiera de sus pasadas y el siguiente se tiñe suave. Un tema pegado como texto se muestra plano. Los loops siguen usando índices de la carta desplegada. El cifrado se dibuja al estilo iReal (`theory/chordFormat.ts`: Δ7, -7, ø7, °7, alteraciones en superíndice); el ajuste "Estilo de cifrado" (en "Más") vuelve a maj7/m7/m7♭5.

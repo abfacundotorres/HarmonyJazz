@@ -481,3 +481,7 @@ button.link { background: var(--surface-2); }
 }
 .ced-barno { font-size: .8rem; color: var(--muted); min-width: 3em; text-align: center; }
 .ced-keypad .ced-slots, .ced-keypad .ced-pal { margin: .3em 0; }
+.ced-play { min-width: 2.6em; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.ced-play.on { background: var(--text); color: var(--surface); }
+.ced-bar.now { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.ced-bar.now.sel { background: color-mix(in srgb, var(--accent) 38%, transparent); }

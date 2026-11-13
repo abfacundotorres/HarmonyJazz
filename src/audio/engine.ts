@@ -351,6 +351,8 @@ export class JazzEngine {
   private repeatId: number | null = null;
   private lastOpts: PlayOptions | null = null;
   /** Momento (tiempo de AudioContext) en que empieza cada chorus. */
+  /** Grilla que entra en el próximo chorus (la edición en vivo no corta lo que suena). */
+  private pendingChart: Chart | null = null;
   private chorusStarts: { chorus: number; time: number }[] = [];
   playing = false;
   private keepAlive: HTMLAudioElement | null = null;
@@ -495,7 +497,6 @@ export class JazzEngine {
     t.bpm.value = opts.tempo;
     const beat = 60 / opts.tempo;
     const barSec = 4 * beat;
-    const chorusSec = opts.chart.bars * barSec;
     const inst = this.inst!;
     const draw = Tone.getDraw();
 
@@ -514,19 +515,34 @@ export class JazzEngine {
 
     let chorus = 0;
     const state: RunState = { bassPrev: 40, comp: newCompState(), rng: mulberry32((Math.random() * 0xffffffff) >>> 0) };
-    this.repeatId = t.scheduleRepeat(
-      (time) => {
-        this.chorusStarts.push({ chorus, time });
-        if (this.chorusStarts.length > 64) this.chorusStarts.shift();
-        this.scheduleChorus(opts, time, chorus, state);
-        chorus++;
-      },
-      chorusSec,
-      offset,
-    );
+    this.pendingChart = null;
+    // Cada chorus agenda el siguiente: así una grilla nueva (queueChart) entra recién en la próxima vuelta,
+    // aunque tenga otra cantidad de compases.
+    let cur = opts;
+    const runChorus = (time: number, at: number) => {
+      if (gen !== this.gen) return;
+      if (this.pendingChart) {
+        cur = { ...cur, chart: this.pendingChart };
+        this.lastOpts = cur;
+        this.pendingChart = null;
+      }
+      this.chorusStarts.push({ chorus, time });
+      if (this.chorusStarts.length > 64) this.chorusStarts.shift();
+      this.scheduleChorus(cur, time, chorus, state);
+      chorus++;
+      const next = at + cur.chart.bars * barSec;
+      this.repeatId = t.schedule((tm) => runChorus(tm, next), next);
+    };
+    this.repeatId = t.schedule((tm) => runChorus(tm, offset), offset);
     t.start('+0.05');
     this.playing = true;
     return true;
+  }
+
+  /** Cambia la grilla a partir del próximo chorus, sin reiniciar. Si no suena, sólo se recuerda para la próxima vez. */
+  queueChart(chart: Chart) {
+    if (this.playing) this.pendingChart = chart;
+    else if (this.lastOpts) this.lastOpts = { ...this.lastOpts, chart };
   }
 
   /** Vuelve a arrancar con nuevas opciones (p. ej. tempo) si está sonando. */

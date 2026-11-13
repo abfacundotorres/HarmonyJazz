@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react';
-import { ChartDoc, DocBar, emptyBar, MAX_CHORD_CHARS, playedBars, QUALITY_BUTTONS, ROOTS, SECTIONS } from '../../content/chartDoc';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { engine, Style } from '../../audio/engine';
+import { ChartDoc, compileDoc, DocBar, docLayout, emptyBar, MAX_CHORD_CHARS, playedBars, QUALITY_BUTTONS, ROOTS, SECTIONS } from '../../content/chartDoc';
 import { copyRange, pasteBars, range, removeRange, repeatRange } from '../../content/barOps';
 import { diatonic, TEMPLATES, templateBars, transposeBars } from '../../content/chartTemplates';
 import { parseChord } from '../../theory/chords';
-import { MAX_BARS } from '../../theory/chart';
+import { MAX_BARS, parseChart } from '../../theory/chart';
 import { prettyAcc as pretty } from '../../theory/notes';
 import { usePersistent } from '../../state/storage';
+import { usePosition, useSettings } from '../hooks';
 
 const valid = (c: string) => {
   if (c === '%') return true;
@@ -26,7 +28,9 @@ const split = (s: string) => {
  * Editor de grilla al estilo iReal Pro: se toca un compás, se eligen raíz y calidad con botones (o se escribe),
  * y se marcan secciones, repeticiones y finales. Tiene deshacer/rehacer.
  */
-export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: ChartDoc) => void }) {
+const OWNER = 'editor';
+
+export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { doc: ChartDoc; onChange: (d: ChartDoc) => void; tempo?: number; style?: Style }) {
   const [sel, setSel] = useState(0);
   const [anchor, setAnchor] = useState(0);
   const [rangeMode, setRangeMode] = useState(false);
@@ -40,6 +44,68 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
   const [, force] = useState(0);
 
   const bars = doc.bars;
+
+  // ---- escuchar mientras se edita ----
+  const [settings] = useSettings();
+  const pos = usePosition();
+  const [playing, setPlaying] = useState(false);
+  const [playErr, setPlayErr] = useState<string | null>(null);
+  /** Última versión válida de la grilla: lo incompleto (acordes vacíos) no corta lo que suena. */
+  const lastGood = useRef<ReturnType<typeof parseChart> | null>(null);
+  const layout = useMemo(() => docLayout(doc), [doc]);
+  const chart = useMemo(() => {
+    try {
+      return parseChart(compileDoc(doc));
+    } catch {
+      return null;
+    }
+  }, [doc]);
+  if (chart) lastGood.current = chart;
+  const playOpts = () => ({
+    chart: lastGood.current!, tempo, swing: settings.swing, style, countIn: false,
+    mix: { piano: true, bass: true, drums: true, melody: false, metronome: false }, owner: OWNER,
+  });
+  const togglePlay = async () => {
+    if (playing) {
+      engine.stop();
+      return;
+    }
+    if (!lastGood.current) return setPlayErr('Completá al menos un compás con acordes válidos para escucharlo.');
+    setPlayErr(null);
+    try {
+      setPlaying(true);
+      if (!(await engine.play(playOpts()))) setPlaying(false);
+    } catch (e) {
+      setPlaying(false);
+      setPlayErr((e as Error).message || 'No se pudo iniciar el audio');
+    }
+  };
+  // la edición entra en la próxima vuelta, sin cortar
+  useEffect(() => {
+    if (playing && chart) engine.queueChart(chart);
+  }, [chart, playing]);
+  // tempo y estilo sí reinician (cambian el pulso)
+  const firstOpts = useRef(true);
+  useEffect(() => {
+    if (firstOpts.current) {
+      firstOpts.current = false;
+      return;
+    }
+    if (playing && lastGood.current) void engine.update(playOpts());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tempo, style, settings.swing]);
+  // sólo reacciona a posiciones nuevas (una vieja, de una parada anterior, no debe detener la reproducción que recién empieza)
+  const playingRef = useRef(false);
+  playingRef.current = playing;
+  useEffect(() => {
+    if (!pos || !playingRef.current) return;
+    if (pos.owner !== OWNER) setPlaying(false);
+    else if (pos.chorus === -1 && pos.bar === -1 && !pos.countIn) setPlaying(false);
+  }, [pos]);
+  useEffect(() => () => {
+    if (engine.options?.owner === OWNER) engine.stop();
+  }, []);
+  const playingWritten = playing && pos?.owner === OWNER && pos.bar >= 0 ? (layout && layout.order.length > pos.bar ? layout.order[pos.bar] : pos.bar) : -1;
   const cur = Math.min(sel, bars.length - 1);
   const bar = bars[cur];
   const curSlot = Math.min(slot, bar.chords.length - 1);
@@ -188,7 +254,7 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
           return (
             <button
               key={i}
-              className={`ced-bar ${i === cur ? 'sel' : ''} ${i >= lo && i <= hi ? 'insel' : ''} ${b.repeatStart ? 'rs' : ''} ${b.repeatEnd ? 're' : ''} ${bad ? 'bad' : ''}`}
+              className={`ced-bar ${i === cur ? 'sel' : ''} ${i === playingWritten ? 'now' : ''} ${i >= lo && i <= hi ? 'insel' : ''} ${b.repeatStart ? 'rs' : ''} ${b.repeatEnd ? 're' : ''} ${bad ? 'bad' : ''}`}
               onClick={(e) => selectBar(i, Number((e.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.dataset.slot ?? 0))}
               aria-label={`Compás ${i + 1}: ${b.chords.join(' ') || 'vacío'}`}
               aria-pressed={i === cur}
@@ -231,6 +297,7 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
           <button onClick={() => selectBar(Math.max(0, cur - 1))} disabled={cur === 0} aria-label="Compás anterior">◂</button>
           <span className="ced-barno" aria-live="polite">{cur + 1}/{bars.length}</span>
           <button onClick={() => selectBar(Math.min(bars.length - 1, cur + 1))} disabled={cur === bars.length - 1} aria-label="Compás siguiente">▸</button>
+          <button className={`ced-play ${playing ? 'on' : ''}`} onClick={() => void togglePlay()} aria-pressed={playing} aria-label={playing ? 'Detener' : 'Escuchar la grilla'}>{playing ? '■' : '▶'}</button>
         </div>
         <div className="ced-pal" role="group" aria-label="Raíz">
           {ROOTS.map((r) => (
@@ -244,6 +311,7 @@ export function ChartEditor({ doc, onChange }: { doc: ChartDoc; onChange: (d: Ch
         </div>
       </div>
 
+      {playErr && <p className="error" role="alert">{playErr}</p>}
       <div className="ced-panel card-inner">
         <p className="muted small">Compás {cur + 1}: tocá el acorde a editar, elegí raíz y calidad (o escribilo).</p>
         <div className="ced-marks">
