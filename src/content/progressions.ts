@@ -1,4 +1,5 @@
 import type { Style } from '../audio/engine';
+import type { ChartDoc } from './chartDoc';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { degreeNote, noteName, parseNote, simplify } from '../theory/notes';
 
@@ -18,6 +19,8 @@ export interface Progression {
   notes: string;
   /** Grabaciones de referencia para escuchar. */
   listen?: string[];
+  /** Grilla escrita (secciones, repeticiones, finales) de un tema propio. */
+  doc?: ChartDoc;
 }
 
 function iiVIcycle(minor = false): string {

@@ -177,6 +177,13 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
           </select>
         </label>
         <label>
+          Estilo de cifrado{' '}
+          <select value={settings.chordStyle} onChange={(e) => setSettings({ chordStyle: e.target.value as typeof settings.chordStyle })}>
+            <option value="ireal">iReal (Δ7, -7, ø7)</option>
+            <option value="full">Completo (maj7, m7, m7♭5)</option>
+          </select>
+        </label>
+        <label>
           <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4
         </label>
       </details>

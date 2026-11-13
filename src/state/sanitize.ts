@@ -23,6 +23,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('focusLesson', str(raw.focusLesson, 40));
   set('volume', num(raw.volume, -14, 2));
   set('output', oneOf(raw.output, ['auto', 'phone', 'normal'] as const));
+  set('chordStyle', oneOf(raw.chordStyle, ['ireal', 'full'] as const));
   return out;
 };
 
