@@ -139,7 +139,7 @@ export const SHAPES: Record<string, (tonic: Note) => Item[]> = {
 
 
 /** Unidad de cada ejercicio: 8 = corcheas (compás de 8), 16 = semicorcheas (compás de 16). */
-export const UNIT: Record<string, number> = { rhythmDotted: 16, syncopation: 16, accentLong: 16, triplets: 12, chromLoop: 6, fourGroups: 16 };
+export const UNIT: Record<string, number> = { rhythmDotted: 16, syncopation: 16, accentLong: 16, triplets: 12, chromLoop: 6, fourGroups: 16, sottoVoce: 16 };
 
 /** Asigna duraciones cíclicas (un patrón) a una secuencia de notas. */
 function patterned(notes: Pitch[], pattern: number[]): Item[] {
@@ -251,6 +251,18 @@ NEW_SHAPES.fourGroups = (tonic) => {
   for (let i = Math.min(4, n - 4); i >= 0; i--) for (let k = 3; k >= 0; k--) items.push({ p: s[i + k], dur: 1 });
   return finish(items, s[0], 16);
 };
+
+/** Notas largas de la tríada precedidas por su arpegio muy corto: la melodía se oye completa sin acompañamiento. */
+NEW_SHAPES.sottoVoce = (tonic) => {
+  const s = ladder(tonic, 'ionian', 15);
+  const T = [0, 2, 4, 7, 9, 11, 14].filter((i) => i < s.length).map((i) => s[i]);
+  const targets = [4, 5, 6, 5, 4].filter((k) => k < T.length);
+  const items: Item[] = [];
+  for (const k of targets) {
+    items.push({ p: T[k - 4], dur: 1 }, { p: T[k - 3], dur: 1 }, { p: T[k - 2], dur: 1 }, { p: T[k - 1], dur: 1 }, { p: T[k], dur: 4, accent: true });
+  }
+  return finish(items, s[0], 16);
+};
 Object.assign(SHAPES, NEW_SHAPES);
 
 /** ABC con la armadura de la tonalidad escrita. `bpm` es la negra. */
@@ -260,7 +272,9 @@ export function techniqueAbc(id: string, concertKey: string, bpm: number): strin
   const unit = UNIT[id] ?? 8;
   let acc = new Map<string, number>();
   const items = SHAPES[id](tonic);
-  const head = (L: number, M = '4/4') => `X:1\nM:${M}\nL:1/${L}\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n`;
+  // los ejercicios en semicorcheas se escriben en 2/4 (8 semicorcheas por compás): en 4/4 quedan demasiado apretados en el celular
+  const barLen = unit === 16 ? 8 : unit;
+  const head = (L: number, M = unit === 16 ? '2/4' : '4/4') => `X:1\nM:${M}\nL:1/${L}\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n`;
 
   if (id === 'chromLoop') {
     const notes = items.map((it) => abcPitch(it.p!, acc, keyAcc)).join('');
@@ -285,8 +299,8 @@ export function techniqueAbc(id: string, concertKey: string, bpm: number): strin
   let body = '';
   let pos = 0;
   items.forEach((it, idx) => {
-    if (pos % unit === 0) {
-      if (pos > 0) body += (pos / unit) % 4 === 0 ? ' |\n' : ' | ';
+    if (pos % barLen === 0) {
+      if (pos > 0) body += (pos / barLen) % 4 === 0 ? ' |\n' : ' | ';
       acc = new Map();
     } else if (pos % 4 === 0) body += ' ';
     const prev = items[idx - 1]?.slur;

@@ -2,8 +2,8 @@ import { expect, test } from './helpers';
 
 // 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
-// día número % 17 = 0: técnica de escala en terceras (la rotación de técnica tiene 17 ejercicios)
-const diaTecnica = (indice: number) => new Date(1970, 0, 1 + 20808 + indice, 12, 0, 0);
+// día número % 18 = 0: técnica de escala en terceras (la rotación de técnica tiene 18 ejercicios)
+const diaTecnica = (indice: number) => new Date(1970, 0, 1 + 20790 + indice, 12, 0, 0);
 const DIA_TERCERAS = diaTecnica(0);
 
 test.describe('ejercicios de práctica con explicación completa', () => {
@@ -73,9 +73,9 @@ test.describe('lecciones: cómo practicar cada ejercicio', () => {
 
 test.describe('técnica rítmica y de ligaduras', () => {
   test('cada ejercicio nuevo se despliega con pentagrama en la tonalidad del día', async ({ page }) => {
-    // índices 8 a 16 de la rotación de técnica
-    const dias = [8, 9, 10, 11, 12, 13, 14, 15, 16].map(diaTecnica);
-    const titulos = ['Ritmo: corchea con puntillo', 'Síncopas sostenidas', 'Ligaduras con pistones', 'Ataque con acento y nota larga', 'Cierres de frase', 'Arpegio de 7ª disminuida', 'Tresillos parejos', 'Cromática ligada muy suave', 'Resistencia: escala en grupos'];
+    // índices 8 a 17 de la rotación de técnica
+    const dias = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map(diaTecnica);
+    const titulos = ['Ritmo: corchea con puntillo', 'Síncopas sostenidas', 'Ligaduras con pistones', 'Ataque con acento y nota larga', 'Cierres de frase', 'Arpegio de 7ª disminuida', 'Tresillos parejos', 'Cromática ligada muy suave', 'Resistencia: escala en grupos', 'Melodía con arpegios'];
     for (const [i, dia] of dias.entries()) {
       await page.clock.setFixedTime(dia);
       await page.goto('/#/hoy');

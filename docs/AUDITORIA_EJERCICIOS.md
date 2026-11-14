@@ -2,7 +2,7 @@
 
 ## Tercera pasada: lectura de Clarke
 
-Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); y los estudios 5 y 6 (páginas 22 a 31); **quedan sin leer los estudios 7 a 10**. Lo que se incorporó:
+Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); y los estudios 5 a 10 (el libro completo, páginas 22 a 53). Lo que se incorporó:
 
 - **Muy suave:** todos los ejercicios deben tocarse muy suave para que los labios se mantengan frescos y bajo control; tocados fuerte producen el efecto contrario. Se reforzó en flexibilidad y se agregó un ejercicio nuevo (cromática ligada muy suave).
 - **Un solo aire y muchas repeticiones:** repetir un fragmento de 8 a 16 veces en un aire, con los dedos firmes y los labios "vivos"; contraer apenas al subir y relajar al bajar. Se creó el ejercicio de cromática ligada (fragmento y pentagrama propios).
@@ -10,6 +10,10 @@ Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio públi
 - **Método:** no perder tiempo en lo fácil y trabajar lo difícil hasta dominarlo; corregir de inmediato la menor falla; sesiones cortas y poco a poco (método común de las Lecciones).
 - **Resistencia (estudio 5):** "la resistencia es el 90 % de tocar"; no forzar el sonido; no pasar a un ejercicio hasta dominar muchas veces el anterior ("un edificio de 20 pisos necesita cimientos más firmes que uno de dos"). Se creó el ejercicio de resistencia con grupos de cuatro semicorcheas.
 - **Escalas (estudio 6):** ejercicios de escalas en distintos registros para resistencia, técnica y elasticidad del labio, con los dos picados, y tocados en un solo aire (opinión suya: rinde más que las notas largas). Esto último no se adoptó: las notas largas siguen siendo la base.
+- **Estudio 7 (tresillos cromáticos y arpegios):** tocarlos tan claros y correctos como un buen violinista o clarinetista; Clarke pedía a un clarinetista que tocara los pasajes difíciles y los imitaba. Arpegios también con triple picado, sin forzar los agudos; los de 7ª disminuida, de 4 a 8 veces en un aire. Se sumó a tresillos y al arpegio disminuido.
+- **Estudios 8 y 9 (cromáticas largas):** muy suave, los labios no se cansan por largo que sea el ejercicio; no intentarlos hasta tener progreso suficiente; cromática que sube un semitono por ejercicio, crescendo al subir y diminuendo al bajar, 4 veces o más en un aire. Sumado a la cromática y a la cromática ligada (con su "práctica diaria": cuatro veces en un aire).
+- **Estudio 10:** una melodía armonizada por arpegios cortos "sotto voce" antes de cada nota larga fuerte. Se creó el ejercicio de melodía con arpegios.
+- **Instrumento:** válvulas lentas o pegajosas desaniman al estudiante y no son su culpa; se agregó el consejo de limpiar y lubricar.
 - Presión: Clarke dice que sólo hace falta una presión leve, "no fuerza bruta", lo que coincide con los textos de la app (a diferencia de la presión creciente que describe Arban).
 
 ## Segunda pasada: lectura directa de Arban
