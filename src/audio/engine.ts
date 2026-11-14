@@ -69,7 +69,8 @@ const BUS_DB = {
   synth: { piano: -9, bass: -18, horn: -14, drums: 8 },
 };
 /** Procesamiento de la salida "phone": corte de graves inaudibles, presencia y armónicos del bajo. */
-const PHONE = { highpass: 120, presenceDb: 3, exciterDb: 4 };
+/** bassTrimDb: con el corte de graves más abajo (90 Hz) el bajo ocupa más margen; se baja para no recortar. */
+const PHONE = { highpass: 90, presenceDb: 3, exciterDb: -10, drive: 2, bias: 0.3, bassTrimDb: -4 };
 
 const SAMPLE_BASE = () => new URL('samples/', location.href.split('#')[0]).href;
 /** Nota de Tone → archivo (los sostenidos del piano se renombraron: D#3 → Ds3). */
@@ -162,6 +163,8 @@ class Instruments {
   private hp: Tone.Filter;
   private presence: Tone.Filter;
   private exciter: Tone.Volume;
+  private bassBase = 0;
+  private phoneOut = false;
   private synths: { piano: Tone.PolySynth; bass: Tone.MonoSynth; horn: Tone.MonoSynth };
 
   constructor() {
@@ -194,6 +197,7 @@ class Instruments {
     // buses: cada instrumento (real o sintético) entra por el suyo, con su nivel
     this.pianoBus = new Tone.Volume(BUS_DB.synth.piano).connect(comp);
     this.bassBus = new Tone.Volume(BUS_DB.synth.bass).connect(comp);
+    this.bassBase = BUS_DB.synth.bass;
     this.hornBus = new Tone.Volume(BUS_DB.synth.horn).connect(this.reverb);
     this.drumBus = new Tone.Volume(BUS_DB.synth.drums).connect(this.reverb);
 
@@ -201,11 +205,13 @@ class Instruments {
     // si se agregan armónicos (240–900 Hz) el oído reconstruye la nota grave. Sólo suena en la salida "phone".
     this.exciter = new Tone.Volume(PHONE.exciterDb);
     this.exciter.mute = true;
+    // Saturación suave y asimétrica (genera 2.º y 3.er armónico). Antes era una distorsión fuerte con +14 dB de
+    // entrada: sonaba a fuzz en cada nota, a cualquier volumen (el control de volumen va después), y comía el margen.
+    const harmonics = new Tone.WaveShaper((x: number) => Math.tanh(PHONE.drive * x + PHONE.bias) - Math.tanh(PHONE.bias), 2048);
     this.bassBus.chain(
-      new Tone.Filter({ type: 'lowpass', frequency: 140, rolloff: -24 }),
-      new Tone.Volume(14),
-      new Tone.Distortion({ distortion: 0.8, oversample: '4x' }),
-      new Tone.Filter({ type: 'highpass', frequency: 170, rolloff: -24 }),
+      new Tone.Filter({ type: 'lowpass', frequency: 160, rolloff: -24 }),
+      harmonics,
+      new Tone.Filter({ type: 'highpass', frequency: 140, rolloff: -24 }),
       new Tone.Filter({ type: 'lowpass', frequency: 900, rolloff: -12 }),
       this.exciter,
       comp,
@@ -275,6 +281,12 @@ class Instruments {
     this.hp.frequency.value = phone ? PHONE.highpass : 20;
     this.presence.gain.value = phone ? PHONE.presenceDb : 0;
     this.exciter.mute = !phone;
+    this.phoneOut = phone;
+    this.applyBassLevel();
+  }
+
+  private applyBassLevel() {
+    this.bassBus.volume.value = this.bassBase + (this.phoneOut ? PHONE.bassTrimDb : 0);
   }
 
   /**
@@ -299,7 +311,8 @@ class Instruments {
     bass.connect(this.bassBus);
     horn.connect(this.hornBus);
     this.pianoBus.volume.value = BUS_DB.real.piano;
-    this.bassBus.volume.value = BUS_DB.real.bass;
+    this.bassBase = BUS_DB.real.bass;
+    this.applyBassLevel();
     this.hornBus.volume.value = BUS_DB.real.horn;
     this.piano = piano;
     this.bass = bass;
@@ -685,7 +698,7 @@ export class JazzEngine {
         st.bassPrev = last;
         for (const h of hits) {
           const t0 = at(h.e);
-          const dur = Math.max(0.06, (at(h.e + h.dur) - t0) * 0.98);
+          const dur = Math.max(0.06, (at(h.e + h.dur) - t0) * jit(0.84, 0.98)); // notas de largo desigual, no todas pegadas
           defer(t0 + jit(-0.006, 0.004), (t) => inst.bass.triggerAttackRelease(midiToFreq(h.midi), dur, t, h.vel));
         }
       }
