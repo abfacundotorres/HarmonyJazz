@@ -752,11 +752,34 @@ export const TECH_CHROM_LOOP: PracticeExercise = {
   abc: (k) => techniqueAbc('chromLoop', k, 72),
 };
 
+export const TECH_ENDURANCE: PracticeExercise = {
+  id: 'tech-endurance',
+  short: 'Resistencia: escala en grupos de cuatro semicorcheas, en un solo aire, muy suave.',
+  goal: 'Resistencia y agilidad de dedos sin forzar: repetir un patrón de escala en un solo aire, muy suave, y subir de a un escalón por vez.',
+  bpm: 72,
+  minutes: 6,
+  steps: [
+    'Cantá el patrón: grupos de cuatro notas (1-2-3-4, 2-3-4-5, 3-4-5-6…) subiendo por la escala y después, bajando, los mismos grupos al revés. Después tocalo muy despacio, a 72, hasta que los dedos se muevan parejos.',
+    'Tocalo todo ligado y muy suave (pianissimo), en un solo aire. Apretá bien los pistones y mantené los labios "vivos": contraé apenas al subir y relajá al bajar.',
+    'Si te alcanza el aire, repetí el patrón varias veces seguidas sin respirar. Si no, respirá antes de que se agote; no hay que llegar a forzar.',
+    'No pases al siguiente escalón (más notas, más tempo, otra tonalidad) hasta que el actual salga muchas veces con total facilidad. Clarke lo comparaba con un edificio de 20 pisos: necesita cimientos mucho más firmes que uno de dos.',
+    'Cuando esté firme, subí el metrónomo de a 4 bpm. Con la mayor facilidad, probá el mismo patrón picado muy liviano y, después, con doble picado.',
+    'Para medir la resistencia: al final de la sesión, volvé a tocar las primeras escalas del día. Si salen tan bien como al principio, vas bien; si no, la próxima vez hacé menos.',
+  ],
+  tips: [
+    'La voluntad ayuda, pero la fuerza no: no fuerces el sonido ni aprietes la boquilla para llegar al final del aire.',
+    'Clarke decía que la resistencia es la mayor parte de tocar la trompeta, y que se construye con constancia y poco a poco, no con sesiones largas.',
+    'Si los labios se cansan o duelen, parar y descansar: tocar fuerte cansa en vez de entrenar.',
+  ],
+  abcCaption: 'La escala de la tonalidad del día en grupos de cuatro semicorcheas ligadas, subiendo y bajando.',
+  abc: (k) => techniqueAbc('fourGroups', k, 72),
+};
+
 export const WARMUP_EXERCISES: PracticeExercise[] = [
   BUZZ_GLISSANDO, LONG_TONES_DYNAMICS, LIP_SLURS_POSITIONS, LONG_TONES_LOW, FLEX_HARMONICS, LIP_BENDING, BUZZ_PHRASE, LONG_TONES_FOURTHS,
   LIP_SLURS_TRIPLETS, BREATH_FLOW, SOFT_ATTACKS, HIGH_SOFT, TONGUING_REPEATED, SLURRED_SCALE, INTERVAL_SLURS,
 ];
 export const TECHNIQUE_EXERCISES: PracticeExercise[] = [
   TECH_THIRDS, TECH_MELODIC_MINOR, TECH_SEVENTHS, TECH_CHROMATIC, TECH_INTERVALS, TECH_BLUES, TECH_TRIADS, TECH_BEBOP,
-  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG, TECH_CLOSINGS, TECH_DIM7, TECH_TRIPLETS, TECH_CHROM_LOOP,
+  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG, TECH_CLOSINGS, TECH_DIM7, TECH_TRIPLETS, TECH_CHROM_LOOP, TECH_ENDURANCE,
 ];

@@ -2,12 +2,14 @@
 
 ## Tercera pasada: lectura de Clarke
 
-Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); **quedan sin leer los estudios 5 a 10**. Lo que se incorporó:
+Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); y los estudios 5 y 6 (páginas 22 a 31); **quedan sin leer los estudios 7 a 10**. Lo que se incorporó:
 
 - **Muy suave:** todos los ejercicios deben tocarse muy suave para que los labios se mantengan frescos y bajo control; tocados fuerte producen el efecto contrario. Se reforzó en flexibilidad y se agregó un ejercicio nuevo (cromática ligada muy suave).
 - **Un solo aire y muchas repeticiones:** repetir un fragmento de 8 a 16 veces en un aire, con los dedos firmes y los labios "vivos"; contraer apenas al subir y relajar al bajar. Se creó el ejercicio de cromática ligada (fragmento y pentagrama propios).
 - **Orden de articulación:** ligar primero, después picado muy liviano y, cuando ya sea fácil, doble picado; acentuar cada grupo de cuatro notas para asegurar el ritmo. Se agregó a escalas en terceras y arpegios de 7ª.
 - **Método:** no perder tiempo en lo fácil y trabajar lo difícil hasta dominarlo; corregir de inmediato la menor falla; sesiones cortas y poco a poco (método común de las Lecciones).
+- **Resistencia (estudio 5):** "la resistencia es el 90 % de tocar"; no forzar el sonido; no pasar a un ejercicio hasta dominar muchas veces el anterior ("un edificio de 20 pisos necesita cimientos más firmes que uno de dos"). Se creó el ejercicio de resistencia con grupos de cuatro semicorcheas.
+- **Escalas (estudio 6):** ejercicios de escalas en distintos registros para resistencia, técnica y elasticidad del labio, con los dos picados, y tocados en un solo aire (opinión suya: rinde más que las notas largas). Esto último no se adoptó: las notas largas siguen siendo la base.
 - Presión: Clarke dice que sólo hace falta una presión leve, "no fuerza bruta", lo que coincide con los textos de la app (a diferencia de la presión creciente que describe Arban).
 
 ## Segunda pasada: lectura directa de Arban
