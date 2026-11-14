@@ -485,3 +485,13 @@ button.link { background: var(--surface-2); }
 .ced-play.on { background: var(--text); color: var(--surface); }
 .ced-bar.now { background: color-mix(in srgb, var(--accent) 30%, transparent); }
 .ced-bar.now.sel { background: color-mix(in srgb, var(--accent) 38%, transparent); }
+
+/* ejercicios desplegables en Hoy */
+.block .exercise { margin: 4px 0; }
+.block .exercise > summary { cursor: pointer; color: var(--text); }
+.block .exercise[open] > summary { font-weight: 600; }
+.block .ex-body { margin: 6px 0 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 8px 8px 0; color: var(--text); }
+.block .ex-body ol, .block .ex-body ul { padding-left: 1.2em; color: var(--text); }
+.block .ex-body li { margin: .35em 0; }
+.block .ex-body h4 { margin: 10px 0 2px; }
+.block .ex-body figure { margin: 8px 0; }

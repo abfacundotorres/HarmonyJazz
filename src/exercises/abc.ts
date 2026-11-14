@@ -17,7 +17,7 @@ export interface AbcOptions {
 
 const ALLOWED = [8, 6, 4, 3, 2, 1];
 
-function abcPitch(p: Pitch, accState: Map<string, number>, keyAcc: number[]): string {
+export function abcPitch(p: Pitch, accState: Map<string, number>, keyAcc: number[]): string {
   const k = `${p.letter}${p.octave}`;
   const current = accState.has(k) ? accState.get(k)! : keyAcc[p.letter];
   let acc = '';

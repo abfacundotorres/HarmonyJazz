@@ -5,6 +5,7 @@ import { generatorById } from '../../exercises/generators';
 import { concertRange } from '../../state/storage';
 import { keyInterval, parseChart, transposeChart } from '../../theory/chart';
 import { localizeNotes } from '../../exercises/localize';
+import { COMMON_METHOD, GUIDES } from '../../content/exerciseGuides';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { LineBreakdown } from '../components/LineBreakdown';
 import { Prose } from '../components/Prose';
@@ -139,7 +140,33 @@ function LessonExerciseCard({ id, ex, initialKey }: { id: string; ex: LessonExer
       style={prog.style}
       onRegenerate={() => setSeed((s) => s + 1)}
     />
+    <PracticeGuide generator={ex.generator!} tempo={ex.tempo ?? prog.tempo} />
     <LineBreakdown recipe={generatorById(ex.generator!).recipe} chart={chart} notes={notes} />
     </>
+  );
+}
+
+/** Cómo practicar este tipo de ejercicio: método común y pasos propios del tipo de línea. */
+function PracticeGuide({ generator, tempo }: { generator: string; tempo: number }) {
+  const { iv } = useReading();
+  const loc = (t: string) => localizeNotes(t, 'C', 'C', iv);
+  const g = GUIDES[generator];
+  if (!g) return null;
+  const slow = Math.max(40, Math.round((tempo * 0.5) / 4) * 4);
+  return (
+    <details className="card study">
+      <summary><h3>Cómo practicar este ejercicio</h3></summary>
+      <p>{loc(g.focus)}</p>
+      <h4>Antes de tocar</h4>
+      <ol>{g.steps.map((s, i) => <li key={i}>{loc(s)}</li>)}</ol>
+      <h4>El método, paso a paso</h4>
+      <ol>
+        {COMMON_METHOD.map((s, i) => <li key={i}>{i === 1 ? `${s} Un tempo de partida razonable: ${slow} bpm.` : s}</li>)}
+      </ol>
+      <h4>Qué escuchar</h4>
+      <p>{loc(g.listen)}</p>
+      <h4>En la trompeta</h4>
+      <ul>{g.trumpet.map((s, i) => <li key={i}>{loc(s)}</li>)}</ul>
+    </details>
   );
 }
