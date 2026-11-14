@@ -139,7 +139,7 @@ export const SHAPES: Record<string, (tonic: Note) => Item[]> = {
 
 
 /** Unidad de cada ejercicio: 8 = corcheas (compás de 8), 16 = semicorcheas (compás de 16). */
-export const UNIT: Record<string, number> = { rhythmDotted: 16, syncopation: 16, accentLong: 16, triplets: 12, chromLoop: 6 };
+export const UNIT: Record<string, number> = { rhythmDotted: 16, syncopation: 16, accentLong: 16, triplets: 12, chromLoop: 6, fourGroups: 16 };
 
 /** Asigna duraciones cíclicas (un patrón) a una secuencia de notas. */
 function patterned(notes: Pitch[], pattern: number[]): Item[] {
@@ -240,6 +240,16 @@ NEW_SHAPES.chromLoop = (tonic) => {
   const ups = [0, 1, 2, 3].map((k) => fromMidi(m0 + k, false));
   const downs = [2, 1].map((k) => fromMidi(m0 + k, true));
   return eighths([...ups, ...downs]);
+};
+
+/** Grupos de cuatro semicorcheas por la escala: 1-2-3-4, 2-3-4-5… subiendo y después en sentido inverso, bajando. */
+NEW_SHAPES.fourGroups = (tonic) => {
+  const s = ladder(tonic, 'ionian', 12);
+  const n = Math.min(s.length, 12);
+  const items: Item[] = [];
+  for (let i = 0; i + 3 < n && i < 5; i++) for (let k = 0; k < 4; k++) items.push({ p: s[i + k], dur: 1 });
+  for (let i = Math.min(4, n - 4); i >= 0; i--) for (let k = 3; k >= 0; k--) items.push({ p: s[i + k], dur: 1 });
+  return finish(items, s[0], 16);
 };
 Object.assign(SHAPES, NEW_SHAPES);
 
