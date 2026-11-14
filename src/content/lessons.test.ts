@@ -49,3 +49,13 @@ describe('lecciones', () => {
     });
   }
 });
+
+describe('plan semanal y errores frecuentes', () => {
+  it('cada lección tiene siete días y tres errores frecuentes, con texto sustancial', () => {
+    for (const l of LESSONS) {
+      expect(l.week, l.id).toHaveLength(7);
+      expect(l.mistakes, l.id).toHaveLength(3);
+      for (const s of [...l.week, ...l.mistakes]) expect(s.length, `${l.id}: ${s}`).toBeGreaterThan(25);
+    }
+  });
+});

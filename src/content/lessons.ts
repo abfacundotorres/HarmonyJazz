@@ -19,6 +19,10 @@ export interface Lesson {
   /** Párrafos. "## " = subtítulo, "- " = viñeta, **negrita**. */
   body: string[];
   exercises: LessonExercise[];
+  /** Plan de siete días para estudiar la lección. */
+  week: string[];
+  /** Errores frecuentes y cómo evitarlos. */
+  mistakes: string[];
   trumpet: string[];
   listen?: string[];
 }
@@ -56,6 +60,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Guide tones en Bird blues', generator: 'guide', progression: 'blues-bird', tempo: 140 },
       { label: 'Guide tones en blancas, blues de F', generator: 'guide2', progression: 'blues-f', tempo: 140 },
       { label: 'Guide tones en la menor con ii–V a la relativa', generator: 'guide', progression: 'menor-modulante', tempo: 130 },
+    ],
+    week: [
+      'Cantá la línea de guide tones de un ii–V–I en una sola tonalidad, sin la trompeta, hasta saberla de memoria.',
+      'Tocala en redondas con el Afinador abierto, en el registro medio: cada nota estable y centrada hasta el final.',
+      'Pasala a blancas (3 → 7 dentro de cada compás) y después probá el ejercicio sobre Rhythm changes.',
+      'Recorré el ciclo de cuartas con el ii–V–I, una tonalidad por vez y sin pasar de 60 bpm.',
+      'Improvisá con una sola regla: caer en un guide tone en el tiempo 1 de cada acorde. Entre medio tocá lo que quieras.',
+      'Activá el reto de guide tones del Play-along y anotá tu porcentaje de cambios "aterrizados".',
+      'Día liviano: escuchá una balada y seguí con la voz las 3ªs y las 7ªs. Repasá la tonalidad que peor salió.',
+    ],
+    mistakes: [
+      'Tocar la 3ª y la 7ª sin escuchar el acorde: si no oís el color del acorde, la línea es sólo una escala de dos notas.',
+      'Saltar de octava entre acordes: la línea tiene que quedarse cerca y moverse por semitono o por grado conjunto.',
+      'Apurar las notas largas: las redondas se sostienen enteras y la afinación se vigila hasta el último tiempo.',
     ],
     trumpet: [
       'Tocalo en dos octavas: la de abajo te obliga a centrar el registro grave, la de arriba trabaja resistencia sin forzar.',
@@ -96,6 +114,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Arpegios desde la 3ª en la menor con ii–V a la relativa', generator: 'arp3', progression: 'menor-modulante', tempo: 130 },
       { label: 'Arpegios desde la 3ª en el turnaround', generator: 'arp3', progression: 'turnaround', tempo: 130 },
     ],
+    week: [
+      'Nombrá en voz alta los arpegios 1-3-5-7 y 3-5-7-9 de los tres acordes de un ii–V–I y cantalos.',
+      'Tocá 1-3-5-7-9 lento y ligado en una sola tonalidad; fijá la digitación de la 9ª.',
+      'Pasá a 3-5-7-9 y comprobá la equivalencia: un m7 desde la 3ª es un maj7 sobre la ♭3.',
+      'Conectá los tres arpegios del ii–V–I sin pausa: cada uno termina en la 7ª, que baja por semitono a la 3ª del siguiente.',
+      'Variá el orden de las notas (3–7–5–9, 9–7–5–3, 5–3–7–9) sobre un acorde estático.',
+      'Ciclo de cuartas con el ejercicio, a un tempo cómodo.',
+      'Registro: tocalos en dos octavas, también en el agudo, sin forzar el sonido.',
+    ],
+    mistakes: [
+      'Empezar siempre desde la fundamental: suena a ejercicio y no a línea; probá empezar desde la 3ª o la 7ª.',
+      'Subir y bajar siempre con el mismo ritmo: variá con silencios y cambios de dirección.',
+      'Olvidar la conexión: la última nota de un arpegio debe quedar cerca de la primera del siguiente.',
+    ],
     trumpet: [
       'Los arpegios rápidos dependen de la flexibilidad entre parciales: si un salto se "cae", trabajá ese par de notas como lip slur.',
       'Legato con lengua suave ("doo") en todas las notas, después articulá sólo los contratiempos.',
@@ -125,7 +157,7 @@ export const LESSONS: Lesson[] = [
       '- Cromática arriba + cromática abajo.',
       '- Doble: escala arriba, cromática arriba, cromática abajo, objetivo (4 notas).',
       '- Al revés: abajo primero, después arriba.',
-      '- Con el objetivo en el tiempo 1: el enclosure empieza en el "y" del 3 del compás anterior.',
+      '- Con el objetivo en el tiempo 1: el enclosure de tres notas empieza en el tiempo 4 del compás anterior; el de cuatro, en el "y" del 3.',
       'Elegí siempre el objetivo antes de tocar: 3ª, 7ª, 9ª. El enclosure sin objetivo claro suena a ornamento vacío.',
     ],
     exercises: [
@@ -133,6 +165,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Enclosure en el turnaround', generator: 'enclosure', progression: 'turnaround', tempo: 130 },
       { label: 'Enclosures en Rhythm changes', generator: 'enclosure', progression: 'rhythm', tempo: 160 },
       { label: 'Enclosures en la cadena mayor–menor', generator: 'enclosure', progression: 'cadena-mayor-menor', tempo: 140 },
+    ],
+    week: [
+      'Elegí la 3ª de un acorde y tocá su enclosure (arriba–abajo), lento, hasta que la resolución se sienta firme.',
+      'Probá las cuatro variantes sobre la misma nota objetivo.',
+      'Aplicá un enclosure a la 3ª de cada acorde de un ii–V–I.',
+      'Cambiá el objetivo: la 7ª y la 9ª.',
+      'Ciclo de cuartas con el ejercicio, a un tempo cómodo.',
+      'Insertá un enclosure en una frase propia, con el objetivo en un tiempo fuerte.',
+      'Grabate improvisando sobre un blues y contá en cuántos tiempos fuertes llegaste a un objetivo con enclosure.',
+    ],
+    mistakes: [
+      'Enclosures sin objetivo claro: elegí la nota antes de tocar.',
+      'Tocar todas las notas con el mismo peso: las aproximaciones son livianas y el objetivo va un poco más largo y con peso.',
+      'Usarlos en cada compás: si todo es enclosure, deja de sonar a decisión.',
     ],
     trumpet: [
       'Las cromáticas en contratiempo, articuladas con lengua ligera, le dan el swing. Las notas objetivo, un poco más largas.',
@@ -171,6 +217,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Bebop en la cadena mayor–menor', generator: 'bebop', progression: 'cadena-mayor-menor', tempo: 140 },
       { label: 'Bebop en el turnaround', generator: 'bebop', progression: 'turnaround', tempo: 140 },
     ],
+    week: [
+      'Tocá la escala mixolidia descendente y decí en voz alta qué nota cae en cada tiempo.',
+      'Agregá la nota de paso y verificá que las notas del acorde caen en los tiempos.',
+      'Empezá desde cada nota del acorde: fundamental, 3ª, 5ª y ♭7.',
+      'Probá la bebop mayor sobre un acorde mayor.',
+      'Ejercicio de ii–V–I por las 12, a un tempo cómodo.',
+      'Estudiá la frase "Escala bebop descendente en el V" del Vocabulario y tocala en otra tonalidad.',
+      'Improvisá sobre un V7 sostenido con la regla: notas del acorde en los tiempos fuertes.',
+    ],
+    mistakes: [
+      'Poner la nota de paso en un tiempo fuerte: pierde su función y suena a error.',
+      'Aplicar la escala sin cambiar nunca de dirección: cuando cambiás de dirección hay que recalcular dónde caen las notas del acorde.',
+      'Tocarla rígida y sin swing: es una herramienta de fraseo, no un ejercicio de dedos.',
+    ],
     trumpet: [
       'Practicalas también ascendentes desde la 3ª: el registro agudo con lengua liviana es donde más se nota la técnica.',
     ],
@@ -205,6 +265,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Digitales en la cadena mayor–menor', generator: 'digital', progression: 'cadena-mayor-menor', tempo: 120 },
       { label: 'Digitales en Rhythm changes', generator: 'digital', progression: 'rhythm', tempo: 150 },
     ],
+    week: [
+      'Aprendé 1-2-3-5 sobre un solo acorde, de oído.',
+      'Sumá 3-5-7-9 y unilas en un compás (1–9–3–5 y 3–5–7–9).',
+      'Aplicá la célula a un ii–V–I lento, empezando en la nota más cercana a donde terminaste.',
+      'Probá 5-3-2-1 y las demás variantes invertidas.',
+      'Ciclo de cuartas con el ejercicio.',
+      'Rhythm changes a un tempo moderado.',
+      'Cambios de Coltrane, muy lento y sólo con la célula 1-2-3-5.',
+    ],
+    mistakes: [
+      'Usar siempre la misma célula en el mismo lugar del compás: cambiá el ritmo y el punto de partida.',
+      'Tocarla sin escuchar el acorde: antes de empezar, oí la 3ª.',
+      'Subir el tempo antes de tener las 12 tonalidades limpias a tempo lento.',
+    ],
     trumpet: ['Empezá ligado para pensar la digitación, después articulá cada nota: la coordinación lengua-dedos es el cuello de botella en la trompeta.'],
     listen: ['John Coltrane – "Giant Steps", "Countdown"', 'Freddie Hubbard – "Red Clay"'],
   },
@@ -212,7 +286,7 @@ export const LESSONS: Lesson[] = [
     id: 'minor-251',
     title: 'ii–V–i menor y el dominante alterado',
     area: 'Armonía',
-    summary: 'Locria ♮2, alterada y menor melódica: tres modos de dos escalas menores melódicas. Un solo sistema.',
+    summary: 'Locria ♮2, alterada y menor melódica: tres modos tomados de tres escalas menores melódicas (la de F, la de A♭ y la de C). Un solo sistema.',
     steps: [
       'Tocá la menor melódica de F, la de A♭ y la de C (una por compás) en negras.',
       'Relacionalas con los acordes: Dø es el modo VI de F menor melódica, G7alt es el modo VII de A♭ menor melódica y Cm6 es C menor melódica.',
@@ -239,6 +313,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Pentatónica de ♭5 sobre el alterado', generator: 'pent', progression: 'ii-v-i-minor', tempo: 120 },
       { label: 'Arpegios desde la 3ª en el ii–V–i menor', generator: 'arp3', progression: 'ii-v-i-minor-12', tempo: 120 },
       { label: 'Bebop en el ii–V–i menor', generator: 'bebop', progression: 'ii-v-i-minor', tempo: 120 },
+    ],
+    week: [
+      'Tocá la menor melódica de F, la de A♭ y la de C, una por compás, en negras.',
+      'Relacionalas con Dø, G7alt y Cm6 y nombrá el modo de cada una.',
+      'Tocá la escala alterada de G y ubicá la ♭9, la ♯9, la ♯11 y la ♭13.',
+      'Resolución: llevá cada tensión por semitono a su nota de destino en el acorde de tónica.',
+      'Ejercicio de pares de tríadas sobre el ii–V–i menor.',
+      'Ejercicio de pentatónicas sobre el ii–V–i menor.',
+      'Improvisá con una regla: toda tensión del V alterado se resuelve por semitono.',
+    ],
+    mistakes: [
+      'Tocar la alterada como una escala: es una fuente de notas, y lo que importa es cómo resolvés las tensiones.',
+      'Olvidar la 3ª del V: sin ella el acorde pierde su identidad.',
+      'Dejar la tensión colgada al llegar al i: la ♭9 y la ♯9 tienen que bajar por semitono.',
     ],
     trumpet: ['Las alteraciones en el registro medio-agudo (A♭, B♭, D♭ escritos) son notas de afinación delicada: verificalas con el afinador.'],
     listen: ['Woody Shaw – "Rosewood"', 'Lee Morgan – "Ceora" (escuchá las resoluciones)'],
@@ -274,6 +362,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Pares de tríadas en la cadena mayor–menor', generator: 'triads', progression: 'cadena-mayor-menor', tempo: 120 },
       { label: 'Pares de tríadas en el blues menor', generator: 'triads', progression: 'blues-minor', tempo: 140 },
     ],
+    week: [
+      'Armá el par de tríadas de un m7 y tocá cada tríada por separado, subiendo y bajando.',
+      'Alterná en zigzag: una tríada sube y la otra baja.',
+      'Tocalas en inversiones, empezando cada una por la nota más cercana.',
+      'Ocho compases sobre un acorde estático, sin cambiar el par.',
+      'Un ii–V–I lento, cambiando de par con cada acorde.',
+      'Ciclo de cuartas con el ejercicio.',
+      'Probá grupos de dos notas por tríada para romper la simetría.',
+    ],
+    mistakes: [
+      'Tocar las tríadas como arpegios de libro: variá el ritmo y la dirección.',
+      'Elegir un par con notas comunes: se pierde el sonido abierto.',
+      'Quedarse en el registro cómodo: las inversiones piden saltos de 4ª y de 6ª.',
+    ],
     trumpet: ['Los saltos de 4ª y 6ª de las inversiones son ideales como flexibilidad: tocalo ligado primero.'],
     listen: ['Woody Shaw – "The Moontrane"', 'Randy Brecker – cualquier solo de los Brecker Brothers'],
   },
@@ -299,7 +401,7 @@ export const LESSONS: Lesson[] = [
       '- m7: pentatónica de la ♭3 (Dm7 → F pentatónica).',
       '- maj7: pentatónica de la 5 (Cmaj7 → G pentatónica: 5, 6, 7, 9, 3).',
       '- 7alt: pentatónica de la ♭5 (C7alt → G♭ pentatónica: ♯11, ♭13, ♭7, ♭9, ♯9).',
-      '- 7♯11: pentatónica de la 2.',
+      '- 7♯11: pentatónica de la 2 (D sobre C7♯11). Ojo: contiene la 7ª mayor (B), que choca con la ♭7 del acorde; usala de paso y resolvé, o elegí la pentatónica de la tónica (C), que no tiene esa fricción. Sobre un maj7♯11 sí funciona entera.',
       '- m7♭5: pentatónica de la ♭6.',
       'En contextos modales, combiná pentatónicas a distancia de semitono para salir y entrar (side-slipping).',
     ],
@@ -308,6 +410,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Pentatónicas sobre el blues menor', generator: 'pent', progression: 'blues-minor', tempo: 150 },
       { label: 'Pentatónicas en la menor con ii–V a la relativa', generator: 'pent', progression: 'menor-modulante', tempo: 130 },
       { label: 'Pentatónicas en el ii–V–I', generator: 'pent', progression: 'ii-v-i', tempo: 110 },
+    ],
+    week: [
+      'Tocá la pentatónica de la ♭3 sobre un m7, de oído.',
+      'Pentatónica de la 5 sobre un maj7.',
+      'Pentatónica de la ♭5 sobre un 7alt y escuchá las alteraciones.',
+      'Combiná las dos de un ii–V.',
+      'Grupos de tres notas, subiendo y bajando.',
+      'Blues menor con el ejercicio.',
+      'Cuartas apiladas, con la frase del Vocabulario.',
+    ],
+    mistakes: [
+      'Subir y bajar la pentatónica sin silencios: suena a escala; metele saltos y pausas.',
+      'Elegir mal la pentatónica: verificá qué grado del acorde es cada nota.',
+      'Usar la pentatónica de la 2 sobre un 7♯11 sin cuidar la 7ª mayor que trae.',
     ],
     trumpet: ['Las cuartas son un desafío de flexibilidad. Usalas como ejercicio diario de lip slurs en el calentamiento.'],
     listen: ['Freddie Hubbard – "Maiden Voyage" (con Herbie Hancock)', 'Woody Shaw – "Stepping Stones"'],
@@ -342,6 +458,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Side-slipping en la cadena mayor–menor', generator: 'sideslip', progression: 'cadena-mayor-menor', tempo: 130 },
       { label: 'Side-slipping en el blues menor', generator: 'sideslip', progression: 'blues-minor', tempo: 140 },
       { label: 'Side-slipping en el ii–V–i menor', generator: 'sideslip', progression: 'ii-v-i-minor-12', tempo: 120 },
+    ],
+    week: [
+      'Tocá el arpegio de un m7 "adentro" y después medio tono arriba, "afuera".',
+      'Practicá la vuelta: resolvé por semitono a una nota del acorde real.',
+      'Un compás adentro y uno con medio compás afuera, con el ejercicio.',
+      'Ocho compases sobre un acorde modal.',
+      'Pasalo a un ii–V–I, con la misma regla: la vuelta siempre por semitono.',
+      'Probá también medio tono abajo.',
+      'Grabate y escuchá: ¿la vuelta se oye clara?',
+    ],
+    mistakes: [
+      'Quedarse afuera demasiado tiempo: la tensión se agota.',
+      'Salir con duda: mismo sonido y misma articulación que adentro.',
+      'Resolver en un tiempo débil o a una nota que no es del acorde.',
     ],
     trumpet: ['Afuera hay que tocar con la misma convicción: mismo sonido, misma articulación. Lo que suena equivocado es la duda.'],
     listen: ['Miles Davis – "So What"', 'Woody Shaw – "Little Red\'s Fantasy"'],
@@ -378,6 +508,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Desplazamiento en el blues de F', generator: 'displaced', progression: 'blues-f', tempo: 140 },
       { label: 'Desplazamiento en la cadena mayor–menor', generator: 'displaced', progression: 'cadena-mayor-menor', tempo: 140 },
     ],
+    week: [
+      'Elegí una frase que ya sepas y tocala tal cual.',
+      'Tocala empezando en el "y" del tiempo 1.',
+      'Acentuá los contratiempos y ligá hacia el tiempo fuerte.',
+      'Anticipá la resolución en el "y" del 4.',
+      'Doodle tonguing lento sobre una sola nota, con el metrónomo en 2 y 4.',
+      'Ejercicio de desplazamiento.',
+      'Grabate y compará con una grabación de referencia.',
+    ],
+    mistakes: [
+      'Acentuar todos los contratiempos por igual: acentuá los que preceden a un cambio de dirección.',
+      'Desplazar sin sentir el pulso: marcá el pie y usá el metrónomo en 2 y 4.',
+      'Perder la intención del swing al subir el tempo: imitá una grabación.',
+    ],
     trumpet: ['El doodle tonguing ("doo-dl") es la herramienta para el bebop rápido: practicalo lento sobre una sola nota con el metrónomo en 2 y 4.'],
     listen: ['Clifford Brown – "Cherokee"', 'Lee Morgan – "Moanin\'" (Art Blakey)'],
   },
@@ -408,6 +552,20 @@ export const LESSONS: Lesson[] = [
       { label: 'Bebop en el blues de F', generator: 'bebop', progression: 'blues-f', tempo: 150 },
       { label: 'Pentatónicas en el blues menor', generator: 'pent', progression: 'blues-minor', tempo: 150 },
     ],
+    week: [
+      'Pentatónica menor sobre un dominante: escuchá cómo la ♭3 choca con la 3ª.',
+      'Resbalón ♭3 → 3 sobre el I7 y sobre el IV7.',
+      'Frase "Blues: la blue note que resbala" del Vocabulario.',
+      'Guide tones sobre el Bird blues.',
+      'Pregunta, repetición y respuesta sobre un solo acorde.',
+      'Blues de F con el ejercicio de arpegios.',
+      'Dos coros improvisados con una sola idea y sus variaciones.',
+    ],
+    mistakes: [
+      'Llenar de notas: el blues es una idea repetida con variaciones.',
+      'Tocar las blue notes con altura exacta: usá glissandos y medias válvulas.',
+      'Perder la forma de los 12 compases: cantá mentalmente los cambios.',
+    ],
     trumpet: ['Medias válvulas y glissandos de labio para las blue notes: no todo es altura exacta.'],
     listen: ['Freddie Hubbard – "Birdlike"', 'Clark Terry – "Mumbles"'],
   },
@@ -426,7 +584,7 @@ export const LESSONS: Lesson[] = [
     why: [
       'G7 y D♭7 comparten la 3ª y la 7ª con las funciones invertidas: el esqueleto armónico es el mismo.',
       'La raíz del bajo se mueve por semitono (D – D♭ – C): una línea cromática muy fluida.',
-      'El backdoor resuelve a la tónica bajando un tono: suena más suave que el V7 normal.',
+      'El backdoor resuelve a la tónica subiendo un tono (la raíz B♭ sube a C): suena más suave que el V7 normal, porque no hay sensible.',
     ],
     body: [
       'D♭7 y G7 comparten la 3ª y la 7ª (F y C♭/B): por eso uno reemplaza al otro. La línea puede tocar la sustitución aunque el piano toque el original, y viceversa.',
@@ -438,6 +596,20 @@ export const LESSONS: Lesson[] = [
       { label: '1-2-3-5 en cambios de Coltrane', generator: 'digital', progression: 'coltrane', tempo: 110 },
       { label: 'Arpegios desde la 3ª en la sustitución tritonal', generator: 'arp3', progression: 'tritone', tempo: 120 },
       { label: 'Enclosures en la sustitución tritonal', generator: 'enclosure', progression: 'tritone', tempo: 120 },
+    ],
+    week: [
+      'Ubicá la 3ª y la 7ª de G7 y de D♭7: son las mismas notas.',
+      'Tocá el ii–V–I con G7 y después con D♭7.',
+      'Estudiá el backdoor: Fm7 – B♭7 – Cmaj7.',
+      'Guide tones sobre la sustitución tritonal.',
+      'Frases del Vocabulario (sustitución tritonal y backdoor).',
+      'Coltrane con la célula 1-2-3-5, lento.',
+      'Elegí un tema tuyo, marcá dónde sustituir y tocalo.',
+    ],
+    mistakes: [
+      'Sustituir sin escuchar qué hace el bajo: la línea y el bajo tienen que contarse la misma historia.',
+      'Olvidar que el acorde sustituto tiene su propia escala (lidia ♭7).',
+      'Tocar rápido los cambios de Coltrane antes de sentir cada centro tonal.',
     ],
     trumpet: ['En ciclos rápidos el registro debe quedar compacto: elegí la inversión que minimiza saltos, no la que te sale.'],
     listen: ['John Coltrane – "Countdown"', 'Woody Shaw – "In a Capricornian Way"'],

@@ -1,5 +1,16 @@
 # Auditoría pedagógica de los ejercicios de práctica
 
+## Auditoría de las Lecciones de armonía
+
+Se revisó el contenido musical de las 12 lecciones (teoría, no técnica de trompeta). Se verificó nota por nota que los modos, equivalencias y pentatónicas citados sean correctos (por ejemplo, Dø = modo VI de F menor melódica, G7alt = modo VII de A♭ menor melódica, 3-5-7-9 de Dø = Fm(maj7), pentatónica de la ♭5 sobre C7alt = G♭ con ♭7, ♭9, ♯9, ♯11 y ♭13). Errores encontrados y corregidos:
+
+- **Enclosures:** decía que un enclosure al tiempo 1 "empieza en el y del 3"; el de tres notas empieza en el tiempo 4 y el de cuatro, en el y del 3.
+- **ii–V–i menor:** el resumen hablaba de "dos escalas menores melódicas"; son tres (F, A♭ y C).
+- **Backdoor:** un párrafo decía que resuelve "bajando un tono" y otro "subiendo"; sube un tono (B♭ → C).
+- **Pentatónica sobre 7♯11:** la pentatónica de la 2ª (D sobre C7♯11) incluye la 7ª mayor, que choca con la ♭7 del acorde. Se agregó la advertencia; el generador de ejercicios la sigue usando (funciona entera sobre maj7♯11).
+
+Se sumó a cada lección un **plan de siete días** y **errores frecuentes**. Los textos de las lecciones citan acordes en Do y se traducen a Si♭ o concierto; sólo se traducen los ejemplos de acordes escritos a propósito (hay un test que lo comprueba).
+
 ## Tercera pasada: lectura de Clarke
 
 Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); y los estudios 5 a 10 (el libro completo, páginas 22 a 53). Lo que se incorporó:

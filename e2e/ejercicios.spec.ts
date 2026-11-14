@@ -89,4 +89,15 @@ test.describe('técnica rítmica y de ligaduras', () => {
       expect(cabe, titulos[i]).toBe(true);
     }
   });
+
+  test('cada lección trae un plan de siete días y los errores frecuentes', async ({ page }) => {
+    await page.goto('/#/lecciones/minor-251');
+    const plan = page.locator('details.study', { hasText: 'Plan de una semana' });
+    await plan.locator('summary').click();
+    await expect(plan.locator('li')).toHaveCount(7);
+    await expect(plan.getByText('Día 7.')).toBeVisible();
+    await page.locator('details.study', { hasText: 'Errores frecuentes' }).locator('summary').click();
+    await expect(page.getByText(/sin ella el acorde pierde su identidad/)).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
 });
