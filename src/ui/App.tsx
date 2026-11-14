@@ -3,6 +3,7 @@ import { engine } from '../audio/engine';
 import { useRoute, useSettings } from './hooks';
 import { Credits } from './pages/Credits';
 import { Lessons } from './pages/Lessons';
+import { Scales } from './pages/Scales';
 import { Listen } from './pages/Listen';
 import { PlayAlong } from './pages/PlayAlong';
 import { Today } from './pages/Today';
@@ -13,6 +14,7 @@ const NAV = [
   ['hoy', 'Hoy'],
   ['playalong', 'Play-along'],
   ['lecciones', 'Lecciones'],
+  ['escalas', 'Escalas'],
   ['vocabulario', 'Vocabulario'],
   ['transcribir', 'Transcribir'],
   ['escucha', 'Afinador'],
@@ -88,6 +90,7 @@ export function App() {
         {page === 'hoy' && <Today />}
         {page === 'playalong' && <PlayAlong />}
         {page === 'lecciones' && <Lessons />}
+        {page === 'escalas' && <Scales />}
         {page === 'vocabulario' && <Vocab />}
         {page === 'transcribir' && <Transcribe />}
         {page === 'escucha' && <Listen />}

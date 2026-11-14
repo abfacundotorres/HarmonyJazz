@@ -495,3 +495,15 @@ button.link { background: var(--surface-2); }
 .block .ex-body li { margin: .35em 0; }
 .block .ex-body h4 { margin: 10px 0 2px; }
 .block .ex-body figure { margin: 8px 0; }
+
+/* estudio de escalas */
+.scalelist { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.scalelist button.on, .steppath button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.notes-line { display: flex; flex-wrap: wrap; gap: .3em .9em; font-size: 1.25rem; margin: .4em 0; }
+.notes-line span { display: inline-flex; flex-direction: column; align-items: center; min-width: 1.6em; }
+.notes-line small { color: var(--muted); font-size: .62rem; }
+.steppath { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.steppath button { width: 100%; text-align: left; min-height: 44px; }
+.steppath small { float: right; opacity: .8; }
+.scales .seg { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
+.scales .seg button { flex: 1 1 auto; border-radius: 8px; }
