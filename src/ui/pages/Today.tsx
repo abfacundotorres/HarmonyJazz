@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
 import type { PhraseLibrary } from '../../content/phrases';
 import { streak, usePersistent } from '../../state/storage';
-import type { PracticeExercise } from '../../content/practice';
+import { abcOf, type PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
 import { Notation } from '../components/Notation';
 import { useLog, useReading, useSettings } from '../hooks';
@@ -71,6 +71,7 @@ export function Today() {
             key={b.id}
             n={i + 1}
             block={b}
+            tonalKey={plan.key}
             done={day.done.includes(b.id)}
             onToggle={() => toggle(b.id)}
           />
@@ -96,7 +97,7 @@ export function Today() {
   );
 }
 
-function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<typeof buildPlan>['blocks'][number]; done: boolean; onToggle: () => void }) {
+function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: ReturnType<typeof buildPlan>['blocks'][number]; done: boolean; onToggle: () => void; tonalKey: string }) {
   const [left, setLeft] = useState(block.minutes * 60);
   const [running, setRunning] = useState(false);
   const timer = useRef<number | null>(null);
@@ -128,7 +129,7 @@ function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<type
       </header>
       <ul>
         {block.detail.map((d, i) =>
-          typeof d === 'string' ? <li key={i}>{d}</li> : <li key={d.id}><Exercise ex={d} /></li>,
+          typeof d === 'string' ? <li key={i}>{d}</li> : <li key={d.id}><Exercise ex={d} tonalKey={tonalKey} /></li>,
         )}
       </ul>
       <footer className="row">
@@ -145,8 +146,9 @@ function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<type
 }
 
 /** Un ejercicio con su explicación completa, desplegable. */
-function Exercise({ ex }: { ex: PracticeExercise }) {
+function Exercise({ ex, tonalKey }: { ex: PracticeExercise; tonalKey: string }) {
   const { view } = useReading();
+  const abc = abcOf(ex, tonalKey);
   return (
     <details className="exercise">
       <summary>{ex.short}</summary>
@@ -157,9 +159,9 @@ function Exercise({ ex }: { ex: PracticeExercise }) {
             {ex.bpm ? `Metrónomo: ${ex.bpm} bpm.` : ''} {ex.minutes ? `Unos ${ex.minutes} min.` : ''}
           </p>
         )}
-        {ex.abc && (
+        {abc && (
           <figure>
-            <Notation abc={ex.abc} transpose={view === 'C' ? -2 : 0} />
+            <Notation abc={abc} transpose={view === 'C' ? -2 : 0} />
             {ex.abcCaption && <figcaption className="muted small">{ex.abcCaption}{view === 'C' ? ' (en concierto)' : ' (escrito para trompeta en Si♭)'}</figcaption>}
           </figure>
         )}
