@@ -2,7 +2,7 @@ import abcjs from 'abcjs';
 import { describe, expect, it } from 'vitest';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { midi, parseNote } from '../theory/notes';
-import { HIGH, LOW, SHAPES, techniqueAbc, writtenTonic } from './techniqueAbc';
+import { HIGH, LOW, SHAPES, techniqueAbc, UNIT, writtenTonic } from './techniqueAbc';
 
 describe('pentagramas de técnica en las 12 tonalidades', () => {
   for (const id of Object.keys(SHAPES)) {
@@ -11,7 +11,7 @@ describe('pentagramas de técnica en las 12 tonalidades', () => {
         const items = SHAPES[id](writtenTonic(key));
         expect(items.length, `${id} en ${key}`).toBeGreaterThan(8);
         const total = items.reduce((s, i) => s + i.dur, 0);
-        expect(total % 8, `${id} en ${key}: compases completos`).toBe(0);
+        expect(total % (UNIT[id] ?? 8), `${id} en ${key}: compases completos`).toBe(0);
         for (const it of items) {
           if (!it.p) continue;
           const m = midi(it.p);

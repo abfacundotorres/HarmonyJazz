@@ -7,8 +7,11 @@ import {
 /** Pentagramas generados de los ejercicios de técnica, en la tonalidad del día y en altura escrita (trompeta en Si♭). */
 export interface Item {
   p: Pitch | null;
-  /** Duración en corcheas. */
+  /** Duración en la unidad del ejercicio (corcheas, o semicorcheas en los ejercicios rítmicos). */
   dur: number;
+  /** Notas con el mismo número van bajo una misma ligadura. */
+  slur?: number;
+  accent?: boolean;
 }
 
 /** Rango escrito razonable: de F♯3 a C6. */
@@ -36,14 +39,15 @@ export function ladder(tonic: Note, scaleId: string, count: number): Pitch[] {
 const eighths = (ps: Pitch[]): Item[] => ps.map((p) => ({ p, dur: 1 }));
 const quarters = (ps: Pitch[]): Item[] => ps.map((p) => ({ p, dur: 2 }));
 
-const ALLOWED = [8, 6, 4, 3, 2, 1];
+const ALLOWED_BY_UNIT: Record<number, number[]> = { 8: [8, 6, 4, 3, 2, 1], 16: [16, 12, 8, 6, 4, 3, 2, 1] };
 /** Cierra el ejercicio con la tónica hasta el final del compás (o un compás entero). */
-function finish(raw: Item[], tonic: Pitch): Item[] {
+function finish(raw: Item[], tonic: Pitch, unit = 8): Item[] {
+  const ALLOWED = ALLOWED_BY_UNIT[unit];
   // si la línea ya termina en la tónica, no se repite la nota
   const last = raw[raw.length - 1];
   const items = last?.p && last.dur === 1 && midi(last.p) === midi(tonic) ? raw.slice(0, -1) : raw;
   const total = items.reduce((s, i) => s + i.dur, 0);
-  const rem = total % 8 === 0 ? 8 : 8 - (total % 8);
+  const rem = total % unit === 0 ? unit : unit - (total % unit);
   const out = [...items];
   if (ALLOWED.includes(rem)) out.push({ p: tonic, dur: rem });
   else {
@@ -133,20 +137,86 @@ export const SHAPES: Record<string, (tonic: Note) => Item[]> = {
   },
 };
 
+
+/** Unidad de cada ejercicio: 8 = corcheas (compás de 8), 16 = semicorcheas (compás de 16). */
+export const UNIT: Record<string, 8 | 16> = { rhythmDotted: 16, syncopation: 16, accentLong: 16 };
+
+/** Asigna duraciones cíclicas (un patrón) a una secuencia de notas. */
+function patterned(notes: Pitch[], pattern: number[]): Item[] {
+  return notes.map((p, i) => ({ p, dur: pattern[i % pattern.length] }));
+}
+
+/** Escala de una octava subiendo y bajando (sin repetir la nota más alta). */
+function octaveUpDown(tonic: Note): Pitch[] {
+  const s = ladder(tonic, 'ionian', 8);
+  return [...s, ...s.slice(0, -1).reverse()];
+}
+
+const NEW_SHAPES: Record<string, (tonic: Note) => Item[]> = {
+  /** Corchea con puntillo + semicorchea, y corchea + dos semicorcheas, alternando de compás en compás. */
+  rhythmDotted(tonic) {
+    const dotted = [3, 1, 3, 1, 3, 1, 3, 1];
+    const eighthTwo16 = [2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1];
+    const stream = [...octaveUpDown(tonic), ...octaveUpDown(tonic)];
+    const items: Item[] = [];
+    let i = 0;
+    for (let bar = 0; i < stream.length - 1; bar++) {
+      const pat = bar % 2 === 0 ? dotted : eighthTwo16;
+      for (const d of pat) {
+        if (i >= stream.length - 1) break;
+        items.push({ p: stream[i++], dur: d });
+      }
+    }
+    return finish(items, stream[0], 16);
+  },
+  /** Síncopa corchea-negra-corchea, con la negra sostenida. */
+  syncopation(tonic) {
+    const stream = octaveUpDown(tonic).slice(0, -1);
+    return finish(patterned(stream, [2, 4, 2]), stream[0], 16);
+  },
+  /** Ataque con acento y notas largas (blancas) por la escala. */
+  accentLong(tonic) {
+    const s = octaveUpDown(tonic);
+    const notes = s.slice(0, -1);
+    return finish(patterned(notes, [8]).map((it) => ({ ...it, accent: true })), s[0], 16);
+  },
+  /** Ligaduras con pistones: de a cuatro notas por grado conjunto y después de a dos por terceras. */
+  slurSteps(tonic) {
+    const s = ladder(tonic, 'ionian', 15);
+    const items: Item[] = [];
+    let g = 0;
+    // grado conjunto: 1-2-3-4, 2-3-4-5, … ligadas de a cuatro
+    for (let i = 0; i + 3 < s.length && i < 8; i++, g++) for (let k = 0; k < 4; k++) items.push({ p: s[i + k], dur: 1, slur: g });
+    // terceras: 1-3, 2-4, 3-5 … ligadas de a dos
+    for (let i = 0; i + 2 < s.length && i < 8; i++, g++) {
+      items.push({ p: s[i], dur: 1, slur: g }, { p: s[i + 2], dur: 1, slur: g });
+    }
+    return finish(items, s[0]);
+  },
+};
+Object.assign(SHAPES, NEW_SHAPES);
+
 /** ABC con la armadura de la tonalidad escrita. `bpm` es la negra. */
 export function techniqueAbc(id: string, concertKey: string, bpm: number): string {
   const tonic = writtenTonic(concertKey);
   const keyAcc = keySignature(tonic);
+  const unit = UNIT[id] ?? 8;
   let acc = new Map<string, number>();
   let body = '';
   let pos = 0;
-  for (const it of SHAPES[id](tonic)) {
-    if (pos % 8 === 0) {
-      if (pos > 0) body += (pos / 8) % 4 === 0 ? ' |\n' : ' | ';
+  const items = SHAPES[id](tonic);
+  items.forEach((it, idx) => {
+    if (pos % unit === 0) {
+      if (pos > 0) body += (pos / unit) % 4 === 0 ? ' |\n' : ' | ';
       acc = new Map();
     } else if (pos % 4 === 0) body += ' ';
+    const prev = items[idx - 1]?.slur;
+    const next = items[idx + 1]?.slur;
+    if (it.slur !== undefined && it.slur !== prev) body += '(';
+    if (it.accent) body += '!accent!';
     body += (it.p ? abcPitch(it.p, acc, keyAcc) : 'z') + (it.dur === 1 ? '' : String(it.dur));
+    if (it.slur !== undefined && it.slur !== next) body += ')';
     pos += it.dur;
-  }
-  return `X:1\nM:4/4\nL:1/8\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n${body} |]\n`;
+  });
+  return `X:1\nM:4/4\nL:1/${unit}\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n${body} |]\n`;
 }

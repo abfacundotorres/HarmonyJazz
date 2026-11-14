@@ -406,6 +406,7 @@ export const TECH_THIRDS: PracticeExercise = {
   tips: [
     'Si una tonalidad te cuesta, fijate en cuáles son las notas alteradas de esa escala antes de empezar: pensarlo de antemano evita los errores.',
     'Prestá atención a los saltos entre registros: que la tercera no suene más fuerte ni más débil que las demás.',
+    'No apures el final de cada frase de la escala: es un hábito muy común, y Arban recomendaba el metrónomo justamente para notarlo.',
   ],
   abcCaption: 'La escala mayor de la tonalidad del día, en terceras.',
   abc: (k) => techniqueAbc('thirds', k, 120),
@@ -444,6 +445,7 @@ export const TECH_SEVENTHS: PracticeExercise = {
     'Tocá cada arpegio de abajo hacia arriba (1-3-5-7) y de vuelta (5-3-1) en corcheas, sobre cada grado de la escala.',
     'Prestá atención a la calidad de cada arpegio: el de V es dominante (con 7ª menor), el de vii es semidisminuido. Escuchá cómo cambia el color.',
     'Hacelo a negra = 100. Si hay un arpegio que se tropieza, aislalo y repetilo despacio.',
+    'Agregá el arpegio de 7ª disminuida (1-♭3-♭5-♭♭7) sobre la sensible: está formado sólo por terceras menores y se puede resolver de varias maneras, por eso aparece tanto.',
     'Con el metrónomo en 2 y 4 y las corcheas con swing.',
     'Variá la articulación en cada vuelta: todo ligado, todo picado, y dos ligadas y dos picadas.',
     'Cuando salgan, tocalos sobre el acorde correspondiente en el play-along.',
@@ -468,6 +470,8 @@ export const TECH_CHROMATIC: PracticeExercise = {
     'Con el metrónomo en 2 y 4 (como en el swing), a negra = 100. Tocá las corcheas con la sensación de swing: las que caen en contratiempo son más largas.',
     'Los dedos y la lengua deben ir juntos: si una nota llega antes o después, bajá el tempo.',
     'Subí de a 8 bpm cuando salga limpia.',
+    'Apretá bien los pistones en cada nota, para que todas suenen plenas y con el mismo sonido.',
+    'Cuando salga pareja, dale forma de frase: crecé un poco al subir y aflojá al bajar, como sugería Arban para las escalas, sin que cambien el timbre ni la afinación.',
     'Terminá con una nota larga en la tónica.',
   ],
   tips: [
@@ -495,6 +499,7 @@ export const TECH_INTERVALS: PracticeExercise = {
   tips: [
     'Los saltos amplios se logran con aire más rápido, no con presión.',
     'Si un intervalo suena inestable, tocalo en nota larga para encontrar su centro y repetilo.',
+    'No cambies la posición de la boquilla ni del labio al pasar de una nota grave a una aguda, ni al revés: Arban asociaba la seguridad del ataque en los saltos con eso.',
   ],
   abcCaption: 'Intervalos crecientes desde la tónica de la tonalidad del día, hasta la octava.',
   abc: (k) => techniqueAbc('intervals', k, 80),
@@ -565,10 +570,104 @@ export const TECH_BEBOP: PracticeExercise = {
   abc: (k) => techniqueAbc('bebopDown', k, 100),
 };
 
+// ---------------------------------------------------------------------------------------------------------------
+// Técnica: ideas tomadas de los principios de Arban (ejercicios propios)
+// ---------------------------------------------------------------------------------------------------------------
+
+export const TECH_DOTTED: PracticeExercise = {
+  id: 'tech-dotted',
+  short: 'Ritmo: corchea con puntillo + semicorchea, y corchea + dos semicorcheas, sobre la escala del día.',
+  goal: 'Dar a cada figura su valor justo y una articulación pareja, que es la base de un fraseo preciso y de un swing que no se desarma.',
+  bpm: 72,
+  minutes: 6,
+  steps: [
+    'Primero el ritmo sobre una sola nota, sin escala: metrónomo a 72, contando en voz alta "1 e y a, 2 e y a…". Tocá corchea con puntillo + semicorchea en cada tiempo, con "tu" en cada nota.',
+    'La corchea con puntillo se sostiene entera hasta la semicorchea: no se acorta ni se reemplaza el puntillo por un silencio. Es el error más común, y Arban insistía en evitarlo.',
+    'Después probá corchea + dos semicorcheas en cada tiempo, también sobre una sola nota. Las semicorcheas son livianas y parejas, y la corchea del principio no se alarga ni se apoya más que las otras.',
+    'Ahora con la escala: el pentagrama alterna un compás de cada ritmo, subiendo y bajando una octava. Mantené el pulso estable y la misma articulación en todos los compases.',
+    'Cuando salga limpio, subí el metrónomo de a 4 bpm (76, 80, 84…). Si una figura se aprieta o se alarga, volvé al tempo anterior.',
+    'Para llevarlo al jazz, repetí cada ritmo con swing: no sale igual que la figura escrita; sentí cómo la articulación hace que la corchea con puntillo se acerque a la figura de tresillo.',
+  ],
+  tips: [
+    'Contá en voz alta mientras tocás: si no podés contar, el ritmo todavía no está en el cuerpo.',
+    'La lengua articula las semicorcheas con el mismo movimiento que las corcheas, sólo más corto: si se ensucian, bajá el tempo, no la tensión.',
+    'Arban advertía especialmente contra estirar la primera nota de un grupo: cada nota tiene el mismo peso que las demás, salvo que la figura pida otra cosa.',
+  ],
+  abcCaption: 'Escala mayor de la tonalidad del día, de una octava, subiendo y bajando: compases de corchea con puntillo + semicorchea alternados con corchea + dos semicorcheas.',
+  abc: (k) => techniqueAbc('rhythmDotted', k, 72),
+};
+
+export const TECH_SYNCOPATION: PracticeExercise = {
+  id: 'tech-syncopation',
+  short: 'Síncopas sostenidas: corchea-negra-corchea sobre la escala del día, sin hinchar la nota.',
+  goal: 'Sostener la nota sincopada en todo su valor, con un solo ataque y un volumen parejo, para tocar anticipaciones con el peso correcto.',
+  bpm: 72,
+  minutes: 5,
+  steps: [
+    'Sobre una sola nota, a 72, tocá corchea - negra - corchea en el compás, contando "1 y 2 y 3 y 4 y". La negra cae sobre el "y" del primer tiempo y dura hasta el "y" del segundo.',
+    'Atacá con "tu" sólo al comienzo de la negra. La nota se sostiene durante toda su duración, sin un segundo golpe de lengua en el medio y sin crecer hacia la mitad, como señalaba Arban.',
+    'Prestá atención al peso: la parte fuerte del tiempo no suena; lo que se oye es el comienzo de la nota que cae antes. Sentí el pulso con el pie mientras la nota se sostiene.',
+    'Ahora con la escala: el pentagrama sube y baja una octava con el mismo patrón. Cuidá que cada negra suene igual de firme y de larga.',
+    'Subí el metrónomo de a 4 bpm. Si se te mueve el pulso o se acelera el final de la nota, volvé al tempo lento y marcá el tiempo con el pie.',
+    'Probalo con swing: las corcheas son desiguales, pero la negra sincopada sigue sosteniéndose hasta el final.',
+  ],
+  tips: [
+    'Una síncopa tocada con un segundo impulso en el medio suena a dos notas; el oído tiene que seguir una sola.',
+    'Respirá antes de una síncopa, no durante, así no se corta el valor de la nota.',
+  ],
+  abcCaption: 'Escala mayor de la tonalidad del día en corchea - negra - corchea (negra sostenida), subiendo y bajando una octava.',
+  abc: (k) => techniqueAbc('syncopation', k, 72),
+};
+
+export const TECH_VALVE_SLURS: PracticeExercise = {
+  id: 'tech-valve-slurs',
+  short: 'Ligaduras con pistones: de a cuatro notas por grado conjunto y de a dos por terceras.',
+  goal: 'Mover los dedos al mismo tiempo, con un aire continuo y sin lengua, para que el legato sea parejo y afinado.',
+  bpm: 72,
+  minutes: 6,
+  steps: [
+    'Tocá la escala de la tonalidad del día ligada de a cuatro notas: 1-2-3-4, 2-3-4-5, 3-4-5-6… Una sola vez de lengua al comienzo de cada grupo de cuatro.',
+    'Entre notas ligadas sólo cambian los dedos: que se muevan juntos y rápido, para que no se oiga ninguna nota intermedia.',
+    'El aire no se detiene dentro de la ligadura: es lo que une las notas. Prestá atención a la afinación, porque sin lengua cualquier defecto se nota más.',
+    'Pasá a las terceras: ligadas de a dos notas (1-3, 2-4, 3-5…). Es más difícil que el grado conjunto, porque cambian más dedos a la vez; si se tropieza, practicá primero sólo el movimiento de los dedos, sin sonido.',
+    'Metrónomo a 72, y subí de a 4 bpm cuando salga limpio.',
+    'Terminá con una nota larga para controlar el final del último grupo.',
+  ],
+  tips: [
+    'Cuando una ligadura suene "con golpe", casi siempre es porque los dedos no bajan juntos: aislá esos dedos.',
+    'No confundir con los lip slurs: acá las notas cambian de digitación y el labio casi no trabaja.',
+  ],
+  abcCaption: 'La escala de la tonalidad del día ligada de a cuatro notas y después en terceras ligadas de a dos.',
+  abc: (k) => techniqueAbc('slurSteps', k, 72),
+};
+
+export const TECH_ACCENT_LONG: PracticeExercise = {
+  id: 'tech-accent-long',
+  short: 'Ataque con acento y nota larga: la escala del día en blancas, cada nota atacada con "tu" y sostenida entera.',
+  goal: 'Un ataque claro y un sonido pleno y parejo en toda la duración de la nota, tocando una escala completa, sin perder afinación.',
+  bpm: 60,
+  minutes: 5,
+  steps: [
+    'Poné el metrónomo en 60. Tocá la escala de la tonalidad del día en blancas, una octava hacia arriba y hacia abajo.',
+    'Atacá cada nota con "tu", marcada pero sin dureza (el pentagrama la indica con acento). Sostenela durante todo su valor con la mayor fuerza y brillo que puedas sin forzar.',
+    'No hinches los cachetes ni dejes que los labios hagan ruido contra la boquilla: la nota se forma sola, con la tensión justa del labio, sin buscarla desde abajo.',
+    'Cuidá que no baje la afinación: una nota con poca tensión o poco aire sale baja. Usá el Afinador de la app.',
+    'Respirá entre notas sólo si lo necesitás, sin perder el pulso. Si te quedás sin aire, tocá en blancas en vez de pensar en redondas.',
+    'Cuando salga limpia, hacelo también en negras con el mismo cuidado en el ataque.',
+  ],
+  tips: [
+    'Este es el ejercicio de partida: antes de buscar velocidad hay que tener un ataque y un sonido que sirvan de base. Arban pedía practicar los primeros ejercicios "durante un tiempo considerable".',
+    'Si el volumen sube en medio de la nota, o cae al final, repetí esa nota sola hasta que quede pareja.',
+  ],
+  abcCaption: 'La escala mayor de la tonalidad del día en blancas, con acento en cada ataque, subiendo y bajando una octava.',
+  abc: (k) => techniqueAbc('accentLong', k, 60),
+};
+
 export const WARMUP_EXERCISES: PracticeExercise[] = [
   BUZZ_GLISSANDO, LONG_TONES_DYNAMICS, LIP_SLURS_POSITIONS, LONG_TONES_LOW, FLEX_HARMONICS, LIP_BENDING, BUZZ_PHRASE, LONG_TONES_FOURTHS,
   LIP_SLURS_TRIPLETS, BREATH_FLOW, SOFT_ATTACKS, HIGH_SOFT, TONGUING_REPEATED, SLURRED_SCALE, INTERVAL_SLURS,
 ];
 export const TECHNIQUE_EXERCISES: PracticeExercise[] = [
   TECH_THIRDS, TECH_MELODIC_MINOR, TECH_SEVENTHS, TECH_CHROMATIC, TECH_INTERVALS, TECH_BLUES, TECH_TRIADS, TECH_BEBOP,
+  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG,
 ];

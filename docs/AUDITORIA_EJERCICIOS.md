@@ -13,6 +13,12 @@ Lo que se confirmó o se agregó a los textos:
 - **Orden:** ataque y sonido antes que ligaduras; descansar y tocar piano cuando se cansan los labios (ya estaba).
 - **Notas sostenidas:** una nota sostenida mantiene su valor entero sin hincharse a la mitad (coincide con "sin crescendo ni diminuendo").
 
+Segunda lectura de Arban (escalas, intervalos y fraseo, pp. 58, 123–124 y 191 de la edición):
+
+- **Escalas:** estudiarlas en todas las tonalidades, con igualdad de sonido, ligado y ritmo estricto; no apurar el final de cada frase; usar el metrónomo; en la cromática, apretar bien los pistones; las escalas ganan en expresión si se crece al subir y se afloja al bajar. Se agregó a las escalas en terceras y a la cromática.
+- **Intervalos:** practicarlos con asiduidad sin cambiar la posición de la boquilla al pasar de graves a agudos; tresillos con las tres notas de igual valor; estudios de semicorcheas en tempo riguroso; acordes mayor y menor, de 7ª dominante y de 7ª disminuida en todas las tonalidades; y **cadencias de cierre** para terminar bien un solo, respirando en los silencios para llegar al final con fuerza y afinado. Se agregó a los intervalos y a los arpegios de 7ª.
+- **Fraseo (Libro 4):** son 150 melodías sin texto; no hay principio nuevo que incorporar, salvo trabajar el fraseo con dinámicas sobre melodías conocidas.
+
 Lo que **no** se adoptó, por contradecir la pedagogía actual (a revisar con un profesor):
 
 - Arban dice que el abdomen se retrae mientras el pecho se expande al inhalar. Los textos de la app hablan de respirar hondo y bajo, que es la enseñanza actual.

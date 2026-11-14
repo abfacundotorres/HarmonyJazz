@@ -1,9 +1,9 @@
 import { expect, test } from './helpers';
 
-// 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1) y técnica cromática (día % 8 = 3)
+// 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
-// 2026-11-11: técnica de escala en terceras (día % 8 = 0), tonalidad del día E (concierto)
-const DIA_TERCERAS = new Date(2026, 10, 11, 12, 0, 0);
+// 2026-11-03: técnica de escala en terceras (día % 12 = 0)
+const DIA_TERCERAS = new Date(2026, 10, 3, 12, 0, 0);
 
 test.describe('ejercicios de práctica con explicación completa', () => {
   test.beforeEach(async ({ page }) => {
@@ -67,5 +67,22 @@ test.describe('lecciones: cómo practicar cada ejercicio', () => {
     await expect(guias.first().getByText('El método, paso a paso')).toBeVisible();
     await expect(guias.first().getByText(/Un tempo de partida razonable: \d+ bpm/)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+});
+
+test.describe('técnica rítmica y de ligaduras', () => {
+  test('cada ejercicio nuevo se despliega con pentagrama en la tonalidad del día', async ({ page }) => {
+    // los cuatro días siguientes cubren la rotación de técnica (día % 12 = 8, 9, 10, 11)
+    const dias = [new Date(2026, 10, 11, 12), new Date(2026, 10, 12, 12), new Date(2026, 10, 13, 12), new Date(2026, 10, 14, 12)];
+    const titulos = ['Ritmo: corchea con puntillo', 'Síncopas sostenidas', 'Ligaduras con pistones', 'Ataque con acento y nota larga'];
+    for (const [i, dia] of dias.entries()) {
+      await page.clock.setFixedTime(dia);
+      await page.goto('/#/hoy');
+      await page.reload();
+      const ex = page.locator('details.exercise', { hasText: titulos[i] }).first();
+      await ex.locator('summary').click();
+      await expect(ex.locator('.paper svg')).toBeVisible();
+      expect(await ex.locator('.paper svg .abcjs-note').count()).toBeGreaterThanOrEqual(8);
+    }
   });
 });
