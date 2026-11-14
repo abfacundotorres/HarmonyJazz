@@ -51,7 +51,8 @@ export const LONG_TONES_LOW: PracticeExercise = {
   ],
   tips: [
     'Si sentís que tenés que apretar la boquilla contra los labios, probablemente falta aire: dejá la presión y mandá más aire, tibio y rápido.',
-    'Las digitaciones con varios pistones (1-3 y 1-2-3, como el F♯ grave) tienen tendencias de afinación propias y cambian de una trompeta a otra: en muchas salen altas y se corrigen extendiendo la corredera del 3.º, pero en el extremo grave algunas salen bajas. Fijate qué hace la tuya con el Afinador en lugar de suponerlo.',
+    'Las digitaciones con varios pistones (1-3 y 1-2-3, como el F♯ grave) tienen tendencias de afinación propias y cambian de una trompeta a otra: en muchas salen altas y se corrigen extendiendo la corredera del 3.º, pero en el extremo grave algunas salen bajas. Fijate qué hace la tuya con el Afinador en lugar de suponerlo. Arban ya señalaba que las notas con varios pistones salen altas y que, en pasajes lentos, conviene corregirlas con la corredera y no con el labio, que perjudica el timbre.',
+    'Los cachetes no se inflan y los labios no hacen ruido contra la boquilla: el sonido se forma solo, con la tensión justa del labio.',
     'Descansá tanto como tocaste. Si se cansa la cara o el sonido se ensucia, es hora de parar y no de insistir.',
     'Grabate con el celular y escuchá la grabación: se oye mejor lo que está o no centrado.',
   ],
@@ -77,6 +78,7 @@ export const FLEX_HARMONICS: PracticeExercise = {
   ],
   tips: [
     'Si se te cae un armónico, volvé a tocarlo como nota larga, escuchalo bien, y recién ahí repetí la serie.',
+    'El paso del 4.º al 5.º armónico (una tercera) es el más difícil de ligar con el labio, como ya notaba Arban: si cuesta, trabajá primero 2-3-4 y recién después sumá el 5.º.',
     'Calentá suave: la mayor parte del calentamiento va en piano o mezzo piano y el fuerte se deja para el final. Si sube la tensión de la cara, bajá el tempo o descansá.',
   ],
   abcCaption: 'Posición abierta y posición 2 (los números sobre las notas son los armónicos). Las demás posiciones repiten la forma.',
@@ -89,7 +91,7 @@ export const FLEX_HARMONICS: PracticeExercise = {
 export const LIP_BENDING: PracticeExercise = {
   id: 'lip-bending',
   short: 'Bending: bajar y subir un semitono con el labio en cada nota larga.',
-  goal: 'Sentir cuánto margen de afinación tiene el labio y controlarlo, para corregir la entonación y para los scoops y caídas del lenguaje jazzístico.',
+  goal: 'Sentir cuánto margen de afinación tiene el labio y controlarlo: es la base de los scoops y las caídas del lenguaje jazzístico y de la flexibilidad del labio.',
   bpm: 60,
   minutes: 5,
   steps: [
@@ -100,7 +102,7 @@ export const LIP_BENDING: PracticeExercise = {
     'Repetí en otras notas largas, tanto abiertas como con pistones, y fijate en cuál se mueve más fácil y cuál es más dura.',
   ],
   tips: [
-    'No se toca así en un solo: sirve para conocer tu margen y para que, cuando una nota salga baja o alta, la corrijas sin pensar.',
+    'Sirve para conocer tu margen y para los scoops y caídas. Para corregir la afinación de una nota larga o lenta conviene usar primero la corredera (la del 3.º, por ejemplo): Arban advertía que bajar la nota con el labio perjudica el timbre; el labio es para los pasajes rápidos.',
     'Si tu profesor te enseña otra forma de hacerlo, seguí la suya: la descripción física de la flexión varía según la escuela.',
     'Si para subir o bajar tenés que apretar, parar: el movimiento sale del labio y del aire, no de la presión.',
   ],
@@ -173,7 +175,8 @@ export const LIP_SLURS_POSITIONS: PracticeExercise = {
   ],
   tips: [
     'En 1-3 y 1-2-3 todos los armónicos salen altos: extendé un poco la corredera del 3.º mientras hacés la serie.',
-    'Los lip slurs son exigentes: hacelos después de las notas largas y el buzz, no en frío, y no insistas en el agudo.',
+    'Los lip slurs son exigentes: hacelos después de las notas largas y el buzz, no en frío, y no insistas en el agudo. Arban recomendaba dominar primero el ataque y el sonido, y recién después pasar a las ligaduras.',
+    'Los saltos más chicos son los más fáciles de ligar; una tercera entre armónicos es lo más difícil. Empezá por los intervalos pequeños y ampliá de a poco.',
     'Si una posición se resiste, volvé a la abierta y buscá la sensación que tenías ahí.',
     'Descansá si se fatiga la comisura de los labios: es señal de que se está apretando en vez de soplar.',
   ],
@@ -273,19 +276,20 @@ export const BREATH_FLOW: PracticeExercise = {
 export const SOFT_ATTACKS: PracticeExercise = {
   id: 'soft-attacks',
   short: 'Ataques suaves: la misma nota con "tu", "du" y "hu", sin golpe.',
-  goal: 'Lograr un comienzo de nota limpio y uniforme con distintas articulaciones, desde la más suave hasta la más precisa.',
+  goal: 'Lograr un comienzo de nota limpio y uniforme: que la nota "nazca sola", con el aire primero y la lengua apenas marcándola.',
   bpm: 60,
   minutes: 5,
   steps: [
     'Elegí una nota cómoda del registro medio (por ejemplo G escrito, sin pistones) y poné el metrónomo en 60.',
-    'Tocá cuatro negras con la sílaba "tu": la lengua toca apenas detrás de los dientes superiores, como para pronunciar una "t" suave, y se retira enseguida.',
-    'Repetí con "du": todavía más suave, la lengua casi no interrumpe el aire. Buscá una nota que "nazca" sola.',
-    'Repetí con "hu" (ataque con aire, sin lengua) en una nota larga, para sentir cómo sale el sonido sólo con el soplo.',
-    'Alterná las tres articulaciones intentando que suenen igual de limpias y con el mismo volumen y afinación.',
-    'Grabate y escuchá si el comienzo de las notas es parejo: ninguno debería sonar a golpe ni a pop.',
+    'Empezá por "tu", la sílaba base del ataque. La lengua descansa contra los dientes superiores con la boca cerrada y el aire detrás; al retirarse (no al "golpear") libera el aire, como una válvula que se abre. Tocá cuatro negras así.',
+    'Cuidá que el sonido se forme solo: los cachetes no se inflan, los labios no hacen ruido contra la boquilla y la nota nace ya afinada, sin buscarla desde abajo.',
+    'Probá "du", más suave: sirve para las notas conectadas de una frase, porque articula cada nota pero las une entre sí. Usala para el legato articulado, y no para empezar una frase: el primer ataque conviene que sea con "tu".',
+    'Probá "hu" (ataque con aire, sin lengua) en una nota larga, para sentir cómo sale el sonido sólo con el soplo.',
+    'Alterná las articulaciones intentando que suenen igual de limpias, con el mismo volumen y la misma afinación. Grabate y escuchá si el comienzo de las notas es parejo: ninguno debería sonar a golpe ni a pop.',
   ],
   tips: [
     'El aire va primero y la lengua sólo marca: si la lengua empuja, la nota sale dura.',
+    'Arban insiste en atacar con "tu" y no con una sílaba más blanda como "dua" para empezar, porque un ataque demasiado blando tiende a dejar la nota baja y con un timbre grueso.',
     'Un buen ataque suave se oye como una pronunciación casi invisible.',
   ],
   abcCaption: 'Cuatro negras con cada sílaba, en la misma nota.',
@@ -323,13 +327,14 @@ export const TONGUING_REPEATED: PracticeExercise = {
     'Elegí una nota cómoda (por ejemplo G escrito) y poné el metrónomo en 60.',
     'Tocá cuatro negras con "tu", cuatro corcheas, cuatro tresillos y cuatro semicorcheas, sin respirar entre figuras.',
     'Mantené el aire constante y la lengua liviana: la lengua toca la "t" y se retira, el aire no se detiene.',
-    'Buscá que cada nota suene igual: el mismo volumen, la misma duración y la misma afinación.',
+    'Buscá que cada nota suene igual: el mismo volumen, la misma duración y la misma afinación. Prestá atención a la última de cada grupo: es la que más se alarga o se apoya sin querer.',
     'Subí el metrónomo de a 4 bpm cuando el ciclo salga limpio. Si las notas se vuelven duras o se pierden, volvé al tempo anterior.',
     'Para las semicorcheas más rápidas probá el doble picado ("tu-ku"), con el mismo aire.',
   ],
   tips: [
     'Si la articulación suena "apretada", hay demasiada lengua y poco aire.',
     'Escuchá el pulso del metrónomo: la articulación va con él y no corriendo detrás.',
+    'Arban comparaba la lengua con el arco del violín: si articulás de forma despareja, ese desorden pasa tal cual al sonido y al ritmo.',
   ],
   abcCaption: 'Negras, corcheas, tresillos y semicorcheas sobre una misma nota.',
   abc: HEAD8(60) + 'G2 G2 G2 G2 | GGGG GGGG | (3GGG (3GGG (3GGG (3GGG | G/G/G/G/ G/G/G/G/ G/G/G/G/ G/G/G/G/ |]\n',

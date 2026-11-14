@@ -1,5 +1,26 @@
 # Auditoría pedagógica de los ejercicios de práctica
 
+## Segunda pasada: lectura directa de Arban
+
+Se leyó el original de Arban (edición Carl Fischer 1893, Goldman, dominio público en IMSLP) en sus páginas de texto: prefacio, afinación y corredera, posición de la boquilla, ataque, respiración, estilo y defectos, comentarios a los primeros estudios y explicación de las ligaduras (pp. 1–9 y 37–38 de la edición). **Clarke todavía no se leyó** (falta el PDF).
+
+Lo que se confirmó o se agregó a los textos:
+
+- **Ataque con "tu":** la lengua no golpea, se retira como una válvula que libera el aire; el sonido se forma solo (sin inflar los cachetes ni hacer ruido en la boquilla). Una sílaba demasiado blanda para empezar ("dua") deja la nota baja y gruesa; "du" se reserva para notas conectadas dentro de una frase. Se reescribió el ejercicio de ataques suaves.
+- **Articulación pareja:** la lengua es al metal lo que el arco al violín; hay que evitar alargar la última nota de un grupo. Se agregó a las notas repetidas.
+- **Corredera antes que labio:** las notas con varios pistones salen altas y en pasajes lentos conviene corregirlas con la corredera, porque bajarlas con el labio perjudica el timbre. Se ajustó el texto del F♯ grave y el del bending (el labio es para flexibilidad y scoops).
+- **Ligaduras:** el intervalo más fácil de ligar con el labio es la segunda menor, después la mayor, y la tercera es lo más difícil; Arban presenta esos ejercicios como estudios para flexibilizar el labio, no como práctica general. Se agregó el aviso del paso 4.º→5.º armónico.
+- **Orden:** ataque y sonido antes que ligaduras; descansar y tocar piano cuando se cansan los labios (ya estaba).
+- **Notas sostenidas:** una nota sostenida mantiene su valor entero sin hincharse a la mitad (coincide con "sin crescendo ni diminuendo").
+
+Lo que **no** se adoptó, por contradecir la pedagogía actual (a revisar con un profesor):
+
+- Arban dice que el abdomen se retrae mientras el pecho se expande al inhalar. Los textos de la app hablan de respirar hondo y bajo, que es la enseñanza actual.
+- Arban aconseja aumentar la presión de la boquilla para las notas agudas. La app aconseja lo contrario (aire, no presión).
+- La proporción 2/3 labio inferior y 1/3 superior de la boquilla: él mismo dice que no hay regla absoluta.
+
+## Primera pasada (fuentes secundarias)
+
 Qué se comparó y con qué alcance. **No se tuvo acceso al texto de Arban, Clarke, Vizzutti ni Maggio**: son obras con derechos de autor y no están en el repositorio ni se pudieron leer. Lo que sigue se apoya en lo que dicen de ellas fuentes secundarias (páginas de profesores, notas de curso, foros) y en principios de pedagogía de metales de uso general. Es una revisión de coherencia, no una verificación contra los libros. La última palabra la tiene un profesor de trompeta.
 
 ## Resultado
