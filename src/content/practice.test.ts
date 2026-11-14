@@ -28,10 +28,10 @@ describe('ejercicios de práctica', () => {
     }
   });
 
-  it('en cinco días aparecen todos los calentamientos y en doce todos los ejercicios de técnica', () => {
+  it('en cinco días aparecen todos los calentamientos y en dieciséis todos los ejercicios de técnica', () => {
     const warm = new Set<string>();
     const tech = new Set<string>();
-    for (let d = 0; d < 12; d++) {
+    for (let d = 0; d < 16; d++) {
       const plan = buildPlan(new Date(2026, 10, 10 + d), 60);
       for (const x of plan.blocks.find((b) => b.id === 'warm')!.detail) if (typeof x !== 'string') warm.add(x.id);
       for (const x of plan.blocks.find((b) => b.id === 'tech')!.detail) if (typeof x !== 'string') tech.add(x.id);

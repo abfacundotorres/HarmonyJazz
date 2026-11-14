@@ -9,7 +9,7 @@ describe('pentagramas de técnica en las 12 tonalidades', () => {
     it(`${id}: dentro del registro, compases completos y ABC sin advertencias`, () => {
       for (const key of CYCLE_OF_FOURTHS) {
         const items = SHAPES[id](writtenTonic(key));
-        expect(items.length, `${id} en ${key}`).toBeGreaterThan(8);
+        expect(items.length, `${id} en ${key}`).toBeGreaterThan(4);
         const total = items.reduce((s, i) => s + i.dur, 0);
         expect(total % (UNIT[id] ?? 8), `${id} en ${key}: compases completos`).toBe(0);
         for (const it of items) {

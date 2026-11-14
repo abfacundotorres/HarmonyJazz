@@ -79,7 +79,7 @@ export const FLEX_HARMONICS: PracticeExercise = {
   tips: [
     'Si se te cae un armónico, volvé a tocarlo como nota larga, escuchalo bien, y recién ahí repetí la serie.',
     'El paso del 4.º al 5.º armónico (una tercera) es el más difícil de ligar con el labio, como ya notaba Arban: si cuesta, trabajá primero 2-3-4 y recién después sumá el 5.º.',
-    'Calentá suave: la mayor parte del calentamiento va en piano o mezzo piano y el fuerte se deja para el final. Si sube la tensión de la cara, bajá el tempo o descansá.',
+    'Calentá suave: la mayor parte del calentamiento va en piano o mezzo piano y el fuerte se deja para el final. Clarke pedía tocar estos ejercicios muy suave para que los labios se mantengan frescos y bajo control: tocados fuertes cansan en vez de entrenar. Si sube la tensión de la cara, bajá el tempo o descansá.',
   ],
   abcCaption: 'Posición abierta y posición 2 (los números sobre las notas son los armónicos). Las demás posiciones repiten la forma.',
   abc:
@@ -400,7 +400,7 @@ export const TECH_THIRDS: PracticeExercise = {
     'Empezá lento, a negra = 80, y subí de a 8 bpm hasta 120. Al subir, no aprietes: el sonido debe seguir parejo.',
     'Bajá la escala con el mismo patrón: 8-6, 7-5, 6-4… Cuidá que las dos notas de cada par estén afinadas entre sí.',
     'Con el metrónomo en 2 y 4: las corcheas se sienten swingueadas, no rectas. Al principio, tocá las corcheas rectas y después aplicá swing.',
-    'Variá la articulación en cada vuelta: todo ligado, todo picado, y dos ligadas y dos picadas. Cada variante obliga a la lengua y a los dedos a coordinarse de otra forma.',
+    'Variá la articulación en cada vuelta, en este orden: primero todo ligado, después picado muy liviano y, cuando ya sea fácil, doble picado. Acentuá el primer sonido de cada grupo de cuatro notas para asegurar el ritmo (así lo proponía Clarke).',
     'Cuando salga limpia, tocala de memoria, sin el pentagrama.',
   ],
   tips: [
@@ -447,7 +447,7 @@ export const TECH_SEVENTHS: PracticeExercise = {
     'Hacelo a negra = 100. Si hay un arpegio que se tropieza, aislalo y repetilo despacio.',
     'Agregá el arpegio de 7ª disminuida (1-♭3-♭5-♭♭7) sobre la sensible: está formado sólo por terceras menores y se puede resolver de varias maneras, por eso aparece tanto.',
     'Con el metrónomo en 2 y 4 y las corcheas con swing.',
-    'Variá la articulación en cada vuelta: todo ligado, todo picado, y dos ligadas y dos picadas.',
+    'Variá la articulación en cada vuelta: primero todo ligado, después picado muy liviano y por último doble picado.',
     'Cuando salgan, tocalos sobre el acorde correspondiente en el play-along.',
   ],
   tips: [
@@ -663,11 +663,100 @@ export const TECH_ACCENT_LONG: PracticeExercise = {
   abc: (k) => techniqueAbc('accentLong', k, 60),
 };
 
+export const TECH_CLOSINGS: PracticeExercise = {
+  id: 'tech-closings',
+  short: 'Cierres de frase: arpegio de dominante que resuelve y 5-4-3-2-1 hasta una nota final sostenida.',
+  goal: 'Terminar bien una frase: respirar en el lugar justo, llegar al final con aire y afinado, y sostener la última nota sin que caiga.',
+  bpm: 72,
+  minutes: 5,
+  steps: [
+    'Cantá primero el cierre: 5-7-2-7 sobre el acorde de dominante (en el pentagrama, las notas del V7) y la resolución 7 → 1; después 5-4-3-2-1 bajando por la escala hasta la tónica. Tenelo en el oído antes de tocarlo.',
+    'Tocá el primer cierre despacio, a 72: el arpegio de dominante sube y baja, y la sensible resuelve medio tono arriba a la tónica. La 7ª (la sensible) tiene que sonar clara y bien afinada antes de resolver.',
+    'Tocá el segundo cierre: cinco notas por grado conjunto hacia la tónica, y la tónica final larga (el compás entero), sin dejar caer el sonido ni la afinación hasta el último tiempo.',
+    'Respirá en el silencio, antes de empezar el cierre, no en medio: el final de una frase tiene que llegar con toda la fuerza y afinado, o el efecto se pierde (Arban lo recomendaba para terminar bien un solo).',
+    'Repetí en otras tonalidades siguiendo el ciclo de cuartas, empezando por la de hoy.',
+    'Después usalo en la improvisación: cada vez que termines una frase sobre el acorde de tónica, probá cerrar con una de estas dos fórmulas.',
+  ],
+  tips: [
+    'Si la nota final baja de afinación, es señal de que falta aire en el último tiempo: acordate de la reserva antes de empezar.',
+    'Grabate el cierre y escuchá solamente la última nota: es la que más se recuerda de una frase.',
+  ],
+  abcCaption: 'Dos cierres en la tonalidad del día: el arpegio de V7 que resuelve a la tónica y 5-4-3-2-1 hasta una tónica larga.',
+  abc: (k) => techniqueAbc('closings', k, 72),
+};
+
+export const TECH_DIM7: PracticeExercise = {
+  id: 'tech-dim7',
+  short: 'Arpegio de 7ª disminuida sobre la sensible y su resolución a la tónica.',
+  goal: 'Conocer el acorde de 7ª disminuida (todo terceras menores), que se puede resolver de cuatro maneras, y ver su relación con el dominante alterado.',
+  bpm: 72,
+  minutes: 6,
+  steps: [
+    'Armá el acorde sobre la sensible de la tonalidad del día: sensible, 3ª menor, 5ª disminuida y 7ª disminuida. Cada nota está a una tercera menor de la anterior, y la última a una tercera menor de la primera (por eso es simétrico).',
+    'Tocá el arpegio subiendo y bajando en corcheas, a 72. Cuidá las alteraciones del pentagrama y que cada tercera menor suene del mismo tamaño.',
+    'Resolvé: la sensible sube medio tono a la tónica (el pentagrama termina así). Escuchá el cambio de tensión a reposo.',
+    'Probá las otras tres resoluciones de oído: cada nota del acorde puede ser la sensible de otra tónica, a medio tono. Tocá el mismo arpegio y resolvelo a cada una de esas notas.',
+    'Escuchá su relación con el dominante: el arpegio sobre la sensible contiene la 3ª, 5ª, ♭7 y ♭9 de un acorde V7(♭9). Sobre el play-along de un dominante, tocalo como arpegio de ese acorde sin fundamental.',
+    'Repetí en otras tonalidades y, cuando salga limpio, tocalo de memoria.',
+  ],
+  tips: [
+    'Como todas las terceras son iguales, es fácil perderse: nombrá en voz alta las notas mientras tocás.',
+    'La simetría ayuda: aprendés un solo arpegio y lo transportás de a tres semitonos.',
+  ],
+  abcCaption: 'El arpegio de 7ª disminuida sobre la sensible de la tonalidad del día, que resuelve medio tono arriba a la tónica.',
+  abc: (k) => techniqueAbc('dim7', k, 72),
+};
+
+export const TECH_TRIPLETS: PracticeExercise = {
+  id: 'tech-triplets',
+  short: 'Tresillos parejos: grupos de tres notas por grado conjunto, subiendo y bajando la escala del día.',
+  goal: 'Que las tres notas del tresillo suenen con el mismo valor, la misma articulación y el mismo volumen, antes de aplicarles swing.',
+  bpm: 72,
+  minutes: 6,
+  steps: [
+    'Empezá lento, a 72, hasta que los dedos se muevan con regularidad: Arban pedía no apurar el movimiento hasta que los dedos fueran parejos.',
+    'Contá "tri-pe-let" (o "1-la-li") en voz alta mientras tocás, para que cada nota ocupe exactamente un tercio del tiempo.',
+    'Primero ligado, con un solo aire por grupo de tres; después picado muy liviano. Cada nota con el mismo peso: el primer sonido del grupo no debe ser más fuerte ni más largo que los otros.',
+    'Tocá la escala subiendo por grupos 1-2-3, 2-3-4, 3-4-5… y después bajando por los mismos grupos invertidos (3-2-1, 4-3-2…), como en el pentagrama.',
+    'Subí el metrónomo de a 4 bpm cuando salga pareja; si los dedos se tropiezan, bajá.',
+    'Recién después, con la escala dominada, probá el tresillo con swing y con acentos desplazados.',
+  ],
+  tips: [
+    'El tresillo parejo es lo que da la base del swing a velocidades altas: si no está parejo, el swing se arrastra.',
+    'Si una tonalidad te cuesta, tocá primero los dedos sin sonido para fijar el movimiento.',
+  ],
+  abcCaption: 'La escala mayor de la tonalidad del día en tresillos de corchea (grupos de tres notas), subiendo y bajando.',
+  abc: (k) => techniqueAbc('triplets', k, 72),
+};
+
+export const TECH_CHROM_LOOP: PracticeExercise = {
+  id: 'tech-chrom-loop',
+  short: 'Cromática ligada muy suave, repetida muchas veces en un solo aire.',
+  goal: 'Resistencia sin esfuerzo y elasticidad de dedos y labios: repetir un fragmento cromático, muy suave, controlando el aire para no cortarlo.',
+  bpm: 72,
+  minutes: 4,
+  steps: [
+    'Tocá el fragmento: la tónica del día, y tres semitonos hacia arriba y de vuelta por la cromática, todo ligado en seis corcheas. Es el único compás del pentagrama, y es el que se repite.',
+    'Repetilo de 8 a 16 veces en un solo aire, muy suave (pianissimo), sin forzar la respiración. Si no llegás a las 16, hacé las que puedas y respirá, sin apretar.',
+    'Apretá bien los pistones en cada nota y mantené los labios "vivos": el movimiento hacia arriba pide una tensión mínima y al bajar se relaja (así lo indicaba Clarke).',
+    'Controlá el aire para que el sonido sea parejo de la primera a la última repetición: si decae el volumen o se afina hacia abajo, parar y respirar.',
+    'Después subí el fragmento de a semitono, un tono por vuelta, con el mismo cuidado, durante 3 o 4 minutos como máximo.',
+    'Terminá con una nota larga para relajar.',
+  ],
+  tips: [
+    'Clarke insistía en tocar estos ejercicios muy suave: tocados fuerte cansan los labios y dejan de ser un entrenamiento.',
+    'Es un ejercicio de aire y de control, no de velocidad: el metrónomo es sólo para mantener el pulso.',
+    'Si sentís tensión o dolor en los labios, parar: es mejor hacer poco todos los días que mucho un solo día.',
+  ],
+  abcCaption: 'Seis notas cromáticas ligadas desde la tónica del día, muy suave (pp): se repite de 8 a 16 veces en un solo aire.',
+  abc: (k) => techniqueAbc('chromLoop', k, 72),
+};
+
 export const WARMUP_EXERCISES: PracticeExercise[] = [
   BUZZ_GLISSANDO, LONG_TONES_DYNAMICS, LIP_SLURS_POSITIONS, LONG_TONES_LOW, FLEX_HARMONICS, LIP_BENDING, BUZZ_PHRASE, LONG_TONES_FOURTHS,
   LIP_SLURS_TRIPLETS, BREATH_FLOW, SOFT_ATTACKS, HIGH_SOFT, TONGUING_REPEATED, SLURRED_SCALE, INTERVAL_SLURS,
 ];
 export const TECHNIQUE_EXERCISES: PracticeExercise[] = [
   TECH_THIRDS, TECH_MELODIC_MINOR, TECH_SEVENTHS, TECH_CHROMATIC, TECH_INTERVALS, TECH_BLUES, TECH_TRIADS, TECH_BEBOP,
-  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG,
+  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG, TECH_CLOSINGS, TECH_DIM7, TECH_TRIPLETS, TECH_CHROM_LOOP,
 ];

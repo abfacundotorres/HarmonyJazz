@@ -18,7 +18,7 @@ export const COMMON_METHOD: string[] = [
   'Leé la línea sin tocar: cantala o solfeala con el nombre de las notas, mirando cómo cada nota se relaciona con el acorde.',
   'Tocala sin acompañamiento, despacio (más o menos a la mitad del tempo sugerido) y sin respirar de más: primero el camino, después la velocidad.',
   'Prendé el metrónomo sólo en 2 y 4 y tocala a ese tempo lento. Después poné el play-along y subí de a 8 bpm cuando salga limpia dos veces seguidas.',
-  'Recorré las tonalidades de a una, empezando por las que más te cuestan. Cuando salga limpia a tempo, tocá "Salió limpio" para registrarlo.',
+  'Recorré las tonalidades de a una, empezando por las que más te cuestan: no pierdas tiempo en lo que sale fácil y trabajá lo difícil hasta dominarlo, como pedía Clarke. Cuando salga limpia a tempo, tocá "Salió limpio" para registrarlo.',
   'Al final tocala de memoria, sin mirar el pentagrama, y después usá la misma idea en una improvisación corta.',
 ];
 
