@@ -51,7 +51,7 @@ export const LONG_TONES_LOW: PracticeExercise = {
   ],
   tips: [
     'Si sentís que tenés que apretar la boquilla contra los labios, probablemente falta aire: dejá la presión y mandá más aire, tibio y rápido.',
-    'En el grave las posiciones con varios pistones (como el F♯ con 1-2-3) suelen salir altas: compensá con la corredera del 3.º (o del 1.º) y con el labio, y confirmalo en el afinador en lugar de suponerlo.',
+    'Las digitaciones con varios pistones (1-3 y 1-2-3, como el F♯ grave) tienen tendencias de afinación propias y cambian de una trompeta a otra: en muchas salen altas y se corrigen extendiendo la corredera del 3.º, pero en el extremo grave algunas salen bajas. Fijate qué hace la tuya con el Afinador en lugar de suponerlo.',
     'Descansá tanto como tocaste. Si se cansa la cara o el sonido se ensucia, es hora de parar y no de insistir.',
     'Grabate con el celular y escuchá la grabación: se oye mejor lo que está o no centrado.',
   ],
@@ -70,14 +70,14 @@ export const FLEX_HARMONICS: PracticeExercise = {
   minutes: 8,
   steps: [
     'Primero la posición abierta (sin pistones): los armónicos 2-3-4-5-4-3-2 suenan C-G-C-E-C-G-C escritos. Tocalos en blancas a 60 bpm, todo ligado: un solo golpe de lengua al principio y el resto lo hace el aire.',
-    'Para subir, acelerá el aire y subí un poco la lengua hacia el paladar (como al decir "iii"); para bajar, aflojá el aire y bajá la lengua ("aaa"). Los labios casi no se mueven y no se aprieta la boquilla.',
+    'Para subir, acelerá el aire y subí un poco la lengua hacia el paladar (como al decir "iii"); para bajar, aflojá el aire y bajá la lengua ("aaa"). La garganta queda abierta (la sílaba sólo marca dónde va la lengua), los labios casi no se mueven y no se aprieta la boquilla.',
     'Repetí la serie en cada posición, bajando de a semitono: 2 (B), 1 (B♭), 1-2 (A), 2-3 (A♭), 1-3 (G) y 1-2-3 (F♯). La digitación no cambia durante la serie: sólo cambia el armónico.',
     'Buscá que cada nota "encaje" en su centro, que no se oiga el armónico del medio al pasar de uno a otro y que el sonido no se cierre ni se achique al subir.',
     'Cuando la serie salga limpia dos veces seguidas, subí el metrónomo de a 8 bpm (68, 76, 84…). Si se ensucia, volvé al tempo anterior.',
   ],
   tips: [
     'Si se te cae un armónico, volvé a tocarlo como nota larga, escuchalo bien, y recién ahí repetí la serie.',
-    'Mejor suave y fácil que fuerte y apretado: si sube la tensión de la cara, bajá el tempo o descansá.',
+    'Calentá suave: la mayor parte del calentamiento va en piano o mezzo piano y el fuerte se deja para el final. Si sube la tensión de la cara, bajá el tempo o descansá.',
   ],
   abcCaption: 'Posición abierta y posición 2 (los números sobre las notas son los armónicos). Las demás posiciones repiten la forma.',
   abc:
@@ -94,13 +94,14 @@ export const LIP_BENDING: PracticeExercise = {
   minutes: 5,
   steps: [
     'Tocá una nota larga cómoda en el registro medio, por ejemplo G escrito (sin pistones), en redonda a 60 bpm, con sonido centrado.',
-    'Sin mover los pistones, bajá la nota un semitono con el labio: aflojá un poco la tensión del labio y dejá caer apenas la mandíbula, siempre con el mismo aire. Después volvé a la altura original.',
+    'Sin mover los pistones, dejá bajar la nota un semitono: relajá apenas la tensión de los labios y dejá caer un poco la mandíbula, con el aire dirigido levemente hacia abajo y sin apretar más la boquilla. Después volvé a la altura original.',
     'Mirá el Afinador de la app: la aguja debería recorrer unos −100 cents en forma continua, sin escalones, y volver a 0.',
     'Si te sale con comodidad, hacelo hacia arriba: subí un semitono sin apretar la boquilla ni cerrar el sonido y volvé al centro.',
     'Repetí en otras notas largas, tanto abiertas como con pistones, y fijate en cuál se mueve más fácil y cuál es más dura.',
   ],
   tips: [
     'No se toca así en un solo: sirve para conocer tu margen y para que, cuando una nota salga baja o alta, la corrijas sin pensar.',
+    'Si tu profesor te enseña otra forma de hacerlo, seguí la suya: la descripción física de la flexión varía según la escuela.',
     'Si para subir o bajar tenés que apretar, parar: el movimiento sale del labio y del aire, no de la presión.',
   ],
   abcCaption: 'La misma nota, sin tocar los pistones: bajar un semitono y volver; después subir un semitono y volver.',
@@ -143,7 +144,7 @@ export const LONG_TONES_DYNAMICS: PracticeExercise = {
     'Elegí una nota cómoda del registro medio (por ejemplo G escrito, sin pistones) y abrí el Afinador de la app.',
     'Con el metrónomo en 60, tocá la nota en pianissimo durante 4 tiempos: tiene que ser suave pero firme, sin que se afine ni se quiebre.',
     'Hacé un crescendo parejo durante 8 tiempos hasta el fortissimo y volvé a pianissimo en otros 8 tiempos, de un solo aire.',
-    'Mientras cambia el volumen, la aguja del afinador debería quedarse cerca de 0 cents: los fuertes tienden a salir altos y los suaves bajos; corregilo con el aire y el labio, no moviendo la trompeta.',
+    'Mientras cambia el volumen, la aguja del afinador debería quedarse cerca de 0 cents: en general los fuertes tienden a salir altos y los suaves bajos; corregilo con el aire y el labio, no moviendo la trompeta.',
     'Escuchá que el timbre sea el mismo en todo el trayecto: que no se abra de más ni se vuelva áspero en el fuerte, ni pierda centro en el suave.',
     'Repetí en otras notas del registro medio, subiendo y bajando de a semitono.',
   ],
@@ -164,13 +165,15 @@ export const LIP_SLURS_POSITIONS: PracticeExercise = {
   minutes: 7,
   steps: [
     'Posición abierta (0): ligá C - G - C (armónicos 2-3-4) en negras a 60 bpm, un solo aire: ataque suave en la primera nota y el resto de la serie ligado.',
-    'Subí el aire y la lengua hacia el paladar ("iii") para subir; aflojá el aire y bajá la lengua ("aaa") para bajar. Casi no se mueve el labio.',
+    'Subí el aire y la lengua hacia el paladar ("iii") para subir; aflojá el aire y bajá la lengua ("aaa") para bajar. La garganta queda abierta (la sílaba sólo marca dónde va la lengua) y casi no se mueve el labio.',
     'Repetí con la digitación 2 (la serie suena un semitono más grave), después con 1, 1-2, 2-3, 1-3 y 1-2-3: de más aguda a más grave.',
     'Cada vez que cambia la digitación, empezá con una nota larga, escuchala bien y recién después hacé la serie.',
     'Cuidá que no se oiga ninguna nota intermedia: el pasaje entre armónicos tiene que ser limpio.',
-    'Mantené el tempo lento: la velocidad llega sola cuando el movimiento sale sin esfuerzo.',
+    'Mantené el tempo lento y el volumen suave (piano o mezzo piano): la velocidad llega sola cuando el movimiento sale sin esfuerzo.',
   ],
   tips: [
+    'En 1-3 y 1-2-3 todos los armónicos salen altos: extendé un poco la corredera del 3.º mientras hacés la serie.',
+    'Los lip slurs son exigentes: hacelos después de las notas largas y el buzz, no en frío, y no insistas en el agudo.',
     'Si una posición se resiste, volvé a la abierta y buscá la sensación que tenías ahí.',
     'Descansá si se fatiga la comisura de los labios: es señal de que se está apretando en vez de soplar.',
   ],
@@ -303,7 +306,7 @@ export const HIGH_SOFT: PracticeExercise = {
     'Termina siempre con una nota larga en el registro medio para relajar.',
   ],
   tips: [
-    'El agudo mejora más con constancia que con insistencia: pocos minutos todos los días rinden más que forzar uno.',
+    'Hacelo después de calentar bien y limitá el tiempo: pocos minutos de agudo suave todos los días rinden más que insistir una sola vez. Si el labio se cansa, parar.',
     'Si los labios se hinchan o se entumecen, parar y descansar.',
   ],
   abcCaption: 'Ejemplo: E5, F5, F♯5, G5 en redondas (siempre suaves, con descanso entre notas).',
@@ -392,6 +395,7 @@ export const TECH_THIRDS: PracticeExercise = {
     'Empezá lento, a negra = 80, y subí de a 8 bpm hasta 120. Al subir, no aprietes: el sonido debe seguir parejo.',
     'Bajá la escala con el mismo patrón: 8-6, 7-5, 6-4… Cuidá que las dos notas de cada par estén afinadas entre sí.',
     'Con el metrónomo en 2 y 4: las corcheas se sienten swingueadas, no rectas. Al principio, tocá las corcheas rectas y después aplicá swing.',
+    'Variá la articulación en cada vuelta: todo ligado, todo picado, y dos ligadas y dos picadas. Cada variante obliga a la lengua y a los dedos a coordinarse de otra forma.',
     'Cuando salga limpia, tocala de memoria, sin el pentagrama.',
   ],
   tips: [
@@ -436,6 +440,7 @@ export const TECH_SEVENTHS: PracticeExercise = {
     'Prestá atención a la calidad de cada arpegio: el de V es dominante (con 7ª menor), el de vii es semidisminuido. Escuchá cómo cambia el color.',
     'Hacelo a negra = 100. Si hay un arpegio que se tropieza, aislalo y repetilo despacio.',
     'Con el metrónomo en 2 y 4 y las corcheas con swing.',
+    'Variá la articulación en cada vuelta: todo ligado, todo picado, y dos ligadas y dos picadas.',
     'Cuando salgan, tocalos sobre el acorde correspondiente en el play-along.',
   ],
   tips: [
@@ -454,7 +459,7 @@ export const TECH_CHROMATIC: PracticeExercise = {
   minutes: 6,
   steps: [
     'Tocá la escala cromática de dos octavas desde la tónica, ligada y lenta (a negra = 60) para fijar las digitaciones, subiendo y bajando.',
-    'Ahora con articulación: "doodle tonguing" alterna sílabas como "du-gu-du-gu" (o "tu-ku"), con el aire constante.',
+    'Ahora con articulación: "doodle tonguing" alterna sílabas como "du-gu-du-gu" (o "tu-ku", la de Arban). Probalo primero sólo con aire y sin trompeta, despacio, y siempre con el aire constante detrás.',
     'Con el metrónomo en 2 y 4 (como en el swing), a negra = 100. Tocá las corcheas con la sensación de swing: las que caen en contratiempo son más largas.',
     'Los dedos y la lengua deben ir juntos: si una nota llega antes o después, bajá el tempo.',
     'Subí de a 8 bpm cuando salga limpia.',
