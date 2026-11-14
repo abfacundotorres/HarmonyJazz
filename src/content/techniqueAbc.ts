@@ -1,7 +1,7 @@
 import { abcPitch, keySignature } from '../exercises/abc';
 import { scaleNotes } from '../theory/scales';
 import {
-  BB_TRUMPET, midi, Note, noteName, parseNote, parsePitch, Pitch, placeNear, simplify, transposeNote,
+  BB_TRUMPET, degreeNote, midi, Note, noteName, parseNote, parsePitch, Pitch, placeNear, simplify, transposeNote,
 } from '../theory/notes';
 
 /** Pentagramas generados de los ejercicios de técnica, en la tonalidad del día y en altura escrita (trompeta en Si♭). */
@@ -139,7 +139,7 @@ export const SHAPES: Record<string, (tonic: Note) => Item[]> = {
 
 
 /** Unidad de cada ejercicio: 8 = corcheas (compás de 8), 16 = semicorcheas (compás de 16). */
-export const UNIT: Record<string, 8 | 16> = { rhythmDotted: 16, syncopation: 16, accentLong: 16 };
+export const UNIT: Record<string, number> = { rhythmDotted: 16, syncopation: 16, accentLong: 16, triplets: 12, chromLoop: 6 };
 
 /** Asigna duraciones cíclicas (un patrón) a una secuencia de notas. */
 function patterned(notes: Pitch[], pattern: number[]): Item[] {
@@ -194,6 +194,53 @@ const NEW_SHAPES: Record<string, (tonic: Note) => Item[]> = {
     return finish(items, s[0]);
   },
 };
+
+/** Cierres de frase: 5ª-7ª-2ª-7ª arpegiando el dominante y resolviendo; y 5-4-3-2-1 por grados conjuntos hasta la tónica. */
+NEW_SHAPES.closings = (tonic) => {
+  const s = ladder(tonic, 'ionian', 9);
+  const q = (i: number): Item => ({ p: s[i], dur: 2 });
+  return [q(4), q(6), q(8), q(6), q(4), q(6), { p: s[7], dur: 4 }, q(4), q(3), q(2), q(1), { p: s[0], dur: 8 }].map((it) => ({ ...it, p: it.p ?? null }));
+};
+
+/** Arpegio de 7ª disminuida sobre la sensible, que resuelve medio tono arriba a la tónica. */
+NEW_SHAPES.dim7 = (tonic) => {
+  const leading = degreeNote(tonic, '7');
+  const tonicP = start(tonic);
+  // la sensible por debajo de la tónica si el registro lo permite; si no, por encima
+  const lowL = placeNear(leading, midi(tonicP), 'down');
+  const L = midi(lowL) >= LOW ? lowL : placeNear(leading, midi(tonicP), 'up');
+  const spell = (d: string, ref: Pitch) => placeNear(degreeNote(leading, d), midi(ref), 'up');
+  const m3 = spell('b3', L);
+  const d5 = spell('b5', m3);
+  const d7 = spell('bb7', d5);
+  const top = placeNear(leading, midi(d7), 'up');
+  const seq = [L, m3, d5, d7, top, d7, d5, m3];
+  const target = placeNear(tonic, midi(L), 'up');
+  return [...eighths(seq), { p: L, dur: 4 }, { p: target, dur: 4 }];
+};
+
+/** Tresillos de corchea sobre grados conjuntos (1-2-3, 2-3-4…) subiendo y bajando; cada nota cuenta 1 y el compás tiene 12. */
+NEW_SHAPES.triplets = (tonic) => {
+  const s = ladder(tonic, 'ionian', 10);
+  const items: Item[] = [];
+  const up: number[][] = [];
+  const down: number[][] = [];
+  for (let i = 0; i + 2 < s.length && i < 8; i++) up.push([i, i + 1, i + 2]);
+  for (let i = Math.min(7, s.length - 3); i >= 0; i--) down.push([i + 2, i + 1, i]);
+  for (const g of [...up, ...down]) for (const i of g) items.push({ p: s[i], dur: 1 });
+  // en registros altos puede faltar un tramo: se completa el último compás con silencios
+  const rem = (12 - (items.length % 12)) % 12;
+  for (let i = 0; i < rem; i++) items.push({ p: null, dur: 1 });
+  return items;
+};
+
+/** Cromática ligada de seis notas (tónica, +1, +2, +3, +2, +1), para repetir muchas veces en un solo aire. */
+NEW_SHAPES.chromLoop = (tonic) => {
+  const m0 = midi(start(tonic));
+  const ups = [0, 1, 2, 3].map((k) => fromMidi(m0 + k, false));
+  const downs = [2, 1].map((k) => fromMidi(m0 + k, true));
+  return eighths([...ups, ...downs]);
+};
 Object.assign(SHAPES, NEW_SHAPES);
 
 /** ABC con la armadura de la tonalidad escrita. `bpm` es la negra. */
@@ -202,9 +249,31 @@ export function techniqueAbc(id: string, concertKey: string, bpm: number): strin
   const keyAcc = keySignature(tonic);
   const unit = UNIT[id] ?? 8;
   let acc = new Map<string, number>();
+  const items = SHAPES[id](tonic);
+  const head = (L: number, M = '4/4') => `X:1\nM:${M}\nL:1/${L}\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n`;
+
+  if (id === 'chromLoop') {
+    const notes = items.map((it) => abcPitch(it.p!, acc, keyAcc)).join('');
+    return `${head(8, '3/4')}"^repetir 8–16 veces" !pp!(${notes}) |]\n`;
+  }
+
+  if (id === 'triplets') {
+    let body = '';
+    let n = 0;
+    items.forEach((it) => {
+      if (n % 12 === 0) {
+        if (n > 0) body += (n / 12) % 4 === 0 ? ' |\n' : ' | ';
+        acc = new Map();
+      }
+      if (n % 3 === 0) body += (n % 12 === 0 ? '' : ' ') + '(3';
+      body += it.p ? abcPitch(it.p, acc, keyAcc) : 'z';
+      n++;
+    });
+    return `${head(8)}${body.trim()} |]\n`;
+  }
+
   let body = '';
   let pos = 0;
-  const items = SHAPES[id](tonic);
   items.forEach((it, idx) => {
     if (pos % unit === 0) {
       if (pos > 0) body += (pos / unit) % 4 === 0 ? ' |\n' : ' | ';
@@ -218,5 +287,5 @@ export function techniqueAbc(id: string, concertKey: string, bpm: number): strin
     if (it.slur !== undefined && it.slur !== next) body += ')';
     pos += it.dur;
   });
-  return `X:1\nM:4/4\nL:1/${unit}\nQ:1/4=${bpm}\nK:${noteName(tonic)}\n${body} |]\n`;
+  return `${head(unit)}${body} |]\n`;
 }

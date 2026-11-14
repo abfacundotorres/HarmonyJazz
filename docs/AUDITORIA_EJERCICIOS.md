@@ -1,5 +1,15 @@
 # Auditoría pedagógica de los ejercicios de práctica
 
+## Tercera pasada: lectura de Clarke
+
+Se leyó *Technical Studies for the Cornet, Second Series* (1912, dominio público en IMSLP): la introducción y los estudios 1 a 4 con sus indicaciones (páginas 1 a 21 del PDF); **quedan sin leer los estudios 5 a 10**. Lo que se incorporó:
+
+- **Muy suave:** todos los ejercicios deben tocarse muy suave para que los labios se mantengan frescos y bajo control; tocados fuerte producen el efecto contrario. Se reforzó en flexibilidad y se agregó un ejercicio nuevo (cromática ligada muy suave).
+- **Un solo aire y muchas repeticiones:** repetir un fragmento de 8 a 16 veces en un aire, con los dedos firmes y los labios "vivos"; contraer apenas al subir y relajar al bajar. Se creó el ejercicio de cromática ligada (fragmento y pentagrama propios).
+- **Orden de articulación:** ligar primero, después picado muy liviano y, cuando ya sea fácil, doble picado; acentuar cada grupo de cuatro notas para asegurar el ritmo. Se agregó a escalas en terceras y arpegios de 7ª.
+- **Método:** no perder tiempo en lo fácil y trabajar lo difícil hasta dominarlo; corregir de inmediato la menor falla; sesiones cortas y poco a poco (método común de las Lecciones).
+- Presión: Clarke dice que sólo hace falta una presión leve, "no fuerza bruta", lo que coincide con los textos de la app (a diferencia de la presión creciente que describe Arban).
+
 ## Segunda pasada: lectura directa de Arban
 
 Se leyó el original de Arban (edición Carl Fischer 1893, Goldman, dominio público en IMSLP) en sus páginas de texto: prefacio, afinación y corredera, posición de la boquilla, ataque, respiración, estilo y defectos, comentarios a los primeros estudios y explicación de las ligaduras (pp. 1–9 y 37–38 de la edición). **Clarke todavía no se leyó** (falta el PDF).

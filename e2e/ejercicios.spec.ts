@@ -2,8 +2,9 @@ import { expect, test } from './helpers';
 
 // 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
-// 2026-11-03: técnica de escala en terceras (día % 12 = 0)
-const DIA_TERCERAS = new Date(2026, 10, 3, 12, 0, 0);
+// día número % 16 = 0: técnica de escala en terceras (la rotación de técnica tiene 16 ejercicios)
+const diaTecnica = (indice: number) => new Date(1970, 0, 1 + 20800 + indice, 12, 0, 0);
+const DIA_TERCERAS = diaTecnica(0);
 
 test.describe('ejercicios de práctica con explicación completa', () => {
   test.beforeEach(async ({ page }) => {
@@ -72,9 +73,9 @@ test.describe('lecciones: cómo practicar cada ejercicio', () => {
 
 test.describe('técnica rítmica y de ligaduras', () => {
   test('cada ejercicio nuevo se despliega con pentagrama en la tonalidad del día', async ({ page }) => {
-    // los cuatro días siguientes cubren la rotación de técnica (día % 12 = 8, 9, 10, 11)
-    const dias = [new Date(2026, 10, 11, 12), new Date(2026, 10, 12, 12), new Date(2026, 10, 13, 12), new Date(2026, 10, 14, 12)];
-    const titulos = ['Ritmo: corchea con puntillo', 'Síncopas sostenidas', 'Ligaduras con pistones', 'Ataque con acento y nota larga'];
+    // índices 8 a 15 de la rotación de técnica
+    const dias = [8, 9, 10, 11, 12, 13, 14, 15].map(diaTecnica);
+    const titulos = ['Ritmo: corchea con puntillo', 'Síncopas sostenidas', 'Ligaduras con pistones', 'Ataque con acento y nota larga', 'Cierres de frase', 'Arpegio de 7ª disminuida', 'Tresillos parejos', 'Cromática ligada muy suave'];
     for (const [i, dia] of dias.entries()) {
       await page.clock.setFixedTime(dia);
       await page.goto('/#/hoy');
@@ -82,7 +83,10 @@ test.describe('técnica rítmica y de ligaduras', () => {
       const ex = page.locator('details.exercise', { hasText: titulos[i] }).first();
       await ex.locator('summary').click();
       await expect(ex.locator('.paper svg')).toBeVisible();
-      expect(await ex.locator('.paper svg .abcjs-note').count()).toBeGreaterThanOrEqual(8);
+      expect(await ex.locator('.paper svg .abcjs-note').count()).toBeGreaterThanOrEqual(6);
+      // el pentagrama cabe en el ancho disponible (la barra final no se sale del recuadro)
+      const cabe = await ex.locator('.paper').evaluate((p) => [...p.querySelectorAll('.abcjs-bar')].every((b) => b.getBoundingClientRect().right <= p.getBoundingClientRect().right + 1));
+      expect(cabe, titulos[i]).toBe(true);
     }
   });
 });
