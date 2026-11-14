@@ -471,7 +471,7 @@ export const TECH_CHROMATIC: PracticeExercise = {
     'Los dedos y la lengua deben ir juntos: si una nota llega antes o después, bajá el tempo.',
     'Subí de a 8 bpm cuando salga limpia.',
     'Apretá bien los pistones en cada nota, para que todas suenen plenas y con el mismo sonido.',
-    'Cuando salga pareja, dale forma de frase: crecé un poco al subir y aflojá al bajar, como sugería Arban para las escalas, sin que cambien el timbre ni la afinación.',
+    'Cuando salga pareja, dale forma de frase: crescendo al subir y diminuendo al bajar, como proponen Arban y Clarke, sin que cambien el timbre ni la afinación. Clarke pedía repetirla cuatro veces o más en un solo aire, sin esfuerzo: "no hace falta forzar si se toca bien".',
     'Terminá con una nota larga en la tónica.',
   ],
   tips: [
@@ -584,7 +584,7 @@ export const TECH_DOTTED: PracticeExercise = {
     'Primero el ritmo sobre una sola nota, sin escala: metrónomo a 72, contando en voz alta "1 e y a, 2 e y a…". Tocá corchea con puntillo + semicorchea en cada tiempo, con "tu" en cada nota.',
     'La corchea con puntillo se sostiene entera hasta la semicorchea: no se acorta ni se reemplaza el puntillo por un silencio. Es el error más común, y Arban insistía en evitarlo.',
     'Después probá corchea + dos semicorcheas en cada tiempo, también sobre una sola nota. Las semicorcheas son livianas y parejas, y la corchea del principio no se alarga ni se apoya más que las otras.',
-    'Ahora con la escala: el pentagrama alterna un compás de cada ritmo, subiendo y bajando una octava. Mantené el pulso estable y la misma articulación en todos los compases.',
+    'Ahora con la escala: el pentagrama alterna dos compases de cada ritmo, subiendo y bajando una octava. Mantené el pulso estable y la misma articulación en todos los compases.',
     'Cuando salga limpio, subí el metrónomo de a 4 bpm (76, 80, 84…). Si una figura se aprieta o se alarga, volvé al tempo anterior.',
     'Para llevarlo al jazz, repetí cada ritmo con swing: no sale igual que la figura escrita; sentí cómo la articulación hace que la corchea con puntillo se acerque a la figura de tresillo.',
   ],
@@ -636,6 +636,7 @@ export const TECH_VALVE_SLURS: PracticeExercise = {
   tips: [
     'Cuando una ligadura suene "con golpe", casi siempre es porque los dedos no bajan juntos: aislá esos dedos.',
     'No confundir con los lip slurs: acá las notas cambian de digitación y el labio casi no trabaja.',
+    'Con los pistones pegajosos o lentos no hay técnica que alcance: Clarke decía que un buen instrumento es la mitad de la batalla. Limpiá y lubricá las válvulas.',
   ],
   abcCaption: 'La escala de la tonalidad del día ligada de a cuatro notas y después en terceras ligadas de a dos.',
   abc: (k) => techniqueAbc('slurSteps', k, 72),
@@ -697,6 +698,7 @@ export const TECH_DIM7: PracticeExercise = {
     'Resolvé: la sensible sube medio tono a la tónica (el pentagrama termina así). Escuchá el cambio de tensión a reposo.',
     'Probá las otras tres resoluciones de oído: cada nota del acorde puede ser la sensible de otra tónica, a medio tono. Tocá el mismo arpegio y resolvelo a cada una de esas notas.',
     'Escuchá su relación con el dominante: el arpegio sobre la sensible contiene la 3ª, 5ª, ♭7 y ♭9 de un acorde V7(♭9). Sobre el play-along de un dominante, tocalo como arpegio de ese acorde sin fundamental.',
+    'Repetí el arpegio de 4 a 8 veces en un solo aire, suave, y también picado (y con triple picado si ya lo dominás), sin forzar para alcanzar las notas agudas: así lo indicaba Clarke.',
     'Repetí en otras tonalidades y, cuando salga limpio, tocalo de memoria.',
   ],
   tips: [
@@ -719,6 +721,7 @@ export const TECH_TRIPLETS: PracticeExercise = {
     'Primero ligado, con un solo aire por grupo de tres; después picado muy liviano. Cada nota con el mismo peso: el primer sonido del grupo no debe ser más fuerte ni más largo que los otros.',
     'Tocá la escala subiendo por grupos 1-2-3, 2-3-4, 3-4-5… y después bajando por los mismos grupos invertidos (3-2-1, 4-3-2…), como en el pentagrama.',
     'Subí el metrónomo de a 4 bpm cuando salga pareja; si los dedos se tropiezan, bajá.',
+    'Tocalo tan claro y correcto como lo tocaría un buen clarinetista o violinista. Clarke pedía a un clarinetista que tocara los ejercicios difíciles y trataba de imitarlo con la trompeta: probá con una grabación o con otro instrumentista.',
     'Recién después, con la escala dominada, probá el tresillo con swing y con acentos desplazados.',
   ],
   tips: [
@@ -741,6 +744,7 @@ export const TECH_CHROM_LOOP: PracticeExercise = {
     'Apretá bien los pistones en cada nota y mantené los labios "vivos": el movimiento hacia arriba pide una tensión mínima y al bajar se relaja (así lo indicaba Clarke).',
     'Controlá el aire para que el sonido sea parejo de la primera a la última repetición: si decae el volumen o se afina hacia abajo, parar y respirar.',
     'Después subí el fragmento de a semitono, un tono por vuelta, con el mismo cuidado, durante 3 o 4 minutos como máximo.',
+    'Clarke usaba un ejercicio parecido cada día, cuatro veces en un solo aire, para comprobar su resistencia en cualquier condición: probá medirte con eso cada tanto, sin forzar.',
     'Terminá con una nota larga para relajar.',
   ],
   tips: [
@@ -775,11 +779,33 @@ export const TECH_ENDURANCE: PracticeExercise = {
   abc: (k) => techniqueAbc('fourGroups', k, 72),
 };
 
+export const TECH_SOTTO_VOCE: PracticeExercise = {
+  id: 'tech-sotto-voce',
+  short: 'Melodía con arpegios "sotto voce": la nota larga, fuerte, y su arpegio de cuatro notas casi susurrado.',
+  goal: 'Hacer que una melodía suene completa sin acompañamiento: las notas largas conducen la línea y los arpegios cortos antes de cada una dan armonía y empuje, con dos planos de volumen bien distintos.',
+  bpm: 66,
+  minutes: 6,
+  steps: [
+    'Cantá primero sólo las notas largas del pentagrama (las acentuadas): forman una melodía sencilla sobre las notas de la tríada de la tonalidad del día. Tenela en el oído.',
+    'Tocá cada arpegio corto (las cuatro notas pequeñas antes de cada nota larga) como un susurro, "sotto voce", muy ligado y casi sin acento, y atacá la nota larga llena y firme.',
+    'Los dos planos tienen que ser claros: la nota larga manda, el arpegio es un adorno que lleva hacia ella. Si los arpegios suenan tan fuertes como las notas largas, la melodía se pierde.',
+    'Para lograr el susurro, los labios tienen que estar blandos y flexibles (así lo pedía Clarke): sin presión, con el aire justo y los dedos precisos.',
+    'Con el metrónomo a 66, sostené cada nota larga durante todo su valor, sin que baje la afinación ni el volumen.',
+    'Cuando salga, probá lo mismo sobre una melodía simple que ya conozcas: agregá tu propio arpegio antes de las notas largas y escuchá cómo suena completa aunque no haya acompañamiento.',
+  ],
+  tips: [
+    'Este recurso (una melodía que suena armonizada porque cada nota se anticipa con su arpegio) también sirve en jazz para tocar una balada sola o para introducir un tema.',
+    'Clarke lo llamaba una forma de "tocar de manera original": lo importante es la idea, no copiar un modelo.',
+  ],
+  abcCaption: 'Notas largas de la tríada de la tonalidad del día (acentuadas), cada una precedida por su arpegio ascendente de cuatro notas cortas.',
+  abc: (k) => techniqueAbc('sottoVoce', k, 66),
+};
+
 export const WARMUP_EXERCISES: PracticeExercise[] = [
   BUZZ_GLISSANDO, LONG_TONES_DYNAMICS, LIP_SLURS_POSITIONS, LONG_TONES_LOW, FLEX_HARMONICS, LIP_BENDING, BUZZ_PHRASE, LONG_TONES_FOURTHS,
   LIP_SLURS_TRIPLETS, BREATH_FLOW, SOFT_ATTACKS, HIGH_SOFT, TONGUING_REPEATED, SLURRED_SCALE, INTERVAL_SLURS,
 ];
 export const TECHNIQUE_EXERCISES: PracticeExercise[] = [
   TECH_THIRDS, TECH_MELODIC_MINOR, TECH_SEVENTHS, TECH_CHROMATIC, TECH_INTERVALS, TECH_BLUES, TECH_TRIADS, TECH_BEBOP,
-  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG, TECH_CLOSINGS, TECH_DIM7, TECH_TRIPLETS, TECH_CHROM_LOOP, TECH_ENDURANCE,
+  TECH_DOTTED, TECH_SYNCOPATION, TECH_VALVE_SLURS, TECH_ACCENT_LONG, TECH_CLOSINGS, TECH_DIM7, TECH_TRIPLETS, TECH_CHROM_LOOP, TECH_ENDURANCE, TECH_SOTTO_VOCE,
 ];
