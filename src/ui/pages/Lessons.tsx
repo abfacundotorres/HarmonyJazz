@@ -99,6 +99,26 @@ function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string
           ))}
         </ul>
       </details>
+      <details className="card study">
+        <summary>
+          <h3>Plan de una semana</h3>
+        </summary>
+        <ol className="steps">
+          {lesson.week.map((t, i) => (
+            <li key={i}><b>Día {i + 1}.</b> {loc(t)}</li>
+          ))}
+        </ol>
+      </details>
+      <details className="card study">
+        <summary>
+          <h3>Errores frecuentes</h3>
+        </summary>
+        <ul className="whylist">
+          {lesson.mistakes.map((t, i) => (
+            <li key={i}>{loc(t)}</li>
+          ))}
+        </ul>
+      </details>
       <h3 className="sectionhead">Ejercicios ({lesson.exercises.length})</h3>
       {lesson.exercises.map((ex, i) => (
         <LessonExerciseCard key={`${lesson.id}:${i}`} id={`${lesson.id}:${i}`} ex={ex} initialKey={initialKey} />
