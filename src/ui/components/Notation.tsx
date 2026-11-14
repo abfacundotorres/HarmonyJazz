@@ -5,7 +5,7 @@ import abcjs from 'abcjs';
  * Partitura con abcjs. Se dibuja al ancho real del contenedor (no se encoge un dibujo grande):
  * en pantallas angostas se pasa a 2 compases por línea para que las notas sigan siendo legibles.
  */
-export function Notation({ abc, highlightBar }: { abc: string; highlightBar?: number }) {
+export function Notation({ abc, highlightBar, transpose = 0 }: { abc: string; highlightBar?: number; transpose?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -31,6 +31,7 @@ export function Notation({ abc, highlightBar }: { abc: string; highlightBar?: nu
     const inner = Math.max(240, width - 12);
     abcjs.renderAbc(ref.current, abc, {
       add_classes: true,
+      visualTranspose: transpose,
       paddingtop: 4,
       paddingbottom: 10,
       paddingleft: 4,
@@ -43,7 +44,7 @@ export function Notation({ abc, highlightBar }: { abc: string; highlightBar?: nu
         preferredMeasuresPerLine: inner < 460 ? 2 : inner < 760 ? 3 : 4,
       },
     } as any);
-  }, [abc, width]);
+  }, [abc, width, transpose]);
 
   useEffect(() => {
     const el = ref.current;

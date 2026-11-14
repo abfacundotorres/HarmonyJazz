@@ -1,13 +1,14 @@
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { LESSONS } from './lessons';
 import type { Lick } from './licks';
+import { FLEX_HARMONICS, LIP_BENDING, LONG_TONES_LOW, PlanItem } from './practice';
 import { PROGRESSIONS } from './progressions';
 
 export interface PlanBlock {
   id: string;
   title: string;
   minutes: number;
-  detail: string[];
+  detail: PlanItem[];
   /** Ruta de la app a la que lleva el bloque. */
   link?: string;
   linkLabel?: string;
@@ -36,9 +37,9 @@ export function tuneOfWeek(d: Date) {
   return TUNES[Math.floor(dayNumber(d) / 7) % TUNES.length];
 }
 
-const WARMUPS = [
+const WARMUPS: PlanItem[][] = [
   ['Buzzing de boquilla: glissandos lentos de una octava, 2 min.', 'Notas largas pp → ff → pp en el registro medio, con afinador.', 'Lip slurs por armónicos en las 7 posiciones (0, 2, 1, 12, 23, 13, 123), lento.'],
-  ['Notas largas en el registro grave (F# a C escritos): sonido abierto y centrado.', 'Flexibilidad: armónicos 2-3-4-5-4-3-2 en cada posición, ligado.', 'Bending: bajar y subir un semitono con el labio en cada nota larga.'],
+  [LONG_TONES_LOW, FLEX_HARMONICS, LIP_BENDING],
   ['Buzzing de boquilla imitando una frase de un solo que estés transcribiendo.', 'Notas largas en cuartas (C-F-B♭...) con afinador.', 'Lip slurs en tresillos, rápido y suave, sin presión.'],
 ];
 

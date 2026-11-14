@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
 import type { PhraseLibrary } from '../../content/phrases';
 import { streak, usePersistent } from '../../state/storage';
+import type { PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
+import { Notation } from '../components/Notation';
 import { useLog, useReading, useSettings } from '../hooks';
 
 export function Today() {
@@ -124,7 +126,11 @@ function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<type
         <h2 className="h3like">{block.title}</h2>
         <span className="mins">{block.minutes} min</span>
       </header>
-      <ul>{block.detail.map((d, i) => <li key={i}>{d}</li>)}</ul>
+      <ul>
+        {block.detail.map((d, i) =>
+          typeof d === 'string' ? <li key={i}>{d}</li> : <li key={d.id}><Exercise ex={d} /></li>,
+        )}
+      </ul>
       <footer className="row">
         <button onClick={() => setRunning((r) => !r)} className={running ? 'on' : ''}>
           {running ? '❚❚' : '▶'} {mm}:{ss}
@@ -135,5 +141,37 @@ function Block({ n, block, done, onToggle }: { n: number; block: ReturnType<type
         </label>
       </footer>
     </article>
+  );
+}
+
+/** Un ejercicio con su explicación completa, desplegable. */
+function Exercise({ ex }: { ex: PracticeExercise }) {
+  const { view } = useReading();
+  return (
+    <details className="exercise">
+      <summary>{ex.short}</summary>
+      <div className="ex-body">
+        <p><b>Para qué:</b> {ex.goal}</p>
+        {(ex.bpm || ex.minutes) && (
+          <p className="muted small">
+            {ex.bpm ? `Metrónomo: ${ex.bpm} bpm.` : ''} {ex.minutes ? `Unos ${ex.minutes} min.` : ''}
+          </p>
+        )}
+        {ex.abc && (
+          <figure>
+            <Notation abc={ex.abc} transpose={view === 'C' ? -2 : 0} />
+            {ex.abcCaption && <figcaption className="muted small">{ex.abcCaption}{view === 'C' ? ' (en concierto)' : ' (escrito para trompeta en Si♭)'}</figcaption>}
+          </figure>
+        )}
+        <h4>Cómo se hace</h4>
+        <ol>{ex.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+        {ex.tips && ex.tips.length > 0 && (
+          <>
+            <h4>En la trompeta</h4>
+            <ul>{ex.tips.map((s, i) => <li key={i}>{s}</li>)}</ul>
+          </>
+        )}
+      </div>
+    </details>
   );
 }
