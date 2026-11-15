@@ -3,6 +3,8 @@ import { LESSONS } from './lessons';
 import type { Lick } from './licks';
 import * as P from './practice';
 import type { PlanItem } from './practice';
+import { PATTERNS, type Suggestion } from './scaleStudy';
+import { SCALES } from '../theory/scales';
 import { PROGRESSIONS } from './progressions';
 
 export interface PlanBlock {
@@ -48,7 +50,7 @@ const WARMUPS: PlanItem[][] = [
 
 const TECHNIQUE: PlanItem[] = P.TECHNIQUE_EXERCISES;
 
-export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string, phrases: Lick[] = []): DailyPlan {
+export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string, phrases: Lick[] = [], scale?: Suggestion): DailyPlan {
   const n = dayNumber(d);
   const key = keyOfDay(d);
   const tune = tuneOfWeek(d);
@@ -57,7 +59,7 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
   const warm = WARMUPS[n % WARMUPS.length];
 
   // reparto proporcional
-  const w = { warm: 0.15, tech: 0.12, lesson: 0.25, lick: 0.15, tune: 0.23, free: 0.1 };
+  const w = { warm: 0.15, tech: 0.1, scale: 0.1, lesson: 0.2, lick: 0.13, tune: 0.22, free: 0.1 };
   const m = (x: number) => Math.max(3, Math.round((totalMinutes * x) / 5) * 5 || 3);
 
   const blocks: PlanBlock[] = [
@@ -77,6 +79,21 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
       link: `#/playalong?p=ii-v-i&k=${key}&m=1`,
       linkLabel: 'Metrónomo en 2 y 4',
     },
+    ...(scale
+      ? [
+          {
+            id: 'scale',
+            title: `Escala del día: ${SCALES[scale.scale].name}`,
+            minutes: m(w.scale),
+            detail: [
+              `Hoy: ${PATTERNS.find((p) => p.id === scale.pattern)!.title.toLowerCase()}, en la tonalidad que sigue en tu ciclo. Es la combinación de escala, patrón y tonalidad que menos trabajaste.`,
+              'Cuando salga limpia a tempo, marcala en la pantalla de Escalas: la app guarda tu mejor tempo y te propone la próxima.',
+            ],
+            link: `#/escalas?e=${scale.scale}&p=${scale.pattern}&k=${scale.key}`,
+            linkLabel: 'Estudiar la escala',
+          },
+        ]
+      : []),
     {
       id: 'lesson',
       title: `Armonía aplicada: ${lesson.title}`,

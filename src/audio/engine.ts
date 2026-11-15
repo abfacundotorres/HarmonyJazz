@@ -620,6 +620,57 @@ export class JazzEngine {
     return { chorus, eighth: Math.max(0, eighth) };
   }
 
+  /**
+   * Toca una frase corta (notas en concierto, `start` y `dur` en segundos al tempo dado) con la trompeta, con
+   * metrónomo en 2 y 4 y cuenta previa opcionales, y la repite si se pide. Todo se agenda sobre el reloj de audio
+   * (no con temporizadores), así que el pulso y las notas no se desfasan. Devuelve false si se canceló durante la preparación.
+   */
+  async playExercise(
+    notes: { midi: number; start: number; dur: number }[],
+    opts: { tempo: number; click: boolean; countIn: boolean; repeat: boolean; onEnd?: () => void },
+  ): Promise<boolean> {
+    const entry = this.gen;
+    await this.init();
+    if (entry !== this.gen) return false;
+    this.stop();
+    const gen = this.gen;
+    const inst = this.inst!;
+    const t = Tone.getTransport();
+    t.bpm.value = opts.tempo;
+    const beat = 60 / opts.tempo;
+    const total = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
+    // la pasada dura compases enteros para que el pulso siga alineado al repetir
+    const bars = Math.max(1, Math.ceil(total / (4 * beat) - 1e-6));
+    const passSec = bars * 4 * beat;
+    const offset = opts.countIn ? 4 * beat : 0;
+
+    if (opts.countIn) {
+      for (let i = 0; i < 4; i++) t.schedule((time) => inst.click.triggerAttackRelease(i === 0 ? 'C6' : 'G5', 0.05, time), i * beat);
+    }
+    const pass = (time: number) => {
+      if (gen !== this.gen) return;
+      const base = t.getSecondsAtTime(time);
+      if (opts.click) {
+        for (let b = 0; b < bars; b++) for (const k of [1, 3]) t.schedule((when) => inst.drumHit('chick', when, 0.9), base + b * 4 * beat + k * beat);
+      }
+      for (const n of notes) {
+        const play = (when: number) => inst.horn.triggerAttackRelease(midiToFreq(n.midi), Math.max(0.05, n.dur * 0.92), when, 0.55);
+        // lo que cae al inicio de la pasada ya está dentro de la ventana de anticipación: se dispara directo
+        if (n.start < 0.03) play(time + n.start);
+        else t.schedule(play, base + n.start);
+      }
+    };
+    if (opts.repeat) {
+      this.repeatId = t.scheduleRepeat((time) => pass(time), passSec, offset);
+    } else {
+      this.repeatId = t.schedule((time) => pass(time), offset);
+      t.schedule((time) => Tone.getDraw().schedule(() => gen === this.gen && (this.stop(), opts.onEnd?.()), time), offset + passSec + 0.1);
+    }
+    t.start('+0.05');
+    this.playing = true;
+    return true;
+  }
+
   /** Reproduce una sola nota (concierto) de referencia. */
   async playNote(m: number, dur = 0.8) {
     await this.init();

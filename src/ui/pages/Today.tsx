@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
+import { localDayNumber, suggest } from '../../content/scaleStudy';
 import type { PhraseLibrary } from '../../content/phrases';
 import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
 import { Notation } from '../components/Notation';
-import { useLog, useReading, useSettings } from '../hooks';
+import { useLog, useMastery, useReading, useSettings } from '../hooks';
 
 export function Today() {
   const [settings, setSettings] = useSettings();
@@ -13,7 +14,9 @@ export function Today() {
   const { keyLabel, view } = useReading();
   const today = useMemo(() => new Date(), []);
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
-  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? []), [today, settings.minutes, settings.focusLesson, pl]);
+  const [mastery] = useMastery();
+  const scale = useMemo(() => suggest(mastery, localDayNumber(today)), [mastery, today]);
+  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale), [today, settings.minutes, settings.focusLesson, pl, scale]);
   const day = log[plan.date] ?? { done: [], minutes: 0 };
   const total = plan.blocks.reduce((s, b) => s + b.minutes, 0);
   const s = streak(log, today);

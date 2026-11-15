@@ -265,3 +265,6 @@ export function suggest(mastery: Record<string, Record<string, number>>, dayNumb
   const key = CYCLE_OF_FOURTHS.map((_, i) => CYCLE_OF_FOURTHS[(start + i) % 12]).find((k) => !done[k]) ?? CYCLE_OF_FOURTHS[start];
   return { ...pick, key };
 }
+
+/** Número de día según la fecha local (el mismo criterio que el plan de Hoy). */
+export const localDayNumber = (d: Date = new Date()) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
