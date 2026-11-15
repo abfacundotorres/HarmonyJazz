@@ -6,7 +6,8 @@ import type { Chart } from '../../theory/chart';
 import { KeySelect } from './KeySelect';
 import { Notation } from './Notation';
 import { Player } from './Player';
-import { useMastery, usePosition, useReading } from '../hooks';
+import { useMastery, useReading } from '../hooks';
+import { usePosition } from '../usePosition';
 
 export interface ExerciseCardProps {
   id: string;

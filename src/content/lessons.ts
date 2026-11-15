@@ -386,7 +386,7 @@ export const LESSONS: Lesson[] = [
     summary: 'Una pentatónica mayor elegida sobre cada acorde: un sonido de cuartas, abierto, sin notas a evitar.',
     steps: [
       'Aprendé las pentatónicas mayores en las 12 tonalidades (una por día).',
-      'Elegí la pentatónica de cada acorde: la de la ♭3 para un m7, la de la 5ª para un maj7, la de la ♭5 para un 7alt y la de la 2ª para un 7♯11.',
+      'Elegí la pentatónica de cada acorde: la de la ♭3 para un m7, la de la 5ª para un maj7, la de la ♭5 para un 7alt y la de la tónica para un 7♯11.',
       'Tocala subiendo y bajando en grupos de tres notas.',
       'Aplicá el ejercicio sobre un ii–V–i menor y sobre un blues menor.',
       'Combinala con cuartas apiladas (frase "Cuartas sobre un acorde modal" del Vocabulario).',
@@ -401,7 +401,7 @@ export const LESSONS: Lesson[] = [
       '- m7: pentatónica de la ♭3 (Dm7 → F pentatónica).',
       '- maj7: pentatónica de la 5 (Cmaj7 → G pentatónica: 5, 6, 7, 9, 3).',
       '- 7alt: pentatónica de la ♭5 (C7alt → G♭ pentatónica: ♯11, ♭13, ♭7, ♭9, ♯9).',
-      '- 7♯11: pentatónica de la 2 (D sobre C7♯11). Ojo: contiene la 7ª mayor (B), que choca con la ♭7 del acorde; usala de paso y resolvé, o elegí la pentatónica de la tónica (C), que no tiene esa fricción. Sobre un maj7♯11 sí funciona entera.',
+      '- 7♯11: pentatónica de la tónica (C sobre C7♯11: 1, 9, 3, 5, 13). La de la 2 (D) trae la ♯11 pero también la 7ª mayor (B), que choca con la ♭7 del acorde: esa es para un maj7♯11, donde funciona entera.',
       '- m7♭5: pentatónica de la ♭6.',
       'En contextos modales, combiná pentatónicas a distancia de semitono para salir y entrar (side-slipping).',
     ],
@@ -423,7 +423,7 @@ export const LESSONS: Lesson[] = [
     mistakes: [
       'Subir y bajar la pentatónica sin silencios: suena a escala; metele saltos y pausas.',
       'Elegir mal la pentatónica: verificá qué grado del acorde es cada nota.',
-      'Usar la pentatónica de la 2 sobre un 7♯11 sin cuidar la 7ª mayor que trae.',
+      'Usar la pentatónica de la 2 sobre un 7♯11: trae la 7ª mayor, que choca con la ♭7. Esa pentatónica es para el maj7♯11.',
     ],
     trumpet: ['Las cuartas son un desafío de flexibilidad. Usalas como ejercicio diario de lip slurs en el calentamiento.'],
     listen: ['Freddie Hubbard – "Maiden Voyage" (con Herbie Hancock)', 'Woody Shaw – "Stepping Stones"'],

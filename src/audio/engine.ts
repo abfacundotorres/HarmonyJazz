@@ -2,6 +2,7 @@ import * as Tone from 'tone';
 import { Chart, EIGHTHS_PER_BAR } from '../theory/chart';
 import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
+import { registerStop } from './stopAll';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, mulberry32, newCompState, Rng, Style } from './patterns';
 
 export interface Mix {
@@ -544,9 +545,9 @@ export class JazzEngine {
       this.scheduleChorus(cur, time, chorus, state);
       chorus++;
       const next = at + cur.chart.bars * barSec;
-      this.repeatId = t.schedule((tm) => runChorus(tm, next), next);
+      this.repeatId = t.scheduleOnce((tm) => runChorus(tm, next), next);
     };
-    this.repeatId = t.schedule((tm) => runChorus(tm, offset), offset);
+    this.repeatId = t.scheduleOnce((tm) => runChorus(tm, offset), offset);
     t.start('+0.05');
     this.playing = true;
     return true;
@@ -575,6 +576,7 @@ export class JazzEngine {
     if (this.repeatId !== null) t.clear(this.repeatId);
     this.repeatId = null;
     this.inst?.piano.releaseAll?.();
+    this.inst?.bass.releaseAll?.();
     this.inst?.horn.releaseAll?.();
     this.inst?.lead.triggerRelease();
     this.keepAlive?.pause();
@@ -621,13 +623,25 @@ export class JazzEngine {
   }
 
   /**
-   * Toca una frase corta (notas en concierto, `start` y `dur` en segundos al tempo dado) con la trompeta, con
-   * metrónomo en 2 y 4 y cuenta previa opcionales, y la repite si se pide. Todo se agenda sobre el reloj de audio
-   * (no con temporizadores), así que el pulso y las notas no se desfasan. Devuelve false si se canceló durante la preparación.
+   * Toca una frase corta (notas en concierto, `start` y `dur` en tiempos, es decir negras) con la trompeta, con
+   * metrónomo en 2 y 4 y cuenta previa opcionales, y la repite si se pide. Con `ramp`, cada `every` pasadas el tempo
+   * sube `step` bpm hasta `max`. Todo se agenda sobre el reloj de audio (no con temporizadores), así que el pulso y
+   * las notas no se desfasan. Devuelve false si se canceló durante la preparación.
    */
   async playExercise(
     notes: { midi: number; start: number; dur: number }[],
-    opts: { tempo: number; click: boolean; countIn: boolean; repeat: boolean; onEnd?: () => void },
+    opts: {
+      tempo: number;
+      click: boolean;
+      countIn: boolean;
+      repeat: boolean;
+      ramp?: { step: number; every: number; max: number };
+      /** Empieza una pasada (índice desde 0) al tempo dado. */
+      onPass?: (tempo: number, pass: number) => void;
+      /** Suena la nota de índice `i` (−1 = ninguna). */
+      onNote?: (i: number) => void;
+      onEnd?: () => void;
+    },
   ): Promise<boolean> {
     const entry = this.gen;
     await this.init();
@@ -637,35 +651,40 @@ export class JazzEngine {
     const inst = this.inst!;
     const t = Tone.getTransport();
     t.bpm.value = opts.tempo;
-    const beat = 60 / opts.tempo;
-    const total = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
+    const draw = Tone.getDraw();
+    const ui = (fn: () => void, time: number) => draw.schedule(() => gen === this.gen && fn(), time);
+    const totalBeats = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
     // la pasada dura compases enteros para que el pulso siga alineado al repetir
-    const bars = Math.max(1, Math.ceil(total / (4 * beat) - 1e-6));
-    const passSec = bars * 4 * beat;
-    const offset = opts.countIn ? 4 * beat : 0;
+    const bars = Math.max(1, Math.ceil(totalBeats / 4 - 1e-6));
+    const tempoOf = (k: number) => (opts.ramp ? Math.min(Math.max(opts.tempo, opts.ramp.max), opts.tempo + opts.ramp.step * Math.floor(k / Math.max(1, opts.ramp.every))) : opts.tempo);
+    const offset = opts.countIn ? (4 * 60) / opts.tempo : 0;
 
     if (opts.countIn) {
-      for (let i = 0; i < 4; i++) t.schedule((time) => inst.click.triggerAttackRelease(i === 0 ? 'C6' : 'G5', 0.05, time), i * beat);
+      for (let i = 0; i < 4; i++) t.scheduleOnce((time) => inst.click.triggerAttackRelease(i === 0 ? 'C6' : 'G5', 0.05, time), (i * 60) / opts.tempo);
     }
-    const pass = (time: number) => {
+    /** `at`: posición de la pasada en el Transport (segundos); `time`: el mismo instante en el reloj de audio. */
+    const pass = (time: number, at: number, k: number) => {
       if (gen !== this.gen) return;
-      const base = t.getSecondsAtTime(time);
+      const tempo = tempoOf(k);
+      const beat = 60 / tempo;
+      ui(() => opts.onPass?.(tempo, k), time);
       if (opts.click) {
-        for (let b = 0; b < bars; b++) for (const k of [1, 3]) t.schedule((when) => inst.drumHit('chick', when, 0.9), base + b * 4 * beat + k * beat);
+        for (let b = 0; b < bars; b++) for (const j of [1, 3]) t.scheduleOnce((when) => inst.drumHit('chick', when, 0.9), at + (b * 4 + j) * beat);
       }
-      for (const n of notes) {
-        const play = (when: number) => inst.horn.triggerAttackRelease(midiToFreq(n.midi), Math.max(0.05, n.dur * 0.92), when, 0.55);
+      notes.forEach((n, i) => {
+        const play = (when: number) => {
+          inst.horn.triggerAttackRelease(midiToFreq(n.midi), Math.max(0.05, n.dur * beat * 0.92), when, 0.55);
+          if (opts.onNote) ui(() => opts.onNote!(i), when);
+        };
         // lo que cae al inicio de la pasada ya está dentro de la ventana de anticipación: se dispara directo
-        if (n.start < 0.03) play(time + n.start);
-        else t.schedule(play, base + n.start);
-      }
+        if (n.start * beat < 0.03) play(time + n.start * beat);
+        else t.scheduleOnce(play, at + n.start * beat);
+      });
+      const next = at + bars * 4 * beat;
+      if (opts.repeat) this.repeatId = t.scheduleOnce((tm) => pass(tm, next, k + 1), next);
+      else t.scheduleOnce((tm) => ui(() => (this.stop(), opts.onNote?.(-1), opts.onEnd?.()), tm), next + 0.1);
     };
-    if (opts.repeat) {
-      this.repeatId = t.scheduleRepeat((time) => pass(time), passSec, offset);
-    } else {
-      this.repeatId = t.schedule((time) => pass(time), offset);
-      t.schedule((time) => Tone.getDraw().schedule(() => gen === this.gen && (this.stop(), opts.onEnd?.()), time), offset + passSec + 0.1);
-    }
+    this.repeatId = t.scheduleOnce((time) => pass(time, offset, 0), offset);
     t.start('+0.05');
     this.playing = true;
     return true;
@@ -779,7 +798,7 @@ export class JazzEngine {
     for (const q of queue) {
       // lo que cae al inicio del chorus ya está dentro de la ventana de anticipación: se dispara directo
       if (q.time - time < 0.03) q.call(q.time);
-      else tr.schedule((when) => q.call(when), t0 + (q.time - time));
+      else tr.scheduleOnce((when) => q.call(when), t0 + (q.time - time));
     }
   }
 
@@ -789,3 +808,4 @@ export class JazzEngine {
 }
 
 export const engine = new JazzEngine();
+registerStop(() => engine.stop());

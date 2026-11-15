@@ -148,5 +148,17 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
       ],
     },
   ];
+  // el redondeo de a 5 puede dejar el total lejos de lo pedido: se le saca al bloque que más se pasó de su parte
+  // (o se le da al que más le falta), de a 5 minutos si se puede y si no de a uno, sin bajar de 3
+  const share = (b: PlanBlock) => totalMinutes * w[b.id as keyof typeof w];
+  for (let diff = totalMinutes - blocks.reduce((sum, b) => sum + b.minutes, 0), guard = 0; diff !== 0 && guard < 60; guard++) {
+    const sign = Math.sign(diff);
+    const by5 = Math.abs(diff) >= 5 ? blocks.filter((b) => sign > 0 || b.minutes >= 10) : [];
+    const step = by5.length ? 5 : 1;
+    const pool = by5.length ? by5 : blocks.filter((b) => sign > 0 || b.minutes > 3);
+    if (!pool.length) break;
+    pool.reduce((a, b) => (sign * (share(b) - b.minutes) > sign * (share(a) - a.minutes) ? b : a)).minutes += sign * step;
+    diff -= sign * step;
+  }
   return { date: isoDate(d), key, blocks };
 }

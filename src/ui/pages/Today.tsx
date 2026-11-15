@@ -1,18 +1,81 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
 import { localDayNumber, suggest } from '../../content/scaleStudy';
 import type { PhraseLibrary } from '../../content/phrases';
+import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/backup';
 import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
-import { Notation } from '../components/Notation';
 import { useLog, useMastery, useReading, useSettings } from '../hooks';
+
+/** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
+function useToday(): Date {
+  const [today, setToday] = useState(() => new Date());
+  useEffect(() => {
+    const check = () => setToday((t) => (isoDate(t) === isoDate(new Date()) ? t : new Date()));
+    const id = window.setInterval(check, 60_000);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+    };
+  }, []);
+  return today;
+}
+
+/** ¿Hay datos sin respaldar hace 14 días o más (o nunca respaldados)? Devuelve los días, null = nunca, false = al día. */
+function backupDue(): number | null | false {
+  try {
+    if (!hasData(summarize(collectLocal(localStorage), []))) return false;
+    const days = daysSinceBackup(localStorage);
+    return days === null || days >= 14 ? days : false;
+  } catch {
+    return false;
+  }
+}
+
+/** Aviso de fin de bloque: vibración y dos tonos cortos. El contexto de audio se crea al iniciar el temporizador (dentro del toque). */
+let beepCtx: AudioContext | null = null;
+function armBeep() {
+  try {
+    beepCtx ??= new AudioContext();
+    void beepCtx.resume();
+  } catch {
+    /* sin audio: queda la vibración */
+  }
+}
+function beep() {
+  try {
+    navigator.vibrate?.([250, 120, 250]);
+  } catch {
+    /* sin vibración */
+  }
+  const ctx = beepCtx;
+  if (!ctx || ctx.state !== 'running') return;
+  [0, 0.28].forEach((at, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = i ? 1175 : 880;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + at + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.24);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime + at);
+    o.stop(ctx.currentTime + at + 0.26);
+  });
+}
+
+// las partituras (abcjs) se traen recién cuando se abre un ejercicio
+const Notation = lazy(() => import('../components/Notation').then((m) => ({ default: m.Notation })));
 
 export function Today() {
   const [settings, setSettings] = useSettings();
   const [log, setLog] = useLog();
   const { keyLabel, view } = useReading();
-  const today = useMemo(() => new Date(), []);
+  const today = useToday();
+  const [due, setDue] = useState(backupDue);
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
   const [mastery] = useMastery();
   const scale = useMemo(() => suggest(mastery, localDayNumber(today)), [mastery, today]);
@@ -40,6 +103,12 @@ export function Today() {
 
   return (
     <div className="page today">
+      {due !== false && (
+        <p className="notice" role="status">
+          <span>{due === null ? 'Todavía no hiciste ninguna copia de seguridad de tus datos.' : `Hace ${due} días que no hacés una copia de seguridad.`}</span>{' '}
+          <button onClick={() => document.getElementById('copia')?.scrollIntoView({ behavior: 'smooth' })}>Ir a la copia</button>
+        </p>
+      )}
       <section className="card hero">
         <div>
           <span className="lbl">Tonalidad del día</span>
@@ -71,7 +140,7 @@ export function Today() {
       <div className="blocks">
         {plan.blocks.map((b, i) => (
           <Block
-            key={b.id}
+            key={`${plan.date}:${b.id}:${b.minutes}`}
             n={i + 1}
             block={b}
             tonalKey={plan.key}
@@ -95,30 +164,45 @@ export function Today() {
         </p>
       </section>
 
-      <BackupCard />
+      <BackupCard onSaved={() => setDue(false)} />
     </div>
   );
 }
 
 function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: ReturnType<typeof buildPlan>['blocks'][number]; done: boolean; onToggle: () => void; tonalKey: string }) {
   const [left, setLeft] = useState(block.minutes * 60);
-  const [running, setRunning] = useState(false);
-  const timer = useRef<number | null>(null);
+  /** Hora (ms) en que termina; null = en pausa. Se mide contra el reloj: con la pantalla apagada el conteo no se atrasa. */
+  const [endAt, setEndAt] = useState<number | null>(null);
+  const running = endAt !== null;
+  const fresh = useRef({ done, onToggle });
+  fresh.current = { done, onToggle };
 
   useEffect(() => {
-    if (!running) return;
-    timer.current = window.setInterval(() => setLeft((l) => Math.max(0, l - 1)), 1000);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
+    if (endAt === null) return;
+    const tick = () => {
+      const l = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+      setLeft(l);
+      if (l > 0) return;
+      setEndAt(null);
+      beep();
+      if (!fresh.current.done) fresh.current.onToggle();
     };
-  }, [running]);
+    const id = window.setInterval(tick, 500);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [endAt]);
 
-  useEffect(() => {
-    if (left === 0 && running) {
-      setRunning(false);
-      if (!done) onToggle();
-    }
-  }, [left, running, done, onToggle]);
+  const toggleTimer = () => {
+    if (running) return setEndAt(null);
+    armBeep();
+    // un bloque terminado se puede volver a empezar
+    const from = left > 0 ? left : block.minutes * 60;
+    setLeft(from);
+    setEndAt(Date.now() + from * 1000);
+  };
 
   const mm = String(Math.floor(left / 60)).padStart(2, '0');
   const ss = String(left % 60).padStart(2, '0');
@@ -136,7 +220,7 @@ function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: Retur
         )}
       </ul>
       <footer className="row">
-        <button onClick={() => setRunning((r) => !r)} className={running ? 'on' : ''}>
+        <button onClick={toggleTimer} className={running ? 'on' : ''} aria-label={`${running ? 'Pausar' : 'Iniciar'} el temporizador, quedan ${mm}:${ss}`}>
           {running ? '❚❚' : '▶'} {mm}:{ss}
         </button>
         {block.link && <a className="button" href={block.link}>{block.linkLabel} →</a>}
@@ -151,9 +235,10 @@ function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: Retur
 /** Un ejercicio con su explicación completa, desplegable. */
 function Exercise({ ex, tonalKey }: { ex: PracticeExercise; tonalKey: string }) {
   const { view } = useReading();
-  const abc = abcOf(ex, tonalKey);
+  const [open, setOpen] = useState(false);
+  const abc = open ? abcOf(ex, tonalKey) : null;
   return (
-    <details className="exercise">
+    <details className="exercise" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>{ex.short}</summary>
       <div className="ex-body">
         <p><b>Para qué:</b> {ex.goal}</p>
@@ -164,7 +249,9 @@ function Exercise({ ex, tonalKey }: { ex: PracticeExercise; tonalKey: string }) 
         )}
         {abc && (
           <figure>
-            <Notation abc={abc} transpose={view === 'C' ? -2 : 0} />
+            <Suspense fallback={<p className="muted small">Cargando la partitura…</p>}>
+              <Notation abc={abc} transpose={view === 'C' ? -2 : 0} />
+            </Suspense>
             {ex.abcCaption && <figcaption className="muted small">{ex.abcCaption}{view === 'C' ? ' (en concierto)' : ' (escrito para trompeta en Si♭)'}</figcaption>}
           </figure>
         )}

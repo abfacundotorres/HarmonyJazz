@@ -353,14 +353,14 @@ const triadPairs: Generator = {
 const PENT_ROOT: Partial<Record<Quality, string>> = {
   maj: '5', maj7: '5', '6': '5', 'maj7#11': '2',
   m: 'b3', m7: 'b3', m6: '4', mMaj7: '4', m7b5: 'b6',
-  '7': '1', '7alt': 'b5', '7#11': '2', '7b13': 'b7', '7sus': 'b7',
+  '7': '1', '7alt': 'b5', '7#11': '1', '7b13': 'b7', '7sus': 'b7',
 };
 
 const pentatonic: Generator = {
   id: 'pent',
   name: 'Superposición pentatónica',
   description: 'Una pentatónica mayor elegida para cada acorde: sobre C7alt, G♭ pentatónica (♯11, ♭13, ♭7, ♭9, ♯9).',
-  recipe: 'Ocho corcheas con la pentatónica mayor elegida para el acorde (♭3 en m7, 5ª en maj7, ♭5 en 7alt, 2ª en 7♯11…): sube en los acordes pares y baja en los impares. Si el acorde no tiene pentatónica asignada, toca su arpegio.',
+  recipe: 'Ocho corcheas con la pentatónica mayor elegida para el acorde (♭3 en m7, 5ª en maj7, ♭5 en 7alt, tónica en 7 y 7♯11, 2ª en maj7♯11…): sube en los acordes pares y baja en los impares. Si el acorde no tiene pentatónica asignada, toca su arpegio.',
   run: (chart, opt) =>
     perChord(chart, opt, (cc, i) => {
       const c = cc.chord;

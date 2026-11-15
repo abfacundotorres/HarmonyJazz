@@ -17,7 +17,8 @@ import { ListenPanel } from '../components/ListenPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
-import { navigate, useReading, usePersistentLibrary, usePosition, useRoute } from '../hooks';
+import { navigate, useReading, usePersistentLibrary, useRoute } from '../hooks';
+import { usePosition } from '../usePosition';
 
 const OWNER = 'playalong';
 /** Retardo de la detección: estabilización (60 ms) + media ventana de análisis (~25 ms). */
@@ -115,7 +116,7 @@ export function PlayAlong() {
   const pos = usePosition();
   const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
   const [atril, setAtril] = useState(false);
-  const { keyLabel } = useReading();
+  const { keyLabel, view } = useReading();
   const mine = pos && pos.owner === OWNER ? pos : null;
   const ci = mine && !mine.countIn ? mine.chordIndex : -1;
   const chord = ci >= 0 ? playChart.chords[ci]?.chord ?? null : null;
@@ -258,7 +259,9 @@ export function PlayAlong() {
           <>
             <KeySelect value={key} onChange={changeKey} minor={base.mode === 'minor'} />
             <p className="muted small">
-              Escrito en {baseKey}; estás tocando en {key}.
+              {view === 'Bb'
+                ? `Tocás en ${keyLabel(key)}${base.mode === 'minor' ? 'm' : ''} (escrito para Si♭); en concierto suena en ${key}${base.mode === 'minor' ? 'm' : ''}.`
+                : `Tocás en ${key}${base.mode === 'minor' ? 'm' : ''} (concierto).`}
             </p>
           </>
         ) : (

@@ -159,6 +159,7 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
 .paper { background: var(--paper); color: var(--paper-ink); border-radius: 10px; padding: 6px; margin-top: 10px; overflow: hidden; }
 .paper svg { display: block; }
 .paper .hj-current { fill: #905e15; }
+.paper .hj-note { fill: #c0392b; }
 
 /* lecciones */
 .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
@@ -525,3 +526,17 @@ button.link { background: var(--surface-2); }
   .brandname { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .prefs { flex: 1; justify-content: flex-end; }
 }
+
+/* Escalas: reproducir y tempo */
+.scaleplay { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.tempobox { display: flex; align-items: center; gap: 6px; }
+.tempobox button { min-width: 48px; }
+.tempofield { display: flex; align-items: center; gap: 4px; }
+.tempofield input { width: 4.6em; text-align: center; font-weight: 700; }
+
+/* Avisos al tope de una pantalla */
+.notice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 10px; background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.scales .seg { display: grid; grid-template-columns: 1fr 1fr; }
+.scaleopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2px 12px; margin-top: 8px; }
+.scaleopts .check { margin-left: 0; }
+.scaleopts input { flex: none; }

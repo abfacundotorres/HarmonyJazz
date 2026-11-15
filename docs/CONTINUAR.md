@@ -36,11 +36,18 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 - Si la app se difunde o se cobra, consultar a una persona abogada (licencias de las muestras, contenido) y a un contador; el control de acceso real exige un servidor.
 
 ## Pendiente
-1. Escuchar en el celular: el bajo y la saturación a volumen bajo (nivel medido, no oído), el audio de Escalas y el play-along tras los cambios del motor (`playExercise`, agendado por chorus).
+1. Escuchar en el celular: el bajo y la saturación a volumen bajo (nivel medido, no oído), el audio de Escalas (ahora con tempo que sube solo) y el play-along tras los cambios del motor (`playExercise`, agendado por chorus con eventos de un solo uso).
 2. Probar Transcribir con audios reales (mp3, m4a) y escuchar el estiramiento a 50–70 %; ver memoria con audios de 8–12 min (`MAX_DECODED_BYTES` en `transcribe/engine.ts`).
 3. Vocabulario: auditar los textos generados con el mismo criterio que las Lecciones.
-4. La pentatónica de la 2ª sobre 7♯11 sigue en el generador `pent` (trae la 7ª mayor, que choca con la ♭7); la lección ya lo advierte.
-5. Rendimiento: todo el código viaja en un solo archivo de ~1,3 MB (395 KB comprimido); se puede dividir por pantalla (Transcribir y las partituras son lo más pesado).
-6. Escalas: que el tempo suba solo (de a 4 bpm) en las repeticiones; resaltar la nota que suena en el pentagrama.
-7. Recordatorio de copia de seguridad (todo vive en el navegador).
-8. Pruebas en otros navegadores (sólo Chromium a 390 px) e iOS (no es prioridad).
+4. Partituras en el celular: van de a 2 compases por línea (1 si hay muchas alteraciones). Se probó meter 4 en las líneas de blancas y redondas: abcjs no achica el espaciado y el dibujo se sale. Sólo se logra con notas más chicas (`scale` < 1): decidir mirándolo en el aparato.
+5. El temporizador de Hoy avisa con vibración y dos tonos: comprobar en el celular que se oye y vibra con la pantalla apagada (el navegador puede frenarlo).
+6. Los nombres de las progresiones ("Blues de jazz en F", "Modal AABA (D dórico…)") están en concierto aunque se lea en Si♭.
+7. Pruebas en otros navegadores (sólo Chromium a 390 px) e iOS (no es prioridad).
+
+## Hecho en la última etapa (auditoría general)
+- **Carga por pantalla:** cada pestaña viaja en su archivo (`lazy` en `ui/App.tsx`); Hoy abre con ~114 KB comprimidos en lugar de 395 (Tone.js y abcjs llegan cuando hacen falta y se precargan de fondo). `audio/stopAll.ts` permite cortar el audio sin cargar el motor; `usePosition` salió de `hooks.ts` por lo mismo.
+- **Hoy:** el plan cambia solo al pasar la medianoche con la app abierta; el temporizador mide contra el reloj (no se atrasa con la pantalla apagada), avisa al terminar y se puede reiniciar; los minutos de los bloques suman la duración elegida; aviso de copia de seguridad arriba si hay datos y pasaron 14 días.
+- **Escalas:** campo de tempo que deja escribir el número (antes saltaba a 40 al tipear), botones −4/+4, "subir 4 bpm cada 2 vueltas" al repetir (marca el tempo alcanzado) y la nota que suena resaltada en el pentagrama.
+- **Pentatónicas:** sobre 7♯11 el generador usa la de la tónica (la de la 2ª traía la 7ª mayor); lección y receta al día.
+- **Play-along / Afinador:** el texto de tonalidad sigue la lectura elegida; las notas de referencia muestran la octava.
+- **Motor:** los eventos agendados se borran al sonar (antes se acumulaban durante toda la sesión) y el bajo se corta al detener.

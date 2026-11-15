@@ -96,7 +96,7 @@ export function Listen() {
           <span className="muted small">Nota de referencia:</span>
           {[58, 60, 62, 65, 67, 70].map((c) => (
             <button key={c} onClick={() => engine.playNote(c, 1.6)}>
-              {midiName(c + writtenOffset, false)}
+              {midiName(c + writtenOffset)}
             </button>
           ))}
         </div>

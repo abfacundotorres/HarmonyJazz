@@ -7,7 +7,8 @@ import { parseChord } from '../../theory/chords';
 import { MAX_BARS, parseChart } from '../../theory/chart';
 import { prettyAcc as pretty } from '../../theory/notes';
 import { usePersistent } from '../../state/storage';
-import { usePosition, useSettings } from '../hooks';
+import { useSettings } from '../hooks';
+import { usePosition } from '../usePosition';
 
 const valid = (c: string) => {
   if (c === '%') return true;

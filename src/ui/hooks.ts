@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { engine, Position } from '../audio/engine';
 import type { Library } from '../content/library';
 import { DEFAULT_SETTINGS, Mastery, PracticeLog, Settings, usePersistent } from '../state/storage';
 import { BB_TRUMPET, INTERVAL, Interval, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
@@ -45,15 +44,4 @@ export function useReading(): { iv: Interval; view: Settings['view']; keyLabel: 
       keyLabel: (k: string) => noteName(simplify(transposeNote(parseNote(k), iv)), true),
     };
   }, [s.view]);
-}
-
-export function usePosition(): Position | null {
-  const [p, setP] = useState<Position | null>(null);
-  useEffect(() => {
-    const off = engine.onPosition(setP);
-    return () => {
-      off();
-    };
-  }, []);
-  return p;
 }
