@@ -44,6 +44,11 @@ export function App() {
     window.scrollTo(0, 0);
   }, [page, sub]);
 
+  // en el celular las pestañas se desplazan: la activa queda a la vista
+  useEffect(() => {
+    document.querySelector('.top nav a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [page]);
+
   return (
     <div className="app">
       {saveFailed && (
@@ -60,7 +65,7 @@ export function App() {
       )}
       <header className="top">
         <a href="#/hoy" className="brand">
-          <img src="./icon.svg" alt="" width="38" height="38" /> HarmonyJazz
+          <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
         <nav>
           {NAV.map(([id, label]) => (
@@ -79,9 +84,9 @@ export function App() {
             </button>
           </div>
           <select value={settings.register} onChange={(e) => setSettings({ register: e.target.value as typeof settings.register })} aria-label="Registro">
-            <option value="grave">Registro grave</option>
-            <option value="medio">Registro medio</option>
-            <option value="agudo">Registro agudo</option>
+            <option value="grave">Reg. grave</option>
+            <option value="medio">Reg. medio</option>
+            <option value="agudo">Reg. agudo</option>
           </select>
         </div>
       </header>

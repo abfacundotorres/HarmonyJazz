@@ -1,27 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { engine } from '../../audio/engine';
 import {
-  BPM_STEP, masteryId, PATTERNS, patternItems, SCALE_GROUPS, SCALE_INFO, scaleAbc, scaleDegrees, scaleNoteNames, suggest,
+  BPM_STEP, localDayNumber, masteryId, PATTERNS, patternItems, SCALE_GROUPS, SCALE_INFO, scaleAbc, scaleDegrees, scaleNoteNames, suggest,
 } from '../../content/scaleStudy';
+import { CONCERT_KEYS } from '../../theory/chart';
 import { SCALES } from '../../theory/scales';
 import { midi } from '../../theory/notes';
 import { KeySelect } from '../components/KeySelect';
 import { Notation } from '../components/Notation';
-import { useMastery, useReading } from '../hooks';
-
-const dayNumber = () => Math.floor(Date.now() / 86400000);
+import { useMastery, useReading, useRoute } from '../hooks';
 
 /** Estudio guiado de escalas: una escala por vez, en una tonalidad, siguiendo un camino de patrones con tempo. */
 export function Scales() {
   const { iv, view, keyLabel } = useReading();
   const [mastery, setMastery] = useMastery();
-  const [groupId, setGroupId] = useState(SCALE_GROUPS[0].id);
-  const [scaleId, setScaleId] = useState(SCALE_GROUPS[0].scales[0]);
-  const [key, setKey] = useState('C');
-  const [stepIdx, setStepIdx] = useState(0);
-  const [tempo, setTempo] = useState(PATTERNS[0].bpm);
+  // el enlace del plan del día llega con ?e=escala&p=patrón&k=tonalidad
+  const { query } = useRoute();
+  const q = useMemo(() => {
+    const e = query.get('e') ?? '';
+    const g = SCALE_GROUPS.find((x) => x.scales.includes(e));
+    const pi = PATTERNS.findIndex((x) => x.id === query.get('p'));
+    const k = query.get('k') ?? '';
+    return { g, e, pi: pi < 0 ? 0 : pi, k: CONCERT_KEYS.includes(k) ? k : 'C' };
+  }, [query]);
+  const [groupId, setGroupId] = useState(q.g?.id ?? SCALE_GROUPS[0].id);
+  const [scaleId, setScaleId] = useState(q.g ? q.e : SCALE_GROUPS[0].scales[0]);
+  const [key, setKey] = useState(q.k);
+  const [stepIdx, setStepIdx] = useState(q.pi);
+  const [tempo, setTempo] = useState(PATTERNS[q.pi].bpm);
   const [playing, setPlaying] = useState(false);
-  const timer = useRef<number | null>(null);
+  const [click, setClick] = useState(true);
+  const [countIn, setCountIn] = useState(true);
+  const [repeat, setRepeat] = useState(false);
 
   const group = SCALE_GROUPS.find((g) => g.id === groupId)!;
   const step = PATTERNS[stepIdx];
@@ -31,18 +41,18 @@ export function Scales() {
   const abc = useMemo(() => scaleAbc(scaleId, step.id, key, tempo, iv), [scaleId, step.id, key, tempo, iv]);
   const names = useMemo(() => scaleNoteNames(scaleId, key, iv), [scaleId, key, iv]);
 
-  const stop = () => {
-    engine.stopLine();
-    if (timer.current) window.clearTimeout(timer.current);
-    timer.current = null;
+  useEffect(() => () => engine.stop(), []);
+  // al cambiar lo que se muestra o el tempo, se corta lo que suena
+  useEffect(() => {
+    engine.stop();
     setPlaying(false);
-  };
-  useEffect(() => stop, []);
-  // al cambiar lo que se muestra, se corta lo que suena
-  useEffect(stop, [scaleId, step.id, key]);
+  }, [scaleId, step.id, key, tempo]);
 
   const play = async () => {
-    if (playing) return stop();
+    if (playing) {
+      engine.stop();
+      return setPlaying(false);
+    }
     const eighth = 30 / tempo;
     let t = 0;
     const notes: { midi: number; start: number; dur: number }[] = [];
@@ -51,7 +61,8 @@ export function Scales() {
       t += it.dur * eighth;
     }
     setPlaying(true);
-    await engine.playLine(notes, () => setPlaying(false));
+    const ok = await engine.playExercise(notes, { tempo, click, countIn, repeat, onEnd: () => setPlaying(false) }).catch(() => false);
+    if (!ok) setPlaying(false);
   };
 
   const pickScale = (g: string, s: string) => {
@@ -66,7 +77,7 @@ export function Scales() {
   };
   const mark = () => setMastery((m) => ({ ...m, [masteryId(scaleId, step.id)]: { ...(m[masteryId(scaleId, step.id)] ?? {}), [key]: Math.max(tempo, m[masteryId(scaleId, step.id)]?.[key] ?? 0) } }));
   const today = () => {
-    const s = suggest(mastery, dayNumber());
+    const s = suggest(mastery, localDayNumber());
     const g = SCALE_GROUPS.find((x) => x.scales.includes(s.scale))!;
     setGroupId(g.id);
     setScaleId(s.scale);
@@ -148,6 +159,9 @@ export function Scales() {
 
         <div className="row">
           <button className={playing ? 'on' : ''} onClick={() => void play()} aria-pressed={playing}>{playing ? '■ Detener' : '▶ Oírla en trompeta'}</button>
+          <label className="check"><input type="checkbox" checked={click} onChange={(e) => setClick(e.target.checked)} /> Metrónomo (2 y 4)</label>
+          <label className="check"><input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4</label>
+          <label className="check"><input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} /> Repetir</label>
           <label>
             Tempo (negra){' '}
             <input type="number" min={40} max={200} step={BPM_STEP} value={tempo} onChange={(e) => setTempo(Math.max(40, Math.min(200, Number(e.target.value) || step.bpm)))} />
