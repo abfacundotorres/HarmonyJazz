@@ -306,6 +306,24 @@ function Loaded({
     const r = edge === 'start' ? normRegion(region.start + d, region.end, duration) : normRegion(region.start, region.end + d, duration);
     if (r) setRegion(r);
   };
+  /** Pasa la selección al tramo de al lado (del mismo largo): para sacar un solo frase por frase. */
+  const shiftRegion = (dir: 1 | -1) => {
+    if (!region) return;
+    const len = region.end - region.start;
+    const start = Math.min(Math.max(0, region.start + dir * len), Math.max(0, duration - len));
+    const r = normRegion(start, start + len, duration);
+    if (!r || Math.abs(r.start - region.start) < 0.01) return;
+    setRegion(r);
+    setLoopOn(true);
+    setView((v) => (r.start >= v.start && r.end <= v.start + v.dur ? v : fitRegion(r, duration)));
+    seek(r.start);
+  };
+  /** Acorta a la mitad o duplica la selección, dejando fijo el inicio. */
+  const scaleRegion = (f: number) => {
+    if (!region) return;
+    const r = normRegion(region.start, Math.min(duration, region.start + Math.max(0.3, (region.end - region.start) * f)), duration);
+    if (r) setRegion(r);
+  };
   const editTime = (edge: 'start' | 'end') => {
     if (!region) return;
     const txt = window.prompt(edge === 'start' ? 'Inicio (m:ss.s)' : 'Fin (m:ss.s)', fmtTime(region[edge]));
@@ -484,16 +502,21 @@ function Loaded({
       />
 
       {!engine.peaks && mode === 'wave' && <p className="muted small">Este audio es muy largo para dibujar la onda, pero podés marcar pasajes igual.</p>}
-      <div className="row transport">
-        <button onClick={() => seek(region && loopOn ? region.start : 0)} aria-label="Ir al inicio">⏮</button>
+      {/* queda pegado arriba al bajar a los paneles: reproducir y retroceder siempre a mano */}
+      <div className="transport">
+        <button onClick={() => seek(region && loopOn ? region.start : 0)} aria-label={region && loopOn ? 'Ir al inicio del loop' : 'Ir al inicio'}>⏮</button>
+        <button onClick={() => seek(Math.max(0, timeRef.current - 5))} aria-label="Retroceder 5 segundos">−5 s</button>
         <button className="primary bigplay" onClick={toggle} aria-label={playing ? 'Pausa' : 'Reproducir'}>
-          {playing ? '❚❚ Pausa' : '▶ Reproducir'}
+          {playing ? '❚❚' : '▶'}
         </button>
-        <b className="timeread">{fmtTime(time)}</b>
-        <span className="muted">/ {fmtTime(duration)}</span>
-        <button className={loopOn ? 'on' : ''} onClick={() => setLoopOn((v) => !v)} disabled={!region} aria-pressed={loopOn}>
-          ⟲ Loop {loopOn ? 'sí' : 'no'}
+        <button onClick={() => seek(Math.min(duration, timeRef.current + 5))} aria-label="Avanzar 5 segundos">+5 s</button>
+        <button className={loopOn ? 'on' : ''} onClick={() => setLoopOn((v) => !v)} disabled={!region} aria-pressed={loopOn} aria-label={`Loop ${loopOn ? 'sí' : 'no'}`}>
+          ⟲
         </button>
+        <span className="timebox">
+          <b className="timeread">{fmtTime(time)}</b>
+          <span className="muted"> / {fmtTime(duration)} · {Math.round(rate * 100)} %</span>
+        </span>
       </div>
 
       <div className="livepitch" aria-live="off">
@@ -513,18 +536,18 @@ function Loaded({
       </div>
 
       <div className="rate">
-        <label>
-          Velocidad: <b>{Math.round(rate * 100)} %</b>
-          <input type="range" min={25} max={200} step={5} value={Math.round(rate * 100)} onChange={(e) => userRate(Number(e.target.value) / 100)} aria-label="Velocidad" />
-        </label>
-        <div className="row">
+        <div className="ratehead">
+          <label htmlFor="tp-rate">
+            Velocidad: <b>{Math.round(rate * 100)} %</b>
+          </label>
           <button onClick={() => userRate(rate - 0.05)} aria-label="Bajar 5 puntos">− 5</button>
-          <div className="seg" role="group" aria-label="Velocidades frecuentes">
-            {RATE_PRESETS.map((p) => (
-              <button key={p} className={Math.round(rate * 100) === p ? 'on' : ''} onClick={() => userRate(p / 100)}>{p}</button>
-            ))}
-          </div>
           <button onClick={() => userRate(rate + 0.05)} aria-label="Subir 5 puntos">+ 5</button>
+        </div>
+        <input id="tp-rate" type="range" min={25} max={200} step={5} value={Math.round(rate * 100)} onChange={(e) => userRate(Number(e.target.value) / 100)} aria-label="Velocidad" />
+        <div className="seg ratepresets" role="group" aria-label="Velocidades frecuentes">
+          {RATE_PRESETS.map((p) => (
+            <button key={p} className={Math.round(rate * 100) === p ? 'on' : ''} onClick={() => userRate(p / 100)}>{p}</button>
+          ))}
         </div>
       </div>
 
@@ -536,6 +559,7 @@ function Loaded({
           {region && <button onClick={() => { setRegion(null); setLoopOn(false); }}>Quitar selección</button>}
         </div>
         {region ? (
+          <>
           <div className="row">
             <span>
               Selección: <button className="link" onClick={() => editTime('start')}>{fmtTime(region.start)}</button> –{' '}
@@ -553,6 +577,13 @@ function Loaded({
               <button onClick={() => nudge('end', NUDGE)} aria-label="Fin 0,1 segundos después">›</button>
             </span>
           </div>
+          <div className="row">
+            <button onClick={() => shiftRegion(-1)} disabled={region.start < 0.01} aria-label="Pasar al tramo anterior">◂ Tramo anterior</button>
+            <button onClick={() => shiftRegion(1)} disabled={region.end > duration - 0.01} aria-label="Pasar al tramo siguiente">Tramo siguiente ▸</button>
+            <button onClick={() => scaleRegion(0.5)} disabled={region.end - region.start <= 0.6} aria-label="Acortar la selección a la mitad">½</button>
+            <button onClick={() => scaleRegion(2)} disabled={region.end > duration - 0.01} aria-label="Duplicar el largo de la selección">×2</button>
+          </div>
+          </>
         ) : (
           <p className="muted small">Arrastrá sobre la onda para seleccionar un pasaje, o usá "Inicio aquí" y "Fin aquí" mientras suena. Tocá para ir a un punto; pellizcá para acercar.</p>
         )}
@@ -797,7 +828,7 @@ function Loaded({
           <input type="checkbox" checked={simple} onChange={(e) => onSimple(e.target.checked)} /> Usar el reproductor simple
         </label>
       </p>
-      <p className="muted small">Teclado: espacio = reproducir · [ ] = inicio y fin · L = loop · M = marcador · ← → = saltar 5 s (Mayús: 1 s) · ↑ ↓ = velocidad · + − = zoom.</p>
+      <p className="muted small keyhelp">Teclado: espacio = reproducir · [ ] = inicio y fin · L = loop · M = marcador · ← → = saltar 5 s (Mayús: 1 s) · ↑ ↓ = velocidad · + − = zoom.</p>
     </section>
   );
 }

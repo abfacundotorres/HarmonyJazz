@@ -540,3 +540,14 @@ button.link { background: var(--surface-2); }
 .scaleopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2px 12px; margin-top: 8px; }
 .scaleopts .check { margin-left: 0; }
 .scaleopts input { flex: none; }
+
+/* Transcribir: transporte pegado arriba y velocidad compacta */
+input[type='range'], input[type='checkbox'] { accent-color: var(--accent); }
+.transport { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px -6px 0; padding: 6px; background: var(--surface); border-radius: 10px; }
+.transport .bigplay { min-width: 4.2em; font-size: 1.15em; }
+.transport .timebox { margin-left: auto; white-space: nowrap; font-size: .9em; }
+.ratehead { display: flex; align-items: center; gap: 6px; }
+.ratehead label { margin-right: auto; }
+.ratepresets { display: flex; margin-top: 6px; }
+.ratepresets button { flex: 1 1 0; padding-left: 0; padding-right: 0; min-width: 0; }
+@media (pointer: coarse) { .keyhelp { display: none; } }
