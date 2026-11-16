@@ -186,3 +186,29 @@ test('retroceder y avanzar 5 s, y el transporte sigue a la vista al bajar a los 
   await expect(page.locator('.bigplay')).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test('la selección pasa al tramo siguiente y al anterior, y se acorta o duplica', async ({ page }) => {
+  await openAudio(page, await makeWav({ seconds: 20 }));
+  const sel = page.locator('.selection');
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Inicio aquí [' }).click();
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Fin aquí ]' }).click();
+  await expect(sel).toContainText('0:05.0 – 0:10.0');
+  await page.getByRole('button', { name: 'Pasar al tramo siguiente' }).click();
+  await expect(sel).toContainText('0:10.0 – 0:15.0');
+  expect(await time(page)).toBeCloseTo(10, 0);
+  await page.getByRole('button', { name: 'Pasar al tramo siguiente' }).click();
+  await expect(sel).toContainText('0:15.0 – 0:20.0');
+  await expect(page.getByRole('button', { name: 'Pasar al tramo siguiente' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Pasar al tramo anterior' }).click();
+  await page.getByRole('button', { name: 'Acortar la selección a la mitad' }).click();
+  await expect(sel).toContainText('0:10.0 – 0:12.5');
+  await page.getByRole('button', { name: 'Duplicar el largo de la selección' }).click();
+  await page.getByRole('button', { name: 'Duplicar el largo de la selección' }).click();
+  await expect(sel).toContainText('0:10.0 – 0:20.0');
+  // el tramo anterior no se sale del principio
+  await page.getByRole('button', { name: 'Pasar al tramo anterior' }).click();
+  await expect(sel).toContainText('0:00.0 – 0:10.0');
+  await expect(page.getByRole('button', { name: 'Pasar al tramo anterior' })).toBeDisabled();
+});

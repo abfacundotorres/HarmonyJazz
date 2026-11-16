@@ -306,6 +306,24 @@ function Loaded({
     const r = edge === 'start' ? normRegion(region.start + d, region.end, duration) : normRegion(region.start, region.end + d, duration);
     if (r) setRegion(r);
   };
+  /** Pasa la selección al tramo de al lado (del mismo largo): para sacar un solo frase por frase. */
+  const shiftRegion = (dir: 1 | -1) => {
+    if (!region) return;
+    const len = region.end - region.start;
+    const start = Math.min(Math.max(0, region.start + dir * len), Math.max(0, duration - len));
+    const r = normRegion(start, start + len, duration);
+    if (!r || Math.abs(r.start - region.start) < 0.01) return;
+    setRegion(r);
+    setLoopOn(true);
+    setView((v) => (r.start >= v.start && r.end <= v.start + v.dur ? v : fitRegion(r, duration)));
+    seek(r.start);
+  };
+  /** Acorta a la mitad o duplica la selección, dejando fijo el inicio. */
+  const scaleRegion = (f: number) => {
+    if (!region) return;
+    const r = normRegion(region.start, Math.min(duration, region.start + Math.max(0.3, (region.end - region.start) * f)), duration);
+    if (r) setRegion(r);
+  };
   const editTime = (edge: 'start' | 'end') => {
     if (!region) return;
     const txt = window.prompt(edge === 'start' ? 'Inicio (m:ss.s)' : 'Fin (m:ss.s)', fmtTime(region[edge]));
@@ -541,6 +559,7 @@ function Loaded({
           {region && <button onClick={() => { setRegion(null); setLoopOn(false); }}>Quitar selección</button>}
         </div>
         {region ? (
+          <>
           <div className="row">
             <span>
               Selección: <button className="link" onClick={() => editTime('start')}>{fmtTime(region.start)}</button> –{' '}
@@ -558,6 +577,13 @@ function Loaded({
               <button onClick={() => nudge('end', NUDGE)} aria-label="Fin 0,1 segundos después">›</button>
             </span>
           </div>
+          <div className="row">
+            <button onClick={() => shiftRegion(-1)} disabled={region.start < 0.01} aria-label="Pasar al tramo anterior">◂ Tramo anterior</button>
+            <button onClick={() => shiftRegion(1)} disabled={region.end > duration - 0.01} aria-label="Pasar al tramo siguiente">Tramo siguiente ▸</button>
+            <button onClick={() => scaleRegion(0.5)} disabled={region.end - region.start <= 0.6} aria-label="Acortar la selección a la mitad">½</button>
+            <button onClick={() => scaleRegion(2)} disabled={region.end > duration - 0.01} aria-label="Duplicar el largo de la selección">×2</button>
+          </div>
+          </>
         ) : (
           <p className="muted small">Arrastrá sobre la onda para seleccionar un pasaje, o usá "Inicio aquí" y "Fin aquí" mientras suena. Tocá para ir a un punto; pellizcá para acercar.</p>
         )}
