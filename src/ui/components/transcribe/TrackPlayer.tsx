@@ -484,16 +484,21 @@ function Loaded({
       />
 
       {!engine.peaks && mode === 'wave' && <p className="muted small">Este audio es muy largo para dibujar la onda, pero podés marcar pasajes igual.</p>}
-      <div className="row transport">
-        <button onClick={() => seek(region && loopOn ? region.start : 0)} aria-label="Ir al inicio">⏮</button>
+      {/* queda pegado arriba al bajar a los paneles: reproducir y retroceder siempre a mano */}
+      <div className="transport">
+        <button onClick={() => seek(region && loopOn ? region.start : 0)} aria-label={region && loopOn ? 'Ir al inicio del loop' : 'Ir al inicio'}>⏮</button>
+        <button onClick={() => seek(Math.max(0, timeRef.current - 5))} aria-label="Retroceder 5 segundos">−5 s</button>
         <button className="primary bigplay" onClick={toggle} aria-label={playing ? 'Pausa' : 'Reproducir'}>
-          {playing ? '❚❚ Pausa' : '▶ Reproducir'}
+          {playing ? '❚❚' : '▶'}
         </button>
-        <b className="timeread">{fmtTime(time)}</b>
-        <span className="muted">/ {fmtTime(duration)}</span>
-        <button className={loopOn ? 'on' : ''} onClick={() => setLoopOn((v) => !v)} disabled={!region} aria-pressed={loopOn}>
-          ⟲ Loop {loopOn ? 'sí' : 'no'}
+        <button onClick={() => seek(Math.min(duration, timeRef.current + 5))} aria-label="Avanzar 5 segundos">+5 s</button>
+        <button className={loopOn ? 'on' : ''} onClick={() => setLoopOn((v) => !v)} disabled={!region} aria-pressed={loopOn} aria-label={`Loop ${loopOn ? 'sí' : 'no'}`}>
+          ⟲
         </button>
+        <span className="timebox">
+          <b className="timeread">{fmtTime(time)}</b>
+          <span className="muted"> / {fmtTime(duration)} · {Math.round(rate * 100)} %</span>
+        </span>
       </div>
 
       <div className="livepitch" aria-live="off">
@@ -513,18 +518,18 @@ function Loaded({
       </div>
 
       <div className="rate">
-        <label>
-          Velocidad: <b>{Math.round(rate * 100)} %</b>
-          <input type="range" min={25} max={200} step={5} value={Math.round(rate * 100)} onChange={(e) => userRate(Number(e.target.value) / 100)} aria-label="Velocidad" />
-        </label>
-        <div className="row">
+        <div className="ratehead">
+          <label htmlFor="tp-rate">
+            Velocidad: <b>{Math.round(rate * 100)} %</b>
+          </label>
           <button onClick={() => userRate(rate - 0.05)} aria-label="Bajar 5 puntos">− 5</button>
-          <div className="seg" role="group" aria-label="Velocidades frecuentes">
-            {RATE_PRESETS.map((p) => (
-              <button key={p} className={Math.round(rate * 100) === p ? 'on' : ''} onClick={() => userRate(p / 100)}>{p}</button>
-            ))}
-          </div>
           <button onClick={() => userRate(rate + 0.05)} aria-label="Subir 5 puntos">+ 5</button>
+        </div>
+        <input id="tp-rate" type="range" min={25} max={200} step={5} value={Math.round(rate * 100)} onChange={(e) => userRate(Number(e.target.value) / 100)} aria-label="Velocidad" />
+        <div className="seg ratepresets" role="group" aria-label="Velocidades frecuentes">
+          {RATE_PRESETS.map((p) => (
+            <button key={p} className={Math.round(rate * 100) === p ? 'on' : ''} onClick={() => userRate(p / 100)}>{p}</button>
+          ))}
         </div>
       </div>
 
@@ -797,7 +802,7 @@ function Loaded({
           <input type="checkbox" checked={simple} onChange={(e) => onSimple(e.target.checked)} /> Usar el reproductor simple
         </label>
       </p>
-      <p className="muted small">Teclado: espacio = reproducir · [ ] = inicio y fin · L = loop · M = marcador · ← → = saltar 5 s (Mayús: 1 s) · ↑ ↓ = velocidad · + − = zoom.</p>
+      <p className="muted small keyhelp">Teclado: espacio = reproducir · [ ] = inicio y fin · L = loop · M = marcador · ← → = saltar 5 s (Mayús: 1 s) · ↑ ↓ = velocidad · + − = zoom.</p>
     </section>
   );
 }

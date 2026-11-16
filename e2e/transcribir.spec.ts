@@ -166,3 +166,23 @@ test('Tu toma: se graba, se escucha, se guarda y se abre en Transcribir', async 
   await expect(page.getByText('Motor preciso')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('section.card h3').first()).toContainText('Toma - ');
 });
+
+test('retroceder y avanzar 5 s, y el transporte sigue a la vista al bajar a los paneles', async ({ page }) => {
+  await openAudio(page, await makeWav({ seconds: 20 }));
+  const time = async () => secs((await page.locator('.timeread').textContent())!);
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  expect(await time()).toBeCloseTo(10, 0);
+  await page.getByRole('button', { name: 'Retroceder 5 segundos' }).click();
+  expect(await time()).toBeCloseTo(5, 0);
+  await page.getByRole('button', { name: 'Retroceder 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Retroceder 5 segundos' }).click();
+  expect(await time()).toBe(0);
+  // no pasa del final
+  for (let i = 0; i < 6; i++) await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  expect(await time()).toBeLessThanOrEqual(20);
+  await page.locator('summary', { hasText: 'Apuntes' }).scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, 200));
+  await expect(page.locator('.bigplay')).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

@@ -50,4 +50,5 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 - **Play-along / Afinador:** el texto de tonalidad sigue la lectura elegida; las notas de referencia muestran la octava.
 - **Nombres en la lectura elegida:** los nombres y descripciones de las progresiones de la app ("Blues de jazz en F") se muestran en Si♭ o concierto; los temas propios no se tocan.
 - **Vocabulario:** ya no tiene textos generados (la frase se estudia con la tarjeta común), así que no hay nada que auditar ahí.
+- **Transcribir:** el transporte (inicio, −5 s, ▶, +5 s, loop, tiempo y velocidad) queda pegado arriba al bajar a los paneles; velocidad en menos renglones; la ayuda de teclado no se muestra en pantallas táctiles.
 - **Motor:** los eventos agendados se borran al sonar (antes se acumulaban durante toda la sesión) y el bajo se corta al detener.
