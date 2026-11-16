@@ -19,6 +19,8 @@ interface Props {
   onRegion: (r: Region | null) => void;
   loopOn: boolean;
   markers: Marker[];
+  /** Pasajes guardados: se dibujan como franjas con su nombre. */
+  saved?: { id: string; name: string; start: number; end: number }[];
   grid: Grid | null;
   notes: DetectedNote[] | null;
   timeRef: MutableRefObject<number>;
@@ -231,6 +233,30 @@ export function WaveView(p: Props) {
       }
     }
 
+    // pasajes guardados: una franja al pie con el nombre
+    ctx.font = `${10 * dpr}px system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    for (const l of q.saved ?? []) {
+      if (l.end < v.start || l.start > v.start + v.dur) continue;
+      const x0 = Math.max(0, xOf(l.start));
+      const x1 = Math.min(W, xOf(l.end));
+      const bh = 14 * dpr;
+      ctx.fillStyle = 'rgba(46,125,50,0.85)';
+      ctx.fillRect(x0, H - bh, Math.max(2 * dpr, x1 - x0), bh);
+      ctx.fillStyle = 'rgba(46,125,50,0.9)';
+      ctx.fillRect(x0, H - bh - 4 * dpr, 2 * dpr, bh + 4 * dpr);
+      ctx.fillRect(x1 - 2 * dpr, H - bh - 4 * dpr, 2 * dpr, bh + 4 * dpr);
+      if (x1 - x0 > 24 * dpr) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x0, H - bh, x1 - x0, bh);
+        ctx.clip();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(l.name, x0 + 4 * dpr, H - bh / 2);
+        ctx.restore();
+      }
+    }
+
     // marcadores
     ctx.font = `${11 * dpr}px system-ui, sans-serif`;
     ctx.textBaseline = 'top';
@@ -301,7 +327,7 @@ export function WaveView(p: Props) {
   // se redibuja al cambiar lo visible; mientras suena, en cada cuadro
   useEffect(() => {
     drawRef.current();
-  }, [p.view, p.region, p.loopOn, p.markers, p.grid, p.notes, p.mode, p.peaks, gain, spec, width, height, p.written, p.duration]);
+  }, [p.view, p.region, p.loopOn, p.markers, p.saved, p.grid, p.notes, p.mode, p.peaks, gain, spec, width, height, p.written, p.duration]);
   useEffect(() => {
     if (!p.playing) return;
     let raf = 0;
