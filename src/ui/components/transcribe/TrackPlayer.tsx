@@ -186,9 +186,13 @@ function Loaded({
   }, [rate, semis, cents, filters, region, loopOn, saved, markers, grid, trainer, text, mode, clickOn, clickGain, persist]);
   useEffect(() => {
     const onHide = () => persist();
+    // en el celular, al cambiar de app la pestaña puede cerrarse sin "pagehide": se guarda también al ocultarse
+    const onVis = () => document.visibilityState === 'hidden' && persist();
+    document.addEventListener('visibilitychange', onVis);
     window.addEventListener('pagehide', onHide);
     return () => {
       window.removeEventListener('pagehide', onHide);
+      document.removeEventListener('visibilitychange', onVis);
       persist();
       engine.pause();
       tone.stopLine();
@@ -340,12 +344,21 @@ function Loaded({
   const whole = view.dur >= duration - 0.01;
 
   // ---- pasajes y marcadores
+  const sameAs = (l: SavedLoop, r: Region | null) => !!r && Math.abs(r.start - l.start) < 0.01 && Math.abs(r.end - l.end) < 0.01;
+  /** El pasaje guardado que coincide con la selección actual, si lo hay. */
+  const current = saved.find((l) => sameAs(l, region)) ?? null;
   const saveLoop = () => {
-    if (!region) return;
-    const name = loopName.trim() || `Pasaje ${saved.length + 1}`;
-    setSaved([...saved, { id: newId('l'), name: name.slice(0, 60), start: region.start, end: region.end, rate }]);
+    if (!region || current) return;
+    // el número sigue al más alto usado, para no repetir nombres después de borrar
+    const n = saved.reduce((m, l) => Math.max(m, Number(/^Pasaje (\d+)$/.exec(l.name)?.[1] ?? 0)), 0) + 1;
+    const name = loopName.trim() || `Pasaje ${n}`;
+    setSaved([...saved, { id: newId('l'), name: name.slice(0, 60), start: region.start, end: region.end, rate }].sort((a, b) => a.start - b.start));
     setLoopName('');
-    setMsg(`"${name}" guardado con la velocidad actual.`);
+    setMsg(`"${name}" guardado con la velocidad actual. Queda en este audio para los próximos días.`);
+  };
+  const renameLoop = (l: SavedLoop) => {
+    const n = window.prompt('Nombre del pasaje', l.name);
+    if (n && n.trim()) setSaved(saved.map((x) => (x.id === l.id ? { ...x, name: n.trim().slice(0, 60) } : x)));
   };
   const activate = (l: SavedLoop) => {
     const r = normRegion(l.start, l.end, duration);
@@ -492,6 +505,7 @@ function Loaded({
         onRegion={onRegion}
         loopOn={loopOn}
         markers={markers}
+        saved={saved}
         grid={grid}
         notes={shown}
         timeRef={timeRef}
@@ -518,6 +532,16 @@ function Loaded({
           <span className="muted"> / {fmtTime(duration)} · {Math.round(rate * 100)} %</span>
         </span>
       </div>
+
+      {saved.length > 0 && (
+        <div className="savedchips" role="group" aria-label="Pasajes guardados">
+          {saved.map((l) => (
+            <button key={l.id} className={sameAs(l, region) ? 'on' : ''} aria-pressed={sameAs(l, region)} onClick={() => activate(l)} title={`${fmtTime(l.start)} – ${fmtTime(l.end)}`}>
+              {l.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="livepitch" aria-live="off">
         {live && engine.playing ? (
@@ -556,6 +580,11 @@ function Loaded({
           <button onClick={() => setA(time)}>Inicio aquí [</button>
           <button onClick={() => setB(time)}>Fin aquí ]</button>
           <button onClick={addMarker}>＋ Marcador</button>
+          {region && (
+            <button className={current ? 'on' : 'primary'} onClick={() => (current ? renameLoop(current) : saveLoop())} aria-label={current ? `Pasaje guardado: ${current.name}. Cambiar el nombre` : 'Guardar la selección como pasaje'}>
+              {current ? `✓ ${current.name}` : '★ Guardar pasaje'}
+            </button>
+          )}
           {region && <button onClick={() => { setRegion(null); setLoopOn(false); }}>Quitar selección</button>}
         </div>
         {region ? (
@@ -800,17 +829,17 @@ function Loaded({
       <Panel title={`Pasajes guardados (${saved.length})`} open={saved.length > 0}>
         <div className="row">
           <input type="text" value={loopName} maxLength={60} placeholder="Nombre (ej.: Solo, compases 5–8)" onChange={(e) => setLoopName(e.target.value)} style={{ flex: 1, minWidth: 160 }} aria-label="Nombre del pasaje" />
-          <button className="primary" onClick={saveLoop} disabled={!region}>Guardar selección</button>
+          <button className="primary" onClick={saveLoop} disabled={!region || !!current}>Guardar selección</button>
         </div>
         {saved.length > 0 && (
           <ul className="tracklist">
             {saved.map((l) => (
-              <li key={l.id} className={region && Math.abs(region.start - l.start) < 0.01 && Math.abs(region.end - l.end) < 0.01 ? 'on' : ''}>
+              <li key={l.id} className={sameAs(l, region) ? 'on' : ''}>
                 <button className="link" onClick={() => activate(l)}>
                   <b>{l.name}</b>
                   <small>{fmtTime(l.start)} – {fmtTime(l.end)}{l.rate && l.rate !== 1 ? ` · ${Math.round(l.rate * 100)} %` : ''}</small>
                 </button>
-                <button onClick={() => { const n = window.prompt('Nombre del pasaje', l.name); if (n && n.trim()) setSaved(saved.map((x) => (x.id === l.id ? { ...x, name: n.trim().slice(0, 60) } : x))); }} aria-label={`Renombrar ${l.name}`}>✎</button>
+                <button onClick={() => renameLoop(l)} aria-label={`Renombrar ${l.name}`}>✎</button>
                 <button onClick={() => window.confirm(`¿Borrar el pasaje "${l.name}"?`) && setSaved(saved.filter((x) => x.id !== l.id))} aria-label={`Borrar ${l.name}`}>✕</button>
               </li>
             ))}

@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { addTrack, getBlob, listTracks, removeTrack, saveMeta, TrackMeta } from '../../transcribe/audioStore';
 import { fmtTime } from '../../transcribe/regions';
 import { OPEN_TRACK_KEY } from '../components/TakeAudio';
 import { TrackPlayer } from '../components/transcribe/TrackPlayer';
+
+/** Último audio abierto: al volver a Transcribir se reabre solo, con su selección y sus pasajes. */
+const LAST_KEY = 'hj:transcribir:ultimo'; // fuera del prefijo de los datos: no viaja en la copia de seguridad
+const lastOpen = {
+  get: () => { try { return localStorage.getItem(LAST_KEY); } catch { return null; } },
+  set: (id: string | null) => { try { if (id) localStorage.setItem(LAST_KEY, id); else localStorage.removeItem(LAST_KEY); } catch { /* sin almacenamiento */ } },
+};
 
 const mb = (n: number) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
 
@@ -12,6 +19,7 @@ export function Transcribe() {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<{ meta: TrackMeta; blob: Blob } | null>(null);
   const [usage, setUsage] = useState<string | null>(null);
+  const booted = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -43,7 +51,10 @@ export function Transcribe() {
     } catch {
       /* sin sessionStorage */
     }
-    const m = id ? tracks.find((t) => t.id === id) : null;
+    // si no, el último audio en el que se estuvo trabajando (salvo que se haya cerrado a propósito)
+    const first = !booted.current;
+    booted.current = true;
+    const m = tracks.find((t) => t.id === (id ?? (first && !open ? lastOpen.get() : null)));
     if (m) void openTrack(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks]);
@@ -56,6 +67,7 @@ export function Transcribe() {
       const meta = { ...m, opened: Date.now() };
       void saveMeta(meta);
       setOpen({ meta, blob });
+      lastOpen.set(m.id);
       window.scrollTo({ top: 0 });
     } catch (e) {
       setError((e as Error).message);
@@ -83,6 +95,7 @@ export function Transcribe() {
     if (!window.confirm(`¿Borrar "${m.name}" y sus pasajes guardados? No se puede deshacer.`)) return;
     await removeTrack(m.id);
     if (open?.meta.id === m.id) setOpen(null);
+    if (lastOpen.get() === m.id) lastOpen.set(null);
     void refresh();
   };
 
@@ -94,6 +107,7 @@ export function Transcribe() {
           initial={open.meta}
           blob={open.blob}
           onClose={() => {
+            lastOpen.set(null);
             setOpen(null);
             void refresh();
           }}

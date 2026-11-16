@@ -212,3 +212,40 @@ test('la selección pasa al tramo siguiente y al anterior, y se acorta o duplica
   await expect(sel).toContainText('0:00.0 – 0:10.0');
   await expect(page.getByRole('button', { name: 'Pasar al tramo anterior' })).toBeDisabled();
 });
+
+test('un pasaje se guarda con un toque y al otro día el audio se reabre solo con sus pasajes y su selección', async ({ page }) => {
+  await openAudio(page, await makeWav({ seconds: 20 }));
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Inicio aquí [' }).click();
+  await page.getByRole('button', { name: 'Avanzar 5 segundos' }).click();
+  await page.getByRole('button', { name: 'Fin aquí ]' }).click();
+  await page.getByRole('button', { name: 'Guardar la selección como pasaje' }).click();
+  await expect(page.getByRole('button', { name: /Pasaje guardado: Pasaje 1/ })).toBeVisible();
+  // otro tramo, otro pasaje
+  await page.getByRole('button', { name: 'Pasar al tramo siguiente' }).click();
+  await page.getByRole('button', { name: 'Guardar la selección como pasaje' }).click();
+  const chips = page.getByRole('group', { name: 'Pasajes guardados' });
+  await expect(chips.getByRole('button')).toHaveText(['Pasaje 1', 'Pasaje 2']);
+  await expect(page.getByText('Pasajes guardados (2)')).toBeVisible();
+  await page.waitForTimeout(1200); // el guardado espera 0,7 s
+
+  // "al otro día": se recarga la app y se vuelve a Transcribir, sin tocar nada más
+  await page.reload();
+  await page.waitForSelector('canvas.wave');
+  await expect(page.getByText('Motor preciso')).toBeVisible({ timeout: 30_000 });
+  await expect(chips.getByRole('button')).toHaveText(['Pasaje 1', 'Pasaje 2']);
+  await expect(page.locator('.selection')).toContainText('0:10.0 – 0:15.0');
+  await expect(chips.getByRole('button', { name: 'Pasaje 2' })).toHaveAttribute('aria-pressed', 'true');
+  // un toque en el otro pasaje lo deja listo para repetir
+  await chips.getByRole('button', { name: 'Pasaje 1' }).click();
+  await expect(page.locator('.selection')).toContainText('0:05.0 – 0:10.0');
+  expect(await time(page)).toBeCloseTo(5, 0);
+
+  // si se cierra el audio a propósito, no se reabre solo
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Transcribir' })).toBeVisible();
+  await page.waitForTimeout(800);
+  await expect(page.locator('canvas.wave')).toHaveCount(0);
+  await expect(page.locator('.tracklist')).toContainText('2 pasajes');
+});

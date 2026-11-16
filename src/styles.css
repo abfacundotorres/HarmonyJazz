@@ -551,3 +551,6 @@ input[type='range'], input[type='checkbox'] { accent-color: var(--accent); }
 .ratepresets { display: flex; margin-top: 6px; }
 .ratepresets button { flex: 1 1 0; padding-left: 0; padding-right: 0; min-width: 0; }
 @media (pointer: coarse) { .keyhelp { display: none; } }
+.savedchips { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 2px; scrollbar-width: thin; }
+.savedchips button { flex: none; border-radius: 999px; white-space: nowrap; max-width: 14em; overflow: hidden; text-overflow: ellipsis; }
+.savedchips button.on { background: #2e7d32; border-color: #2e7d32; color: #fff; }
