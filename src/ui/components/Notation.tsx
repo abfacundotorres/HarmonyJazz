@@ -4,8 +4,10 @@ import abcjs from 'abcjs';
 /**
  * Partitura con abcjs. Se dibuja al ancho real del contenedor (no se encoge un dibujo grande):
  * en pantallas angostas se pasa a 2 compases por línea para que las notas sigan siendo legibles.
+ * (Se probó meter 4 compases por línea en el celular para las líneas de blancas y redondas: abcjs no achica
+ * el espaciado por debajo de su mínimo y el dibujo se sale; sólo entraría reduciendo el tamaño de las notas.)
  */
-export function Notation({ abc, highlightBar, transpose = 0 }: { abc: string; highlightBar?: number; transpose?: number }) {
+export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { abc: string; highlightBar?: number; /** Índice de la nota que suena (sin contar silencios). */ highlightNote?: number; transpose?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -53,6 +55,19 @@ export function Notation({ abc, highlightBar, transpose = 0 }: { abc: string; hi
     if (highlightBar === undefined || highlightBar < 0) return;
     el.querySelectorAll(`.abcjs-mm${highlightBar}`).forEach((n) => n.classList.add('hj-current'));
   }, [highlightBar, abc, width]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.querySelectorAll('.hj-note').forEach((n) => n.classList.remove('hj-note'));
+    if (highlightNote === undefined || highlightNote < 0) return;
+    const note = el.querySelectorAll('.abcjs-note')[highlightNote];
+    if (!note) return;
+    note.classList.add('hj-note');
+    // en una partitura larga, la línea que suena queda a la vista
+    const r = note.getBoundingClientRect();
+    if (r.top < 60 || r.bottom > window.innerHeight - 60) note.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [highlightNote, abc, width]);
 
   return <div className="paper" ref={ref} />;
 }

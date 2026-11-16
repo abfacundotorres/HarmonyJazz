@@ -6,7 +6,8 @@ import type { Chart } from '../../theory/chart';
 import { midiName } from '../../theory/notes';
 import { Notation } from './Notation';
 import { Player } from './Player';
-import { usePosition, useReading } from '../hooks';
+import { useReading } from '../hooks';
+import { usePosition } from '../usePosition';
 
 const OWNER = 'transcription';
 

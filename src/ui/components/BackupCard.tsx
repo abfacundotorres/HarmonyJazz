@@ -3,7 +3,7 @@ import { applyLocal, backupFileName, buildBackup, collectLocal, daysSinceBackup,
 import { getBlob, listTracks, normalizeMeta, saveMeta } from '../../transcribe/audioStore';
 
 /** Copia de seguridad: guarda y restaura temas, frases, progreso, ajustes y fichas de los audios. */
-export function BackupCard() {
+export function BackupCard({ onSaved }: { onSaved?: () => void } = {}) {
   const [msg, setMsg] = useState('');
   const [days, setDays] = useState<number | null>(() => daysSinceBackup(localStorage));
   const [info, setInfo] = useState<Summary | null>(null);
@@ -28,6 +28,7 @@ export function BackupCard() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       markBackup(localStorage);
       setDays(0);
+      onSaved?.();
       setMsg('Copia guardada. Conservá el archivo en un lugar seguro (por ejemplo, tu nube o tu correo).');
     } finally {
       setBusy(false);
@@ -65,7 +66,7 @@ export function BackupCard() {
 
   const stale = info && hasData(info) && (days === null || days >= 14);
   return (
-    <section className="card">
+    <section className="card" id="copia">
       <h2 className="h3like">Copia de seguridad</h2>
       <p className="muted small">
         Tus temas, frases, progreso y ajustes viven sólo en este navegador. Si se borran los datos del sitio o cambiás de celular, se pierden: guardá una copia de vez en cuando.

@@ -10,6 +10,31 @@ import { KeySelect } from '../components/KeySelect';
 import { Notation } from '../components/Notation';
 import { useMastery, useReading, useRoute } from '../hooks';
 
+const MIN_BPM = 40;
+const MAX_BPM = 200;
+/** Con "subir solo", cada cuántas vueltas sube el tempo: dos limpias seguidas, como pide el método. */
+const RAMP_EVERY = 2;
+
+/** Campo de tempo que deja escribir el número entero: recién se aplica al salir o con Enter. */
+function TempoInput({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+  const commit = () => {
+    const v = Number(text);
+    if (Number.isFinite(v) && v > 0) onCommit(v);
+    else setText(String(value));
+  };
+  return (
+    <label className="tempofield">
+      <input
+        type="number" inputMode="numeric" min={MIN_BPM} max={MAX_BPM} step={BPM_STEP} value={text} aria-label="Tempo (negra)"
+        onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+      />
+      <span className="muted small">bpm</span>
+    </label>
+  );
+}
+
 /** Estudio guiado de escalas: una escala por vez, en una tonalidad, siguiendo un camino de patrones con tempo. */
 export function Scales() {
   const { iv, view, keyLabel } = useReading();
@@ -32,6 +57,9 @@ export function Scales() {
   const [click, setClick] = useState(true);
   const [countIn, setCountIn] = useState(true);
   const [repeat, setRepeat] = useState(false);
+  const [ramp, setRamp] = useState(false);
+  /** Mientras suena: tempo de la pasada (sube solo si se pidió) y nota que suena. */
+  const [live, setLive] = useState<{ tempo: number; note: number } | null>(null);
 
   const group = SCALE_GROUPS.find((g) => g.id === groupId)!;
   const step = PATTERNS[stepIdx];
@@ -46,24 +74,37 @@ export function Scales() {
   useEffect(() => {
     engine.stop();
     setPlaying(false);
+    setLive(null);
   }, [scaleId, step.id, key, tempo]);
 
+  const stop = () => {
+    engine.stop();
+    setPlaying(false);
+    setLive(null);
+  };
   const play = async () => {
-    if (playing) {
-      engine.stop();
-      return setPlaying(false);
-    }
-    const eighth = 30 / tempo;
+    if (playing) return stop();
+    // en tiempos (negras): cada nota del patrón dura una corchea
     let t = 0;
     const notes: { midi: number; start: number; dur: number }[] = [];
     for (const it of patternItems(scaleId, step.id, key)) {
-      if (it.p) notes.push({ midi: midi(it.p), start: t, dur: it.dur * eighth });
-      t += it.dur * eighth;
+      if (it.p) notes.push({ midi: midi(it.p), start: t / 2, dur: it.dur / 2 });
+      t += it.dur;
     }
     setPlaying(true);
-    const ok = await engine.playExercise(notes, { tempo, click, countIn, repeat, onEnd: () => setPlaying(false) }).catch(() => false);
-    if (!ok) setPlaying(false);
+    setLive({ tempo, note: -1 });
+    const ok = await engine
+      .playExercise(notes, {
+        tempo, click, countIn, repeat,
+        ramp: repeat && ramp ? { step: BPM_STEP, every: RAMP_EVERY, max: MAX_BPM } : undefined,
+        onPass: (bpm) => setLive((l) => ({ tempo: bpm, note: l?.note ?? -1 })),
+        onNote: (i) => setLive((l) => (l ? { ...l, note: i } : l)),
+        onEnd: () => { setPlaying(false); setLive(null); },
+      })
+      .catch(() => false);
+    if (!ok) stop();
   };
+  const changeTempo = (v: number) => setTempo(Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(v))));
 
   const pickScale = (g: string, s: string) => {
     setGroupId(g);
@@ -75,7 +116,9 @@ export function Scales() {
     setStepIdx(i);
     setTempo(PATTERNS[i].bpm);
   };
-  const mark = () => setMastery((m) => ({ ...m, [masteryId(scaleId, step.id)]: { ...(m[masteryId(scaleId, step.id)] ?? {}), [key]: Math.max(tempo, m[masteryId(scaleId, step.id)]?.[key] ?? 0) } }));
+  /** Con el tempo subiendo solo, se marca el tempo al que se llegó. */
+  const shownTempo = live?.tempo ?? tempo;
+  const markAt = (bpm: number) => setMastery((m) => ({ ...m, [masteryId(scaleId, step.id)]: { ...(m[masteryId(scaleId, step.id)] ?? {}), [key]: Math.max(bpm, m[masteryId(scaleId, step.id)]?.[key] ?? 0) } }));
   const today = () => {
     const s = suggest(mastery, localDayNumber());
     const g = SCALE_GROUPS.find((x) => x.scales.includes(s.scale))!;
@@ -155,18 +198,27 @@ export function Scales() {
           {doneCount(scaleId, step.id)}/12 tonalidades marcadas en "{step.title}". Tonalidad elegida: {keyLabel(key)}.
         </p>
 
-        <Notation abc={abc} />
+        <Notation abc={abc} highlightNote={live?.note} />
 
-        <div className="row">
-          <button className={playing ? 'on' : ''} onClick={() => void play()} aria-pressed={playing}>{playing ? '■ Detener' : '▶ Oírla en trompeta'}</button>
+        <div className="scaleplay">
+          <button className={playing ? 'on' : 'primary'} onClick={() => void play()} aria-pressed={playing}>{playing ? '■ Detener' : '▶ Oírla en trompeta'}</button>
+          <div className="tempobox" role="group" aria-label="Tempo">
+            <button onClick={() => changeTempo(tempo - BPM_STEP)} aria-label={`Bajar ${BPM_STEP} bpm`} disabled={tempo <= MIN_BPM}>−{BPM_STEP}</button>
+            <TempoInput value={tempo} onCommit={changeTempo} />
+            <button onClick={() => changeTempo(tempo + BPM_STEP)} aria-label={`Subir ${BPM_STEP} bpm`} disabled={tempo >= MAX_BPM}>+{BPM_STEP}</button>
+          </div>
+        </div>
+        {live && live.tempo !== tempo && <p className="muted small" role="status">Sonando a <b>{live.tempo} bpm</b> (empezó en {tempo}).</p>}
+        <div className="scaleopts">
           <label className="check"><input type="checkbox" checked={click} onChange={(e) => setClick(e.target.checked)} /> Metrónomo (2 y 4)</label>
           <label className="check"><input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4</label>
           <label className="check"><input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} /> Repetir</label>
-          <label>
-            Tempo (negra){' '}
-            <input type="number" min={40} max={200} step={BPM_STEP} value={tempo} onChange={(e) => setTempo(Math.max(40, Math.min(200, Number(e.target.value) || step.bpm)))} />
-          </label>
-          <button className="primary" onClick={mark}>✓ Salió limpio a {tempo} bpm</button>
+          {repeat && (
+            <label className="check"><input type="checkbox" checked={ramp} onChange={(e) => setRamp(e.target.checked)} /> Subir {BPM_STEP} bpm cada {RAMP_EVERY} vueltas</label>
+          )}
+        </div>
+        <div className="row">
+          <button className="primary" onClick={() => markAt(shownTempo)}>✓ Salió limpio a {shownTempo} bpm</button>
           {best ? <span className="muted small">Mejor marca en {keyLabel(key)}: {best} bpm</span> : null}
         </div>
 

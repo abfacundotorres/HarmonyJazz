@@ -1,14 +1,25 @@
-import { useEffect, useState } from 'react';
-import { engine } from '../audio/engine';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { stopAll } from '../audio/stopAll';
 import { useRoute, useSettings } from './hooks';
-import { Credits } from './pages/Credits';
-import { Lessons } from './pages/Lessons';
-import { Scales } from './pages/Scales';
-import { Listen } from './pages/Listen';
-import { PlayAlong } from './pages/PlayAlong';
 import { Today } from './pages/Today';
-import { Transcribe } from './pages/Transcribe';
-import { Vocab } from './pages/Vocab';
+
+// Cada pantalla viaja en su propio archivo: Hoy abre sin esperar al motor de audio ni a las partituras.
+const PAGES = {
+  playalong: () => import('./pages/PlayAlong').then((m) => ({ default: m.PlayAlong })),
+  lecciones: () => import('./pages/Lessons').then((m) => ({ default: m.Lessons })),
+  escalas: () => import('./pages/Scales').then((m) => ({ default: m.Scales })),
+  vocabulario: () => import('./pages/Vocab').then((m) => ({ default: m.Vocab })),
+  transcribir: () => import('./pages/Transcribe').then((m) => ({ default: m.Transcribe })),
+  escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
+  creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
+};
+const PlayAlong = lazy(PAGES.playalong);
+const Lessons = lazy(PAGES.lecciones);
+const Scales = lazy(PAGES.escalas);
+const Vocab = lazy(PAGES.vocabulario);
+const Transcribe = lazy(PAGES.transcribir);
+const Listen = lazy(PAGES.escucha);
+const Credits = lazy(PAGES.creditos);
 
 const NAV = [
   ['hoy', 'Hoy'],
@@ -40,9 +51,15 @@ export function App() {
   // al cambiar de pantalla, cortar el audio
   const sub = path[1];
   useEffect(() => {
-    engine.stop();
+    stopAll();
     window.scrollTo(0, 0);
   }, [page, sub]);
+
+  // con la app ya dibujada, se traen de fondo las demás pantallas: el cambio de pestaña es inmediato
+  useEffect(() => {
+    const idle = (window as unknown as { requestIdleCallback?: (f: () => void) => number }).requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 1500));
+    idle(() => Object.values(PAGES).forEach((load) => void load().catch(() => undefined)));
+  }, []);
 
   // en el celular las pestañas se desplazan: la activa queda a la vista
   useEffect(() => {
@@ -92,14 +109,16 @@ export function App() {
       </header>
       <main>
         <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : (NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz')}</h1>
-        {page === 'hoy' && <Today />}
-        {page === 'playalong' && <PlayAlong />}
-        {page === 'lecciones' && <Lessons />}
-        {page === 'escalas' && <Scales />}
-        {page === 'vocabulario' && <Vocab />}
-        {page === 'transcribir' && <Transcribe />}
-        {page === 'escucha' && <Listen />}
-        {page === 'creditos' && <Credits />}
+        <Suspense fallback={<p className="muted" role="status">Cargando…</p>}>
+          {page === 'hoy' && <Today />}
+          {page === 'playalong' && <PlayAlong />}
+          {page === 'lecciones' && <Lessons />}
+          {page === 'escalas' && <Scales />}
+          {page === 'vocabulario' && <Vocab />}
+          {page === 'transcribir' && <Transcribe />}
+          {page === 'escucha' && <Listen />}
+          {page === 'creditos' && <Credits />}
+        </Suspense>
       </main>
       <footer className="credits">
         Piano: Salamander Grand Piano V3 (Alexander Holm,{' '}

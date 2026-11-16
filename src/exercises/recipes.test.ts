@@ -75,6 +75,14 @@ describe('las recetas dicen lo que cada generador hace', () => {
     expect(ms(2)[0]).toBeGreaterThan(ms(2)[3]); // baja
   });
 
+  it('pent: sobre un 7♯11 no toca la 7ª mayor (usa la pentatónica de la tónica)', () => {
+    const c = parseChart('Db7#11 | Db7#11');
+    const pcs = generatorById('pent').run(c, OPT).filter((n) => n.pitch).map((n) => ([0, 2, 4, 5, 7, 9, 11][n.pitch!.letter] + n.pitch!.acc + 12) % 12);
+    expect(pcs.length).toBeGreaterThan(8);
+    expect(pcs.every((x) => new Set([1, 3, 5, 8, 10]).has(x))).toBe(true); // D♭ E♭ F A♭ B♭
+    expect(pcs).not.toContain(0); // C, la 7ª mayor
+  });
+
   it('triads: las notas son de dos tríadas sin notas en común', () => {
     const set = new Set([5, 9, 0, 7, 11, 2]); // F A C + G B D sobre Dm7
     expect(pcsOf('triads', 1).every((x) => set.has(x))).toBe(true);

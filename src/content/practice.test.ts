@@ -39,4 +39,14 @@ describe('ejercicios de práctica', () => {
     expect([...warm].sort()).toEqual(WARMUP_EXERCISES.map((e) => e.id).sort());
     expect([...tech].sort()).toEqual(TECHNIQUE_EXERCISES.map((e) => e.id).sort());
   });
+
+  it('los minutos de los bloques suman la duración elegida', () => {
+    for (const total of [30, 45, 60, 90, 120]) {
+      for (let d = 0; d < 7; d++) {
+        const plan = buildPlan(new Date(2026, 10, 10 + d), total, undefined, [], { scale: 'ionian', pattern: 'octave', key: 'C' });
+        expect(plan.blocks.reduce((a, b) => a + b.minutes, 0), `${total} min`).toBe(total);
+        expect(plan.blocks.every((b) => b.minutes >= 3)).toBe(true);
+      }
+    }
+  });
 });
