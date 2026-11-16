@@ -76,4 +76,14 @@ test.describe('Hoy', () => {
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
     await expect(page.locator('.notice')).toHaveCount(0);
   });
+
+  test('leyendo en Si♭, los nombres de las progresiones de la app también están en Si♭; en concierto quedan como son', async ({ page }) => {
+    await page.goto('/#/playalong?p=blues-f');
+    const tema = page.getByLabel('Tema');
+    await expect(tema.locator('option:checked')).toHaveText('Blues de jazz en G');
+    await expect(page.getByText(/Tocás en G \(escrito para Si♭\); en concierto suena en F\./)).toBeVisible();
+    await page.getByRole('button', { name: 'Concierto' }).click();
+    await expect(tema.locator('option:checked')).toHaveText('Blues de jazz en F');
+    await expect(page.getByText('Tocás en F (concierto).')).toBeVisible();
+  });
 });

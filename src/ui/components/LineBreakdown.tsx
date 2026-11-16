@@ -37,7 +37,7 @@ export function LineBreakdown({ recipe, chart, notes }: { recipe: string; chart:
       <p className="muted small">
         En estos {bars} compases hay {st.notes} notas: {st.chordOnStrong} de las {st.strongNotes} que caen en un tiempo son del acorde ({pct} %)
         {st.enclosures ? `, ${st.enclosures} enclosure${st.enclosures > 1 ? 's' : ''}` : ''}
-        {st.approaches ? `, ${st.approaches} ${st.approaches > 1 ? 'aproximaciones' : 'aproximación'} cromática${st.approaches > 1 ? 's' : ''}` : ''}.
+        {st.approaches ? `, ${st.approaches} ${st.approaches > 1 ? 'aproximaciones' : 'aproximación'} por semitono` : ''}.
         Es la misma regla en cada acorde de la progresión: lo que cambia es el acorde, no la receta.
       </p>
       <NoteRows rows={rows} chart={part.chart} />
