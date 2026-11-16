@@ -5,6 +5,7 @@ import {
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
+import { localizeNotes } from '../../exercises/localize';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
   Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
@@ -116,7 +117,9 @@ export function PlayAlong() {
   const pos = usePosition();
   const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
   const [atril, setAtril] = useState(false);
-  const { keyLabel, view } = useReading();
+  const { keyLabel, view, iv } = useReading();
+  /** Los nombres y notas de las progresiones de la app están en concierto: se muestran en la lectura elegida. Los temas propios no se tocan. */
+  const loc = (p: Progression, text: string) => (p.category === 'Mis temas' ? text : localizeNotes(text, 'C', 'C', iv));
   const mine = pos && pos.owner === OWNER ? pos : null;
   const ci = mine && !mine.countIn ? mine.chordIndex : -1;
   const chord = ci >= 0 ? playChart.chords[ci]?.chord ?? null : null;
@@ -244,7 +247,7 @@ export function PlayAlong() {
                 <optgroup key={cat} label={cat}>
                   {items.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name}
+                      {loc(p, p.name)}
                     </option>
                   ))}
                 </optgroup>
@@ -252,7 +255,7 @@ export function PlayAlong() {
             })}
           </select>
         </header>
-        {!useCustom && <p className="muted">{selected.notes}</p>}
+        {!useCustom && <p className="muted">{loc(selected, selected.notes)}</p>}
         {useCustom && <p className="muted">Estás tocando una progresión propia sin guardar. Guardala en "Mis temas" para conservarla.</p>}
 
         {showKeys ? (
@@ -290,7 +293,7 @@ export function PlayAlong() {
 
       {atril && (
         <Atril
-          title={useCustom ? 'Progresión propia' : selected.name}
+          title={useCustom ? 'Progresión propia' : loc(selected, selected.name)}
           keyLabel={baseKey ? keyLabel(key) : null}
           chart={chart}
           layout={layout}

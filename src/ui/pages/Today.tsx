@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlan, isoDate, tuneOfWeek } from '../../content/plan';
 import { localDayNumber, suggest } from '../../content/scaleStudy';
+import { localizeNotes } from '../../exercises/localize';
 import type { PhraseLibrary } from '../../content/phrases';
 import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/backup';
 import { streak, usePersistent } from '../../state/storage';
@@ -73,7 +74,7 @@ const Notation = lazy(() => import('../components/Notation').then((m) => ({ defa
 export function Today() {
   const [settings, setSettings] = useSettings();
   const [log, setLog] = useLog();
-  const { keyLabel, view } = useReading();
+  const { keyLabel, view, iv } = useReading();
   const today = useToday();
   const [due, setDue] = useState(backupDue);
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
@@ -117,7 +118,7 @@ export function Today() {
         </div>
         <div>
           <span className="lbl">Tema de la semana</span>
-          <div className="mid">{tuneOfWeek(today).name}</div>
+          <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>
         </div>
         <div>
           <span className="lbl">Racha</span>
@@ -142,7 +143,7 @@ export function Today() {
           <Block
             key={`${plan.date}:${b.id}:${b.minutes}`}
             n={i + 1}
-            block={b}
+            block={b.id === 'tune' ? { ...b, title: localizeNotes(b.title, 'C', 'C', iv) } : b}
             tonalKey={plan.key}
             done={day.done.includes(b.id)}
             onToggle={() => toggle(b.id)}

@@ -3,6 +3,7 @@ import type { WorkletIn, WorkletPos } from './engine.worklet';
 import type { ClickOpts } from './stretch';
 import { decodePeaks } from './audioStore';
 import type { Filters } from './filters';
+import { maxDecodedBytes } from './limits';
 import { Peaks, peaksFromChannels, Region } from './regions';
 
 /**
@@ -59,8 +60,7 @@ class Emitter {
   }
 }
 
-/** Memoria máxima del audio decodificado (Float32) para usar el motor preciso. */
-export const MAX_DECODED_BYTES = 260 * 1024 * 1024;
+export { MAX_DECODED_BYTES, maxDecodedBytes } from './limits';
 const ANALYSIS_RATE = 11025;
 
 function probeDuration(blob: Blob): Promise<number> {
@@ -126,8 +126,8 @@ export class BufferEngine extends Emitter implements PlayerEngine {
     const ctx = new AudioContext({ latencyHint: 'playback' });
     try {
       const dur = await probeDuration(blob);
-      if (dur > 0 && dur * ctx.sampleRate * 2 * 4 > MAX_DECODED_BYTES) {
-        throw new Error(`El audio dura ${Math.round(dur / 60)} min: es muy largo para el motor preciso.`);
+      if (dur > 0 && dur * ctx.sampleRate * 2 * 4 > maxDecodedBytes((navigator as unknown as { deviceMemory?: number }).deviceMemory)) {
+        throw new Error(`El audio dura ${Math.round(dur / 60)} min: es muy largo para el motor preciso en este aparato.`);
       }
       const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
       const sr = buf.sampleRate;

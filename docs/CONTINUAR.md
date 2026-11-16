@@ -37,12 +37,10 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 
 ## Pendiente
 1. Escuchar en el celular: el bajo y la saturación a volumen bajo (nivel medido, no oído), el audio de Escalas (ahora con tempo que sube solo) y el play-along tras los cambios del motor (`playExercise`, agendado por chorus con eventos de un solo uso).
-2. Probar Transcribir con audios reales (mp3, m4a) y escuchar el estiramiento a 50–70 %; ver memoria con audios de 8–12 min (`MAX_DECODED_BYTES` en `transcribe/engine.ts`).
-3. Vocabulario: auditar los textos generados con el mismo criterio que las Lecciones.
-4. Partituras en el celular: van de a 2 compases por línea (1 si hay muchas alteraciones). Se probó meter 4 en las líneas de blancas y redondas: abcjs no achica el espaciado y el dibujo se sale. Sólo se logra con notas más chicas (`scale` < 1): decidir mirándolo en el aparato.
-5. El temporizador de Hoy avisa con vibración y dos tonos: comprobar en el celular que se oye y vibra con la pantalla apagada (el navegador puede frenarlo).
-6. Los nombres de las progresiones ("Blues de jazz en F", "Modal AABA (D dórico…)") están en concierto aunque se lea en Si♭.
-7. Pruebas en otros navegadores (sólo Chromium a 390 px) e iOS (no es prioridad).
+2. Probar Transcribir con audios reales (mp3, m4a) y escuchar el estiramiento a 50–70 %; ver memoria con audios largos: el tope del motor preciso ahora depende de la memoria del aparato (`transcribe/limits.ts`: unos 7 min con 4 GB, 4 min con 2 GB; pasado eso usa el reproductor simple). Ajustar esos números según lo que aguante el celular.
+3. Partituras en el celular: van de a 2 compases por línea (1 si hay muchas alteraciones). Se probó meter 4 en las líneas de blancas y redondas: abcjs no achica el espaciado y el dibujo se sale. Sólo se logra con notas más chicas (`scale` < 1): decidir mirándolo en el aparato.
+4. El temporizador de Hoy avisa con vibración y dos tonos: comprobar en el celular que se oye y vibra con la pantalla apagada (el navegador puede frenarlo).
+5. Pruebas en otros navegadores (sólo Chromium a 390 px) e iOS (no es prioridad).
 
 ## Hecho en la última etapa (auditoría general)
 - **Carga por pantalla:** cada pestaña viaja en su archivo (`lazy` en `ui/App.tsx`); Hoy abre con ~114 KB comprimidos en lugar de 395 (Tone.js y abcjs llegan cuando hacen falta y se precargan de fondo). `audio/stopAll.ts` permite cortar el audio sin cargar el motor; `usePosition` salió de `hooks.ts` por lo mismo.
@@ -50,4 +48,6 @@ Webapp estática (React + TypeScript + Vite + Tone.js + abcjs) para aprender jaz
 - **Escalas:** campo de tempo que deja escribir el número (antes saltaba a 40 al tipear), botones −4/+4, "subir 4 bpm cada 2 vueltas" al repetir (marca el tempo alcanzado) y la nota que suena resaltada en el pentagrama.
 - **Pentatónicas:** sobre 7♯11 el generador usa la de la tónica (la de la 2ª traía la 7ª mayor); lección y receta al día.
 - **Play-along / Afinador:** el texto de tonalidad sigue la lectura elegida; las notas de referencia muestran la octava.
+- **Nombres en la lectura elegida:** los nombres y descripciones de las progresiones de la app ("Blues de jazz en F") se muestran en Si♭ o concierto; los temas propios no se tocan.
+- **Vocabulario:** ya no tiene textos generados (la frase se estudia con la tarjeta común), así que no hay nada que auditar ahí.
 - **Motor:** los eventos agendados se borran al sonar (antes se acumulaban durante toda la sesión) y el bajo se corta al detener.
