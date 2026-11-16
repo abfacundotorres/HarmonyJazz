@@ -1,5 +1,5 @@
 /**
- * Núcleo de reproducción del transcriptor: estiramiento de tiempo sin cambiar el tono (WSOLA),
+ * Núcleo de reproducción del transcriptor: estiramiento de tiempo sin cambiar el tono,
  * afinación fina (remuestreo), loops continuos y silencios entre repeticiones.
  *
  * Es código puro y sin dependencias: corre dentro de un AudioWorklet (engine.worklet.ts) y también en
@@ -7,9 +7,12 @@
  *
  * Cómo funciona
  *  - Modo directo (velocidad 100 % y afinación 0): copia las muestras tal cual.
- *  - Modo WSOLA: se arman cuadros de N muestras (ventana Hann, solape del 50 %) del original. La posición
- *    nominal de cada cuadro avanza `Hs × tempo`; para que no haya saltos de fase se busca, cerca de esa
- *    posición, el tramo que mejor continúa al cuadro anterior (correlación normalizada).
+ *  - Estiramiento de alta calidad (por defecto): vocoder de fase con bloqueo de fase y ataques intactos (pv.ts).
+ *    Cada cuadro se calcula por etapas, una por bloque de audio, para repartir el costo.
+ *  - Estiramiento liviano (WSOLA, `setQuality(false)`): cuadros de N muestras (ventana Hann, solape del 50 %)
+ *    del original; se busca, cerca de la posición nominal, el tramo que mejor continúa al cuadro anterior
+ *    (correlación normalizada). Cuesta la cuarta parte, pero en música con varios instrumentos ensucia lo
+ *    sostenido y repite los golpes.
  *  - Afinación: se estira por `velocidad / afinación` y después se remuestrea por `afinación`
  *    (interpolación de Hermite): la velocidad final es la pedida y el tono cambia por esa razón.
  *  - Loop: el tramo se trata como una señal circular. Los últimos ~12 ms se mezclan (potencia constante)
@@ -17,6 +20,8 @@
  *    dura exactamente lo que se marcó y no suena ningún clic.
  *  - Cualquier salto (buscar una posición, pausar, cambiar de modo) se hace con un fundido corto.
  */
+import { PhaseVocoder, PV_HOP } from './pv';
+
 export type Samples = Float32Array | Int16Array;
 
 export interface CoreSource {
@@ -32,6 +37,8 @@ const TOL = 512;
 const FIFO = 1 << 15;
 const MASK = FIFO - 1;
 const FADE = 96;
+/** Techo del limitador de salida. */
+const LIMIT = 0.97;
 
 export type CenterMode = 0 | 1 | 2; // 0 = estéreo, 1 = quitar el centro, 2 = sólo el centro
 
@@ -68,6 +75,15 @@ export class PlayerCore {
   private rate = 1;
   private pitch = 1;
   private center: CenterMode = 0;
+  /** Estiramiento de alta calidad (vocoder de fase, pv.ts) o liviano (WSOLA, más barato para el procesador). */
+  private hq = true;
+  // lo pedido (se aplica enseguida, o al final de un fundido si cambia el modo)
+  private tRate = 1;
+  private tPitch = 1;
+  private tHq = true;
+  private pendMode = false;
+  private pendSeek: number | null = null;
+  private pv: PhaseVocoder;
   private gap = 0; // muestras de silencio entre repeticiones
 
   // loop
@@ -84,11 +100,18 @@ export class PlayerCore {
   private wantPlay = false;
   private fade = 0;
   private fadeDir = 0;
-  private pending: (() => void) | null = null;
   private a = 0; // posición de origen (muestras, con decimales)
   private silence = 0;
   private finished = false;
 
+  /** Cuadros del vocoder que hubo que terminar de golpe (no alcanzó el cálculo por etapas): para medir. */
+  syncFrames = 0;
+  /** Ganancia del limitador de salida (1 = sin actuar). */
+  /** Cuadros de arranque que faltan y si todavía no salió el primer salto desde el último arranque. */
+  private warm = 2;
+  private priming = true;
+  private limit = 1;
+  private limitRel = 0;
   /** Cantidad de vueltas del loop (crece a medida que se generan). */
   loops = 0;
   ended = false;
@@ -126,21 +149,46 @@ export class PlayerCore {
     this.ola = [new Float32Array(N), new Float32Array(N)];
     this.fifo = [new Float32Array(FIFO), new Float32Array(FIFO)];
     this.tmp = [new Float32Array(N), new Float32Array(N)];
+    this.limitRel = 1 - Math.exp(-1 / (0.3 * this.sr));
+    this.pv = new PhaseVocoder((c, u) => this.at(c, u), this.nch > 1);
     this.resetStretch();
   }
 
   // ---------- control ----------
   setRate(r: number) {
-    const pos = this.getPosition();
-    const was = this.direct();
-    this.rate = Math.min(4, Math.max(0.1, r));
-    this.modeChanged(was, pos);
+    this.tRate = Math.min(4, Math.max(0.1, r));
+    this.retarget();
   }
   setPitch(ratio: number) {
-    const pos = this.getPosition();
-    const was = this.direct();
-    this.pitch = Math.min(4, Math.max(0.25, ratio));
-    this.modeChanged(was, pos);
+    this.tPitch = Math.min(4, Math.max(0.25, ratio));
+    this.retarget();
+  }
+  /** Calidad del estiramiento: true = vocoder de fase (por defecto), false = WSOLA. */
+  setQuality(high: boolean) {
+    this.tHq = high;
+    this.retarget();
+  }
+  /**
+   * Aplica velocidad, afinación y calidad pedidas. Si cambia la forma de generar el sonido (directo, vocoder o
+   * WSOLA) y está sonando, el cambio se hace en el punto más bajo de un fundido corto: hasta entonces sigue el modo
+   * anterior, así no hay salto en la onda.
+   */
+  private retarget() {
+    const next = Math.abs(this.tRate - 1) < 1e-6 && Math.abs(this.tPitch - 1) < 1e-6;
+    const same = this.direct() === next && (next || this.tHq === this.hq);
+    if (same && !this.pendMode) return this.applyTarget();
+    if (!this.active) {
+      const pos = this.getPosition();
+      this.applyTarget();
+      return this.reposition(pos);
+    }
+    this.pendMode = true;
+    this.fadeDir = -1;
+  }
+  private applyTarget() {
+    this.rate = this.tRate;
+    this.pitch = this.tPitch;
+    this.hq = this.tHq;
   }
   setCenter(m: CenterMode) {
     this.center = m;
@@ -195,7 +243,7 @@ export class PlayerCore {
   seek(frame: number) {
     const f = Math.min(Math.max(0, frame), Math.max(0, this.length - 1));
     if (!this.active) return this.reposition(f);
-    this.pending = () => this.reposition(f);
+    this.pendSeek = f;
     this.fadeDir = -1;
   }
   /** Posición de origen (muestras) de lo que se está oyendo. */
@@ -226,12 +274,6 @@ export class PlayerCore {
     if (q < 0) q += this.L;
     return this.loopS + q;
   }
-  private modeChanged(wasDirect: boolean, pos: number) {
-    if (wasDirect === this.direct()) return;
-    if (!this.active) return this.reposition(pos);
-    this.pending = () => this.reposition(pos);
-    this.fadeDir = -1;
-  }
   private reposition(f: number) {
     this.a = this.looping ? this.wrap(f) : Math.min(Math.max(0, f), this.length);
     if (this.direct()) this.a = Math.round(this.a);
@@ -246,6 +288,9 @@ export class PlayerCore {
     this.havePrev = false;
     this.srcDone = false;
     this.gapMarks = [];
+    this.pv.reset();
+    this.warm = 2;
+    this.priming = true;
   }
 
   /** Muestra del dominio de reproducción: del archivo, o circular con empalme si hay loop. */
@@ -267,8 +312,82 @@ export class PlayerCore {
     else for (let i = 0; i < n; i++) dst[i] = 0.5 * (this.at(0, u0 + i) + this.at(1, u0 + i));
   }
 
-  /** Genera un cuadro WSOLA y agrega Hs muestras terminadas a la cola. */
+  /** Copia a la cola el salto que el vocoder acaba de terminar. `fade`: con caída (final antes de un silencio). */
+  private pushPv(fade = false) {
+    for (let c = 0; c < 2; c++) {
+      const src = this.pv.out[c];
+      const f = this.fifo[c];
+      if (fade) for (let i = 0; i < PV_HOP; i++) f[(this.fifoEnd + i) & MASK] = src[i] * (0.5 + 0.5 * Math.cos((Math.PI * i) / PV_HOP));
+      else for (let i = 0; i < PV_HOP; i++) f[(this.fifoEnd + i) & MASK] = src[i];
+    }
+    this.fifoEnd += PV_HOP;
+  }
+
+  /**
+   * Vocoder de fase: avanza una etapa del cuadro en curso (o lo empieza). Devuelve true si terminó un cuadro.
+   * `a` es la posición que se oye al comienzo del salto; como lo que suena en cada instante lo dominan los dos
+   * cuadros anteriores, el cuadro se toma `2 × salto × (1 − tempo)` antes. Al arrancar se calculan primero esos
+   * dos cuadros anteriores (sin sacarlos): así el sonido empieza justo en el punto pedido y a la velocidad pedida.
+   * Mientras tanto sale silencio (unos 20 ms), en lugar de calcular todo de golpe en un solo bloque.
+   */
+  private stepPv(): boolean {
+    const pv = this.pv;
+    const t = this.tempo();
+    if (!pv.busy) pv.start(this.a - 2 * PV_HOP * (1 - t) - this.warm * PV_HOP * t, t);
+    if (!pv.step()) return false;
+    if (this.warm > 0) {
+      // cuadro de arranque: no se saca
+      pv.force(PV_HOP * t);
+      this.warm--;
+      return false;
+    }
+    if (this.priming) {
+      // el fundido de entrada empieza con el primer sonido, no durante el silencio de arranque
+      this.priming = false;
+      if (this.fadeDir >= 0 && this.wantPlay) {
+        this.fade = 0;
+        this.fadeDir = 1;
+      }
+    }
+    this.anchorIdx[this.frames & 63] = this.fifoEnd;
+    this.anchorA[this.frames & 63] = pv.anchor;
+    this.anchorT[this.frames & 63] = t;
+    this.pushPv();
+    this.frames++;
+    this.havePrev = true;
+    this.a += pv.hop;
+    if (this.looping) {
+      while (this.a >= this.loopE) {
+        this.a -= this.L;
+        pv.shift(-this.L);
+        this.loops++;
+        if (this.gap > 0) {
+          // final del tramo con caída, silencio y arranque limpio
+          pv.tail();
+          this.pushPv(true);
+          this.gapMarks.push(this.fifoEnd);
+          pv.reset();
+          this.warm = 2;
+          this.priming = true;
+        }
+      }
+    } else if (this.a >= this.length) {
+      this.srcDone = true;
+      for (let k = 0; k < 3; k++) {
+        pv.tail();
+        this.pushPv();
+      }
+    }
+    return true;
+  }
+
+  /** Genera un cuadro y agrega un salto de muestras terminadas a la cola. */
   private produce() {
+    if (this.hq) {
+      this.syncFrames++;
+      while (!this.stepPv());
+      return;
+    }
     const t = this.tempo();
     let nominal = this.a;
     let start = Math.round(nominal);
@@ -372,6 +491,12 @@ export class PlayerCore {
       out.r = 0;
       return true;
     }
+    // arrancando el vocoder: silencio hasta que esté listo el primer salto (se calcula por etapas en process)
+    if (this.hq && this.priming && !this.srcDone && this.fifoEnd - this.readPos < 4 && !this.gapMarks.length) {
+      out.l = 0;
+      out.r = 0;
+      return true;
+    }
     // asegura muestras suficientes para interpolar
     let guard = 0;
     while (!this.srcDone && this.fifoEnd - this.readPos < 4 && guard++ < 64) this.produce();
@@ -428,6 +553,14 @@ export class PlayerCore {
   /** Llena un bloque de salida (estéreo). */
   process(L: Float32Array, R: Float32Array) {
     const n = L.length;
+    // el cuadro siguiente del vocoder se adelanta de a una etapa por bloque, para no cargar todo el costo en uno solo
+    if (this.hq && this.active && !this.direct() && !this.srcDone) {
+      const ahead = this.fifoEnd - this.readPos;
+      if (ahead < 2 * PV_HOP) {
+        const steps = this.priming ? 3 : ahead < PV_HOP ? 2 : 1;
+        for (let k = 0; k < steps; k++) if (this.stepPv()) break;
+      }
+    }
     this.scheduleClicks(n);
     let qi = 0;
     this.clickQ.sort((a, b) => a.j - b.j);
@@ -441,9 +574,13 @@ export class PlayerCore {
         this.fade -= 1 / FADE;
         if (this.fade <= 0) {
           this.fade = 0;
-          const p = this.pending;
-          this.pending = null;
-          p?.();
+          if (this.pendMode || this.pendSeek !== null) {
+            const pos = this.pendSeek ?? this.getPosition();
+            if (this.pendMode) this.applyTarget();
+            this.pendMode = false;
+            this.pendSeek = null;
+            this.reposition(pos);
+          }
           if (this.wantPlay) this.fadeDir = 1;
           else {
             this.fadeDir = 0;
@@ -483,6 +620,13 @@ export class PlayerCore {
         r = this.nch === 1 ? l : this.sample.r;
         if (this.nch === 1) r = l;
       } else if (this.srcDone) this.finish();
+      // El vocoder cambia la relación de fases entre parciales: en discos masterizados "al tope" los picos pueden
+      // pasar el máximo. Un limitador (baja al instante y se recupera despacio, en ~0,3 s, para no "bombear") evita que la salida recorte.
+      const top = Math.max(Math.abs(l), Math.abs(r)) * this.limit;
+      if (top > LIMIT) this.limit *= LIMIT / top;
+      else if (this.limit < 1) this.limit = Math.min(1, this.limit + (1 - this.limit) * this.limitRel);
+      l *= this.limit;
+      r *= this.limit;
       if (this.center === 1) l = r = 0.5 * (l - r);
       else if (this.center === 2) l = r = 0.5 * (l + r);
       while (qi < this.clickQ.length && this.clickQ[qi].j <= i) {

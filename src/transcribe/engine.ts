@@ -45,6 +45,8 @@ export interface PlayerEngine {
   setFilters(f: Filters): void;
   /** Click de metrónomo alineado con el audio (null lo apaga). Sólo con el motor preciso. */
   setClick(c: ClickOpts | null): void;
+  /** Estiramiento de alta calidad (true, por defecto) o liviano, para aparatos lentos. Sólo con el motor preciso. */
+  setQuality(high: boolean): void;
   on(ev: EngineEvent, fn: (arg?: number | string) => void): () => void;
   dispose(): void;
 }
@@ -252,6 +254,9 @@ export class BufferEngine extends Emitter implements PlayerEngine {
   setClick(c: ClickOpts | null) {
     this.post({ type: 'click', click: c });
   }
+  setQuality(high: boolean) {
+    this.post({ type: 'quality', high });
+  }
   dispose() {
     this.isPlaying = false;
     try {
@@ -363,6 +368,9 @@ export class MediaEngine extends Emitter implements PlayerEngine {
     /* no disponible en este modo */
   }
   setClick() {
+    /* no disponible en este modo */
+  }
+  setQuality() {
     /* no disponible en este modo */
   }
   dispose() {
