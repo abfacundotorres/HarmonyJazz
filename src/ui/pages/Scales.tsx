@@ -8,7 +8,7 @@ import { SCALES } from '../../theory/scales';
 import { midi } from '../../theory/notes';
 import { KeySelect } from '../components/KeySelect';
 import { Notation } from '../components/Notation';
-import { useMastery, useReading, useRoute } from '../hooks';
+import { useMark, useMastery, useReading, useRoute } from '../hooks';
 
 const MIN_BPM = 40;
 const MAX_BPM = 200;
@@ -38,7 +38,8 @@ function TempoInput({ value, onCommit }: { value: number; onCommit: (v: number) 
 /** Estudio guiado de escalas: una escala por vez, en una tonalidad, siguiendo un camino de patrones con tempo. */
 export function Scales() {
   const { iv, view, keyLabel } = useReading();
-  const [mastery, setMastery] = useMastery();
+  const [mastery] = useMastery();
+  const markDone = useMark();
   // el enlace del plan del día llega con ?e=escala&p=patrón&k=tonalidad
   const { query } = useRoute();
   const q = useMemo(() => {
@@ -118,7 +119,7 @@ export function Scales() {
   };
   /** Con el tempo subiendo solo, se marca el tempo al que se llegó. */
   const shownTempo = live?.tempo ?? tempo;
-  const markAt = (bpm: number) => setMastery((m) => ({ ...m, [masteryId(scaleId, step.id)]: { ...(m[masteryId(scaleId, step.id)] ?? {}), [key]: Math.max(bpm, m[masteryId(scaleId, step.id)]?.[key] ?? 0) } }));
+  const markAt = (bpm: number) => markDone(masteryId(scaleId, step.id), key, bpm);
   const today = () => {
     const s = suggest(mastery, localDayNumber());
     const g = SCALE_GROUPS.find((x) => x.scales.includes(s.scale))!;

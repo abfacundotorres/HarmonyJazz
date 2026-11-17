@@ -56,6 +56,24 @@ export const sanitizeMastery: Sanitizer = (raw) => {
   return out;
 };
 
+/** Cuándo se marcó cada ejercicio y tonalidad (para el repaso espaciado). */
+export const sanitizeSeen: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, Record<string, { d: number; n: number }>> = {};
+  for (const [id, v] of Object.entries(raw).slice(0, 3000)) {
+    if (id.length > 80 || !isObj(v)) continue;
+    const keys: Record<string, { d: number; n: number }> = {};
+    for (const [k, e] of Object.entries(v).slice(0, 40)) {
+      if (k.length > 12 || !isObj(e)) continue;
+      const d = num(e.d, 0, 100000);
+      const n = num(e.n, 1, 1000);
+      if (d !== undefined && n !== undefined) keys[k] = { d: Math.round(d), n: Math.round(n) };
+    }
+    if (Object.keys(keys).length) out[id] = keys;
+  }
+  return out;
+};
+
 /** Listas de objetos (temas, frases): se descarta lo que no sea objeto; cada elemento se valida después al usarlo. */
 const listOf = (field: string, max: number): Sanitizer => (raw) => {
   if (!isObj(raw) || !Array.isArray(raw[field])) return null;
@@ -76,6 +94,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
   mastery: sanitizeMastery,
+  seen: sanitizeSeen,
   library: sanitizeLibrary,
   phrases: sanitizePhrases,
   atril: sanitizeAtril,

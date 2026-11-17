@@ -6,6 +6,7 @@ import { Today } from './pages/Today';
 
 // Cada pantalla viaja en su propio archivo: Hoy abre sin esperar al motor de audio ni a las partituras.
 const PAGES = {
+  progreso: () => import('./pages/Progress').then((m) => ({ default: m.Progress })),
   playalong: () => import('./pages/PlayAlong').then((m) => ({ default: m.PlayAlong })),
   lecciones: () => import('./pages/Lessons').then((m) => ({ default: m.Lessons })),
   escalas: () => import('./pages/Scales').then((m) => ({ default: m.Scales })),
@@ -14,6 +15,7 @@ const PAGES = {
   escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
 };
+const Progress = lazy(PAGES.progreso);
 const PlayAlong = lazy(PAGES.playalong);
 const Lessons = lazy(PAGES.lecciones);
 const Scales = lazy(PAGES.escalas);
@@ -24,6 +26,7 @@ const Credits = lazy(PAGES.creditos);
 
 const NAV = [
   ['hoy', 'Hoy'],
+  ['progreso', 'Progreso'],
   ['playalong', 'Play-along'],
   ['lecciones', 'Lecciones'],
   ['escalas', 'Escalas'],
@@ -122,6 +125,7 @@ export function App() {
         <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : (NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz')}</h1>
         <Suspense fallback={<p className="muted" role="status">Cargando…</p>}>
           {page === 'hoy' && <Today />}
+          {page === 'progreso' && <Progress />}
           {page === 'playalong' && <PlayAlong />}
           {page === 'lecciones' && <Lessons />}
           {page === 'escalas' && <Scales />}
