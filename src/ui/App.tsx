@@ -16,6 +16,7 @@ const PAGES = {
   escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
   mas: () => import('./pages/More').then((m) => ({ default: m.More })),
+  mes: () => import('./pages/Month').then((m) => ({ default: m.Month })),
 };
 const Progress = lazy(PAGES.progreso);
 const PlayAlong = lazy(PAGES.playalong);
@@ -26,6 +27,7 @@ const Transcribe = lazy(PAGES.transcribir);
 const Listen = lazy(PAGES.escucha);
 const Credits = lazy(PAGES.creditos);
 const More = lazy(PAGES.mas);
+const Month = lazy(PAGES.mes);
 
 
 
@@ -133,6 +135,7 @@ export function App() {
         <Suspense fallback={<p className="muted" role="status">Cargando…</p>}>
           {page === 'hoy' && <Today />}
           {page === 'progreso' && <Progress />}
+          {page === 'mes' && <Month />}
           {page === 'playalong' && <PlayAlong />}
           {page === 'lecciones' && <Lessons />}
           {page === 'escalas' && <Scales />}

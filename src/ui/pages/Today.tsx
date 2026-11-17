@@ -9,7 +9,9 @@ import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
-import { useLog, useMastery, useReading, useSeen, useSettings } from '../hooks';
+import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings } from '../hooks';
+import { buildMonthPlan, monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
+import { focusById } from '../../content/focus';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
 function useToday(): Date {
@@ -83,7 +85,16 @@ export function Today() {
   const [mastery] = useMastery();
   const [seen] = useSeen();
   const scale = useMemo(() => suggest(mastery, localDayNumber(today)), [mastery, today]);
-  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale), [today, settings.minutes, settings.focusLesson, pl, scale]);
+  // plan del mes (focos elegidos) si lo hay; si no, el plan de rotación de siempre
+  const [mp] = useMonth();
+  const [lib] = usePersistentLibrary();
+  const tunes = useMemo(() => phraseNames(lib.tunes as unknown[] | undefined), [lib]);
+  const monthOn = monthActive(mp, today, tunes);
+  const session = useMemo(() => sessionNumber(log, mp.startDay, dayNum(today)), [log, mp.startDay, today]);
+  const plan = useMemo(
+    () => (monthOn ? buildMonthPlan(today, settings.minutes, mp, session, repertoireName(mp.rep, tunes)!) : buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale)),
+    [monthOn, today, settings.minutes, settings.focusLesson, pl, scale, mp, session, tunes],
+  );
   const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
   const day = log[plan.date] ?? { done: [], minutes: 0 };
   const total = plan.blocks.reduce((s, b) => s + b.minutes, 0);
@@ -107,16 +118,41 @@ export function Today() {
           <a className="button" href="#/mas">Ir a la copia</a>
         </p>
       )}
+      {monthOn ? (
+        <p className="notice monthbar" role="status">
+          <span>
+            <b>{monthName(mp.month)}:</b> {focusById(mp.tech)?.title} · {focusById(mp.lang)?.title} · {repertoireName(mp.rep, tunes)}
+          </span>
+          <a href="#/mes">Ver mi mes</a>
+        </p>
+      ) : (
+        <p className="notice monthbar" role="status">
+          <span>
+            {mp.month !== '' && mp.month !== monthOf(today)
+              ? 'Empezó un mes nuevo: elegí tus focos (o seguí con los de antes).'
+              : 'Elegí pocos focos para el mes y trabajalos a fondo: técnica, lenguaje y un tema.'}
+          </span>
+          <a className="button" href="#/mes">Elegir los focos del mes</a>
+        </p>
+      )}
       <section className="card hero">
         <div>
           <span className="lbl">Tonalidad del día</span>
           <div className="big">{keyLabel(plan.key)}</div>
           <span className="muted small">{view === 'Bb' ? `concierto ${plan.key}` : ''}</span>
         </div>
-        <div>
-          <span className="lbl">Tema de la semana</span>
-          <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>
-        </div>
+        {monthOn && plan.month ? (
+          <div>
+            <span className="lbl">Tu mes</span>
+            <div className="mid">Semana {plan.month.week + 1} de 4</div>
+            <span className="muted small">sesión {plan.month.session}</span>
+          </div>
+        ) : (
+          <div>
+            <span className="lbl">Tema de la semana</span>
+            <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>
+          </div>
+        )}
         <div>
           <span className="lbl">Racha</span>
           <div className="big">{s}</div>

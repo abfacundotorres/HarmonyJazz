@@ -3,6 +3,7 @@
  * de seguridad ajena o estar dañado: nada de eso debe dejar la app en blanco. Cada validador devuelve el dato limpio
  * (con sólo lo válido) o null si no sirve y hay que descartarlo.
  */
+import { FOCI } from '../content/focus';
 import { THEME_IDS } from '../ui/themes';
 
 export type Sanitizer = (raw: unknown) => unknown;
@@ -74,6 +75,22 @@ export const sanitizeSeen: Sanitizer = (raw) => {
   return out;
 };
 
+/** El plan del mes (focos elegidos). */
+export const sanitizeMonth: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, unknown> = {};
+  const m = str(raw.month, 7);
+  if (m && /^\d{4}-\d{2}$/.test(m)) out.month = m;
+  const ids = new Set(FOCI.map((f) => f.id));
+  if (typeof raw.tech === 'string' && ids.has(raw.tech)) out.tech = raw.tech;
+  if (typeof raw.lang === 'string' && ids.has(raw.lang)) out.lang = raw.lang;
+  const rep = str(raw.rep, 80);
+  if (rep !== undefined) out.rep = rep;
+  const day = num(raw.startDay, 0, 100000);
+  if (day !== undefined) out.startDay = Math.round(day);
+  return out;
+};
+
 /** Listas de objetos (temas, frases): se descarta lo que no sea objeto; cada elemento se valida después al usarlo. */
 const listOf = (field: string, max: number): Sanitizer => (raw) => {
   if (!isObj(raw) || !Array.isArray(raw[field])) return null;
@@ -95,6 +112,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   log: sanitizeLog,
   mastery: sanitizeMastery,
   seen: sanitizeSeen,
+  month: sanitizeMonth,
   library: sanitizeLibrary,
   phrases: sanitizePhrases,
   atril: sanitizeAtril,

@@ -19,12 +19,14 @@ export interface PlanBlock {
 
 export interface DailyPlan {
   date: string;
+  /** Si el plan es el del mes: en qué semana y sesión va. */
+  month?: { week: number; session: number };
   /** Tonalidad del día (concierto). */
   key: string;
   blocks: PlanBlock[];
 }
 
-const dayNumber = (d: Date) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+export const dayNumber = (d: Date) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
 export const isoDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -40,7 +42,7 @@ export function tuneOfWeek(d: Date) {
   return TUNES[Math.floor(dayNumber(d) / 7) % TUNES.length];
 }
 
-const WARMUPS: PlanItem[][] = [
+export const WARMUPS: PlanItem[][] = [
   [P.BUZZ_GLISSANDO, P.LONG_TONES_DYNAMICS, P.LIP_SLURS_POSITIONS],
   [P.LONG_TONES_LOW, P.FLEX_HARMONICS, P.LIP_BENDING],
   [P.BUZZ_PHRASE, P.LONG_TONES_FOURTHS, P.LIP_SLURS_TRIPLETS],
@@ -148,9 +150,16 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
       ],
     },
   ];
-  // el redondeo de a 5 puede dejar el total lejos de lo pedido: se le saca al bloque que más se pasó de su parte
-  // (o se le da al que más le falta), de a 5 minutos si se puede y si no de a uno, sin bajar de 3
-  const share = (b: PlanBlock) => totalMinutes * w[b.id as keyof typeof w];
+  fitMinutes(blocks, totalMinutes, (b) => totalMinutes * w[b.id as keyof typeof w]);
+  return { date: isoDate(d), key, blocks };
+}
+
+/**
+ * Ajusta los minutos de los bloques para que sumen exactamente la duración elegida: el redondeo de a 5 puede dejar el
+ * total lejos de lo pedido, así que se le saca al bloque que más se pasó de su parte (o se le da al que más le falta),
+ * de a 5 minutos si se puede y si no de a uno, sin bajar de 3.
+ */
+export function fitMinutes(blocks: PlanBlock[], totalMinutes: number, share: (b: PlanBlock) => number) {
   for (let diff = totalMinutes - blocks.reduce((sum, b) => sum + b.minutes, 0), guard = 0; diff !== 0 && guard < 60; guard++) {
     const sign = Math.sign(diff);
     const by5 = Math.abs(diff) >= 5 ? blocks.filter((b) => sign > 0 || b.minutes >= 10) : [];
@@ -160,5 +169,4 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
     pool.reduce((a, b) => (sign * (share(b) - b.minutes) > sign * (share(a) - a.minutes) ? b : a)).minutes += sign * step;
     diff -= sign * step;
   }
-  return { date: isoDate(d), key, blocks };
 }

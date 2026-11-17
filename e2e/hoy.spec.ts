@@ -66,21 +66,21 @@ test.describe('Hoy', () => {
       localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'scale:ionian:octave': { C: 80 } }));
     });
     await page.goto('/#/hoy');
-    await expect(page.locator('.notice')).toContainText('Todavía no hiciste ninguna copia');
-    await page.locator('.notice').getByRole('link', { name: 'Ir a la copia' }).click();
+    await expect(page.locator('.notice:not(.monthbar)')).toContainText('Todavía no hiciste ninguna copia');
+    await page.locator('.notice:not(.monthbar)').getByRole('link', { name: 'Ir a la copia' }).click();
     await expect(page).toHaveURL(/#\/mas/);
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Guardar copia' }).click();
     await download;
     await page.goto('/#/hoy');
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
-    await expect(page.locator('.notice')).toHaveCount(0);
+    await expect(page.locator('.notice:not(.monthbar)')).toHaveCount(0);
   });
 
   test('sin datos propios no hay aviso de copia', async ({ page }) => {
     await page.goto('/#/hoy');
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
-    await expect(page.locator('.notice')).toHaveCount(0);
+    await expect(page.locator('.notice:not(.monthbar)')).toHaveCount(0);
   });
 
   test('leyendo en Si♭, los nombres de las progresiones de la app también están en Si♭; en concierto quedan como son', async ({ page }) => {
