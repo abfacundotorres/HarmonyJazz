@@ -3,9 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Gate } from './ui/components/Gate';
+import { DEFAULT_SETTINGS, load } from './state/storage';
+import { applyTheme } from './ui/themes';
 import '@fontsource/dm-serif-display/latin-400.css';
 import '@fontsource/dm-serif-display/latin-400-italic.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/libre-baskerville/latin-400.css';
 import './styles.css';
+
+// el tema elegido se aplica antes de dibujar, para que no parpadee el de por defecto
+applyTheme(load('settings', DEFAULT_SETTINGS).theme);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

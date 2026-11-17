@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { stopAll } from '../audio/stopAll';
+import { applyTheme } from './themes';
 import { useRoute, useSettings } from './hooks';
 import { Today } from './pages/Today';
 
@@ -47,6 +48,16 @@ export function App() {
       window.removeEventListener('hj-save-failed', g);
     };
   }, []);
+
+  // tema elegido; en automático, también cuando el celular cambia entre claro y oscuro
+  useEffect(() => {
+    applyTheme(settings.theme);
+    if (settings.theme !== 'auto' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const f = () => applyTheme('auto');
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, [settings.theme]);
 
   // al cambiar de pantalla, cortar el audio
   const sub = path[1];

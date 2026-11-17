@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { ThemeId } from '../ui/themes';
 import { sanitizeKey } from './sanitize';
 
 const PREFIX = 'harmonyjazz:';
@@ -68,9 +69,11 @@ export interface Settings {
   output: 'auto' | 'phone' | 'normal';
   /** Cifrado en la grilla: estilo iReal Pro (Δ7, -7, ø7) o completo (maj7, m7, m7♭5). */
   chordStyle: 'ireal' | 'full';
+  /** Tema visual ('auto' = claro u oscuro según el celular). */
+  theme: ThemeId;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal' };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto' };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {
