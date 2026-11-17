@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Position } from '../../audio/engine';
+import { beatsPerBar } from '../../theory/chart';
 import type { Chord } from '../../theory/chords';
 import type { Chart } from '../../theory/chart';
 import { usePersistent } from '../../state/storage';
@@ -82,7 +83,7 @@ export function Atril({
         <div className="atril-sym">{chord ? <ChordText chord={chord} /> : '—'}</div>
         <div className="atril-side">
           <div className="atril-beats" aria-hidden>
-            {[0, 1, 2, 3].map((b) => (
+            {Array.from({ length: beatsPerBar(chart) }, (_, b) => (
               <i key={b} className={b === beat ? 'on' : ''} />
             ))}
           </div>

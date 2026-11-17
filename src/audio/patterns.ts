@@ -4,7 +4,7 @@
  * reproduce. Así las reglas musicales se pueden verificar con tests.
  */
 import { qdef, Chord } from '../theory/chords';
-import { Chart, ChartChord, EIGHTHS_PER_BAR } from '../theory/chart';
+import { barLen, Chart, ChartChord, EIGHTHS_PER_BAR, type Meter } from '../theory/chart';
 import { degreePc, mod, pc } from '../theory/notes';
 import { SCALES } from '../theory/scales';
 import { buildVoicing } from '../theory/voicings';
@@ -34,6 +34,9 @@ function weighted<T>(r: Rng, items: [T, number][]): T {
   }
   return items[items.length - 1][0];
 }
+
+/** En 3/4 y 6/8 hay swing (vals y 6/8) y balada; los demás estilos de 4/4 se tocan como swing. */
+export const meterStyle = (style: Style, meter?: Meter): Style => (!meter || style === 'ballad' ? style : 'swing');
 
 // ---------- swing ----------
 
@@ -175,6 +178,7 @@ export function walkBar(chord: Chord, next: Chord, prev: number, r: Rng): [numbe
 }
 
 export function bassLine(chart: Chart, style: Style, r: Rng, prev: number): { hits: BassHit[]; last: number } {
+  if (chart.meter) return bassLineMeter(chart, meterStyle(style, chart.meter), r, prev);
   const hits: BassHit[] = [];
   const chords = chart.chords;
   let last = prev;
@@ -271,6 +275,7 @@ export interface CompState {
 export const newCompState = (): CompState => ({ voicing: null, lastCell: null, repeats: 0 });
 
 export function compLine(chart: Chart, style: Style, r: Rng, chorus: number, st: CompState): CompHit[] {
+  if (chart.meter) return compLineMeter(chart, meterStyle(style, chart.meter), r, chorus, st);
   const hits: CompHit[] = [];
   const intensity = 0.85 + 0.15 * Math.min(chorus, 3) / 3;
   chart.chords.forEach((cc: ChartChord, idx: number) => {
@@ -345,6 +350,7 @@ export function fillProbability(bar: number, bars: number): number {
 }
 
 export function drumLine(chart: Chart, style: Style, r: Rng, chorus: number): DrumHit[] {
+  if (chart.meter) return drumLineMeter(chart, meterStyle(style, chart.meter), r, chorus);
   const hits: DrumHit[] = [];
   const intensity = 0.88 + 0.12 * Math.min(chorus, 3) / 3;
   const add = (voice: DrumVoice, e: number, vel: number) => hits.push({ voice, e, vel: Math.max(0.04, Math.min(1, vel * intensity)) });
@@ -417,6 +423,155 @@ export function drumLine(chart: Chart, style: Style, r: Rng, chorus: number): Dr
       add('ghost', e0 + 6, between(r, 0.3, 0.4));
       add('snare', e0 + 7, between(r, 0.55, 0.68));
       add('kick', e0 + 6, between(r, 0.4, 0.5));
+    }
+  }
+  return hits;
+}
+
+// ---------- 3/4 y 6/8 ----------
+// Cada compás tiene 6 corcheas. En 3/4 el pulso es la negra (3 pulsos); en 6/8 es la negra con puntillo (2 pulsos de 3 corcheas).
+
+/** Bajo: en 3/4 camina de a tres (fundamental, nota del acorde, aproximación); en 6/8 alterna fundamental y quinta. */
+function bassLineMeter(chart: Chart, style: Style, r: Rng, prev: number): { hits: BassHit[]; last: number } {
+  const hits: BassHit[] = [];
+  const chords = chart.chords;
+  const bl = barLen(chart);
+  const waltz = chart.meter === '3/4';
+  let last = prev;
+  chords.forEach((cc, i) => {
+    const nextCc = chords[(i + 1) % chords.length];
+    const c = chordPcs(cc.chord);
+    const n = chordPcs(nextCc.chord);
+    const full = cc.dur >= bl;
+    if (style === 'ballad') {
+      const root = nearest(inRange([c.root]), last);
+      hits.push({ e: cc.start, dur: cc.dur * 0.95, midi: root, vel: 0.85 });
+      last = root;
+      return;
+    }
+    if (waltz) {
+      if (full) {
+        const [b1, , b3, b4] = walkBar(cc.chord, nextCc.chord, last, r);
+        [b1, b3, b4].forEach((m, k) => hits.push({ e: cc.start + k * 2, dur: 1.85, midi: m, vel: k === 0 ? between(r, 0.88, 0.98) : between(r, 0.7, 0.82) }));
+        last = b4;
+      } else if (cc.dur >= 4) {
+        const root = pickRoot(c.root, n.root, last);
+        const nextRoot = pickNext(n.root, root);
+        const cands = [nextRoot - 1, nextRoot + 1].filter((m) => m >= BASS_LOW && m <= BASS_HIGH && m !== root);
+        const ap = cands.length ? weighted(r, cands.map((m): [number, number] => [m, 1])) : nextRoot;
+        hits.push({ e: cc.start, dur: 1.85, midi: root, vel: between(r, 0.88, 0.98) }, { e: cc.start + 2, dur: 1.85, midi: ap, vel: between(r, 0.7, 0.82) });
+        last = ap;
+      } else {
+        const root = nearest(inRange([c.root]), last);
+        hits.push({ e: cc.start, dur: 1.85, midi: root, vel: 0.9 });
+        last = root;
+      }
+      return;
+    }
+    // 6/8: fundamental en el primer pulso, quinta en el segundo
+    const root = pickRoot(c.root, n.root, last);
+    if (full) {
+      const fifth = nearest(inRange([mod(c.root + 7, 12)]), root + 4);
+      hits.push({ e: cc.start, dur: 2.7, midi: root, vel: between(r, 0.88, 0.98) }, { e: cc.start + 3, dur: 2.7, midi: fifth, vel: between(r, 0.72, 0.84) });
+      last = fifth;
+    } else {
+      hits.push({ e: cc.start, dur: Math.max(1.5, cc.dur * 0.9), midi: root, vel: 0.9 });
+      last = root;
+    }
+  });
+  return { hits, last };
+}
+
+/** Células de piano de un compás completo, [posición, duración] en corcheas. */
+const WALTZ_CELLS: Record<string, [number, number][]> = {
+  waltz: [[2, 2], [4, 2]], // el "pum-ta-ta" del vals
+  beatTwo: [[2, 2]],
+  andOfTwo: [[3, 1], [4, 2]],
+  oneThree: [[0, 2], [4, 2]],
+};
+const WALTZ_WEIGHTS: [string, number][] = [['waltz', 4], ['beatTwo', 1.5], ['andOfTwo', 1.5], ['oneThree', 1]];
+const COMPOUND_CELLS: Record<string, [number, number][]> = {
+  pulseTwo: [[3, 2]],
+  oneTwo: [[0, 1], [3, 2]],
+  synco: [[2, 1], [3, 1], [5, 1]],
+  offbeats: [[1, 1], [3, 1], [4, 1]],
+};
+const COMPOUND_WEIGHTS: [string, number][] = [['pulseTwo', 2], ['oneTwo', 2], ['synco', 1.5], ['offbeats', 1]];
+
+function compLineMeter(chart: Chart, style: Style, r: Rng, chorus: number, st: CompState): CompHit[] {
+  const hits: CompHit[] = [];
+  const bl = barLen(chart);
+  const waltz = chart.meter === '3/4';
+  const cells = waltz ? WALTZ_CELLS : COMPOUND_CELLS;
+  const weights = waltz ? WALTZ_WEIGHTS : COMPOUND_WEIGHTS;
+  const intensity = 0.85 + (0.15 * Math.min(chorus, 3)) / 3;
+  chart.chords.forEach((cc: ChartChord) => {
+    const v = buildVoicing(cc.chord, st.voicing, 52, 64);
+    st.voicing = v;
+    const push = (e: number, dur: number, vel: number) => hits.push({ e: cc.start + e, dur, midis: v, vel: Math.min(1, vel * intensity) });
+    if (style === 'ballad') {
+      push(0, cc.dur * 0.97, between(r, 0.3, 0.4));
+      return;
+    }
+    if (cc.dur >= bl) {
+      let name = weighted(r, weights);
+      if (name === st.lastCell && st.repeats >= 2) name = weighted(r, weights.filter(([k]) => k !== st.lastCell));
+      st.repeats = name === st.lastCell ? st.repeats + 1 : 1;
+      st.lastCell = name;
+      cells[name].forEach(([e, d]) => push(e, d * 0.6, between(r, 0.4, 0.56)));
+    } else push(0, Math.max(1, cc.dur * 0.55), between(r, 0.4, 0.5));
+  });
+  return hits;
+}
+
+/** Batería: ride de vals (1, 2, "y" de 2, 3) en 3/4 y de 6/8 (0, 2, 3, 5) en dos pulsos; el pedal marca el segundo pulso. */
+function drumLineMeter(chart: Chart, style: Style, r: Rng, chorus: number): DrumHit[] {
+  const hits: DrumHit[] = [];
+  const bl = barLen(chart);
+  const waltz = chart.meter === '3/4';
+  const intensity = 0.88 + (0.12 * Math.min(chorus, 3)) / 3;
+  const add = (voice: DrumVoice, e: number, vel: number) => hits.push({ voice, e, vel: Math.max(0.04, Math.min(1, vel * intensity)) });
+  for (let b = 0; b < chart.bars; b++) {
+    const e0 = b * bl;
+    const fillP = fillProbability(b, chart.bars);
+    if (style === 'ballad') {
+      for (const k of waltz ? [0, 2, 4] : [0, 3]) add('ride', e0 + k, between(r, 0.28, 0.36));
+      add('ride', e0 + (waltz ? 3 : 5), between(r, 0.16, 0.22));
+      add('chick', e0 + (waltz ? 4 : 3), between(r, 0.3, 0.38));
+      add('kick', e0, between(r, 0.08, 0.14));
+      if (r() < 0.3) add('ghost', e0 + weighted(r, waltz ? ([[1, 1], [3, 1], [5, 1]] as [number, number][]) : ([[2, 1], [4, 1], [5, 1]] as [number, number][])), between(r, 0.12, 0.2));
+      continue;
+    }
+    if (waltz) {
+      for (const [k, v] of [[0, 0.56], [2, 0.62], [4, 0.6]] as const) add('ride', e0 + k, between(r, v - 0.08, v + 0.04));
+      if (r() < 0.96) add('ride', e0 + 3, between(r, 0.4, 0.52)); // el "y" de 2, el que da el swing
+      add('chick', e0 + 4, between(r, 0.5, 0.62));
+      if (r() < 0.4) add('chick', e0 + 2, between(r, 0.3, 0.4));
+      add('kick', e0, between(r, 0.14, 0.24));
+      const comment = weighted(r, [['none', 3], ['ghost', 3], ['accent', 1.5]] as [string, number][]);
+      if (comment === 'ghost') add('ghost', e0 + weighted(r, [[1, 1], [3, 1], [5, 1]] as [number, number][]), between(r, 0.2, 0.34));
+      if (comment === 'accent') {
+        add('snare', e0 + weighted(r, [[3, 2], [5, 1]] as [number, number][]), between(r, 0.38, 0.5));
+        add('kick', e0 + 4, between(r, 0.3, 0.4));
+      }
+      if (fillP > 0 && r() < fillP) {
+        add('ghost', e0 + 2, between(r, 0.3, 0.4));
+        add('snare', e0 + 3, between(r, 0.42, 0.52));
+        add('ghost', e0 + 4, between(r, 0.3, 0.4));
+        add('snare', e0 + 5, between(r, 0.55, 0.68));
+      }
+      continue;
+    }
+    // 6/8
+    for (const [k, v] of [[0, 0.6], [2, 0.44], [3, 0.58], [5, 0.44]] as const) add('ride', e0 + k, between(r, v - 0.06, v + 0.06));
+    add('chick', e0 + 3, between(r, 0.46, 0.58));
+    add('kick', e0, between(r, 0.2, 0.3));
+    add('kick', e0 + 3, between(r, 0.1, 0.18));
+    if (r() < 0.4) add('ghost', e0 + weighted(r, [[1, 1], [2, 1], [4, 1], [5, 1]] as [number, number][]), between(r, 0.18, 0.3));
+    if (fillP > 0 && r() < fillP) {
+      add('ghost', e0 + 3, between(r, 0.3, 0.4));
+      add('snare', e0 + 4, between(r, 0.42, 0.52));
+      add('snare', e0 + 5, between(r, 0.55, 0.68));
     }
   }
   return hits;

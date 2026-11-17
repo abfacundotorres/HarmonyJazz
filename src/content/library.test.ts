@@ -181,3 +181,19 @@ describe('estilo en la carga de texto', () => {
     expect(style('swing en 2')).toBe('two');
   });
 });
+
+describe('temas en 3/4 y 6/8', () => {
+  it('la carga de texto toma el compás de la línea "compás:" o del comienzo del cifrado', () => {
+    const r = parseBulk(`# Vals\ncompás: 3/4\nDm7 | G7 | Cmaj7 | Cmaj7\n\n# Seis octavos\n@6/8 Am7 | D7 | Gmaj7\n\n# Mal compás\ncompás: 5/4\nDm7 | G7`);
+    expect(r[0].error).toBeNull();
+    expect(r[0].tune!.chart).toBe('@3/4 Dm7 | G7 | Cmaj7 | Cmaj7');
+    expect(r[1].tune!.chart).toBe('@6/8 Am7 | D7 | Gmaj7');
+    expect(r[2].tune!.chart).toBe('Dm7 | G7');
+    expect(r[2].notes.join(' ')).toMatch(/No entendí el compás "5\/4"/);
+  });
+  it('un tema guardado conserva el compás y avisa si entran menos acordes de los escritos', () => {
+    const ok = validateTune({ name: 'Vals', key: 'C', chart: '@3/4 Dm7 G7 | Cmaj7', tempo: 140 });
+    expect(ok).toMatchObject({ chart: '@3/4 Dm7 G7 | Cmaj7' });
+    expect(validateTune({ name: 'Mal', key: 'C', chart: '@6/8 Dm7 G7 C7 | Cmaj7', tempo: 140 })).toMatch(/entran hasta 2/);
+  });
+});

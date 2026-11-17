@@ -4,7 +4,7 @@ import { ChartDoc, compileDoc, DocBar, docLayout, emptyBar, MAX_CHORD_CHARS, pla
 import { copyRange, pasteBars, range, removeRange, repeatRange } from '../../content/barOps';
 import { diatonic, TEMPLATES, templateBars, transposeBars } from '../../content/chartTemplates';
 import { parseChord } from '../../theory/chords';
-import { MAX_BARS, parseChart } from '../../theory/chart';
+import { MAX_BARS, maxChordsPerBar, type Meter, METERS, parseChart } from '../../theory/chart';
 import { prettyAcc as pretty } from '../../theory/notes';
 import { usePersistent } from '../../state/storage';
 import { useSettings } from '../hooks';
@@ -45,6 +45,8 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
   const [, force] = useState(0);
 
   const bars = doc.bars;
+  const maxChords = maxChordsPerBar(doc.meter);
+  const [meterNote, setMeterNote] = useState('');
 
   // ---- escuchar mientras se edita ----
   const [settings] = useSettings();
@@ -125,14 +127,14 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
   const doCopy = () => setClip(copyRange(bars, lo, hi));
   const doCut = () => {
     setClip(copyRange(bars, lo, hi, true));
-    commit({ bars: removeRange(bars, lo, hi) });
+    commit({ ...doc, bars: removeRange(bars, lo, hi) });
     setRangeMode(false);
     selectBar(Math.max(0, lo - (lo >= bars.length - count ? 1 : 0)));
   };
   const doPaste = () => {
     const r = pasteBars(bars, hi + 1, clip);
     if (!r.added) return;
-    commit({ bars: r.bars });
+    commit({ ...doc, bars: r.bars });
     setAnchor(hi + 1);
     setSel(hi + r.added);
     setRangeMode(true);
@@ -140,13 +142,13 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
   const doRepeat = () => {
     const r = repeatRange(bars, lo, hi);
     if (!r.added) return;
-    commit({ bars: r.bars });
+    commit({ ...doc, bars: r.bars });
     setAnchor(hi + 1);
     setSel(hi + r.added);
     setRangeMode(true);
   };
   const doDelete = () => {
-    commit({ bars: removeRange(bars, lo, hi) });
+    commit({ ...doc, bars: removeRange(bars, lo, hi) });
     setRangeMode(false);
     selectBar(Math.max(0, Math.min(lo, bars.length - count - 1)));
   };
@@ -176,14 +178,14 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
   const patchBar = (i: number, patch: Partial<DocBar>) => {
     const next = bars.map((b, k) => (k === i ? { ...b, ...patch } : b));
     // los campos opcionales en false/undefined se quitan para que el documento quede limpio
-    commit({ bars: next.map((b) => JSON.parse(JSON.stringify(b)) as DocBar) });
+    commit({ ...doc, bars: next.map((b) => JSON.parse(JSON.stringify(b)) as DocBar) });
   };
   const setChord = (i: number, k: number, text: string) =>
     patchBar(i, { chords: bars[i].chords.map((c, j) => (j === k ? text.slice(0, MAX_CHORD_CHARS) : c)) });
 
   const insertAt = (i: number, b: DocBar = emptyBar()) => {
     if (bars.length >= MAX_BARS) return;
-    commit({ bars: [...bars.slice(0, i), b, ...bars.slice(i)] });
+    commit({ ...doc, bars: [...bars.slice(0, i), b, ...bars.slice(i)] });
     setSel(i);
     setSlot(0);
   };
@@ -192,11 +194,11 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
     if (j < 0 || j >= bars.length) return;
     const next = bars.slice();
     [next[cur], next[j]] = [next[j], next[cur]];
-    commit({ bars: next });
+    commit({ ...doc, bars: next });
     setSel(j);
   };
   const addChord = () => {
-    if (bar.chords.length >= 4) return;
+    if (bar.chords.length >= maxChords) return;
     patchBar(cur, { chords: [...bar.chords, ''] });
     setSlot(bar.chords.length);
   };
@@ -214,13 +216,29 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
     const at = empty ? 0 : cur + 1;
     const room = MAX_BARS - base.length;
     if (room <= 0) return;
-    const use = add.slice(0, room);
-    commit({ bars: [...base.slice(0, at), ...use, ...base.slice(at)] });
+    // las plantillas están pensadas en 4/4: en 3/4 y 6/8 se recortan los acordes que no entran en el compás
+    const use = add.slice(0, room).map((b) => (b.chords.length > maxChords ? { ...b, chords: b.chords.slice(0, maxChords) } : b));
+    commit({ ...doc, bars: [...base.slice(0, at), ...use, ...base.slice(at)] });
     setSel(at);
     setSlot(0);
   };
+  /** Cambia el compás de la grilla. Si en algún compás sobran acordes (en 3/4 entran 3 y en 6/8, 2), se quitan los últimos y se avisa. */
+  const changeMeter = (m: Meter | '4/4') => {
+    const max = maxChordsPerBar(m === '4/4' ? undefined : m);
+    let dropped = 0;
+    const next: ChartDoc = {
+      bars: bars.map((b) => {
+        if (b.chords.length <= max) return b;
+        dropped += b.chords.length - max;
+        return { ...b, chords: b.chords.slice(0, max) };
+      }),
+    };
+    if (m !== '4/4') next.meter = m;
+    commit(next);
+    setMeterNote(dropped ? `${dropped === 1 ? 'Se quitó 1 acorde que no entra' : `Se quitaron ${dropped} acordes que no entran`} en ${m}. Podés deshacer.` : '');
+  };
   const setWholeChord = (sym: string) => setChord(cur, curSlot, sym);
-  const shiftAll = (semis: number) => commit({ bars: transposeBars(bars, semis) });
+  const shiftAll = (semis: number) => commit({ ...doc, bars: transposeBars(bars, semis) });
 
   const pickRoot = (r: string) => setChord(cur, curSlot, r + split(bar.chords[curSlot]).rest);
   const pickQuality = (suffix: string) => {
@@ -316,7 +334,18 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
       <div className="ced-panel card-inner">
         <p className="muted small">Compás {cur + 1}: tocá el acorde a editar, elegí raíz y calidad (o escribilo).</p>
         <div className="ced-marks">
-          <button onClick={addChord} disabled={bar.chords.length >= 4} aria-label="Agregar acorde al compás">+ acorde</button>
+          <label className="small">
+            Tipo de compás{' '}
+            <select value={doc.meter ?? '4/4'} onChange={(e) => changeMeter(e.target.value as Meter | '4/4')} aria-label="Tipo de compás">
+              {(['4/4', ...METERS] as const).map((m) => (
+                <option key={m} value={m}>{m === '3/4' ? '3/4 (vals)' : m === '6/8' ? '6/8' : '4/4'}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {meterNote && <p className="muted small" role="status">{meterNote}</p>}
+        <div className="ced-marks">
+          <button onClick={addChord} disabled={bar.chords.length >= maxChords} aria-label="Agregar acorde al compás">+ acorde</button>
           <button onClick={removeChord} disabled={bar.chords.length <= 1} aria-label="Quitar acorde del compás">− acorde</button>
           <button onClick={() => patchBar(cur, { chords: ['%'] })} disabled={cur === 0} title="Repite el compás anterior">%</button>
           <label className="small">

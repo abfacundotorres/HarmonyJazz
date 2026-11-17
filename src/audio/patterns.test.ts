@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PROGRESSIONS } from '../content/progressions';
 import { parseChart } from '../theory/chart';
 import { mod, pc } from '../theory/notes';
-import { BASS_HIGH, BASS_LOW, bassLine, chordPcs, compLine, drumLine, effectiveSwing, fillProbability, mulberry32, newCompState, walkBar } from './patterns';
+import { BASS_HIGH, BASS_LOW, bassLine, chordPcs, compLine, drumLine, effectiveSwing, fillProbability, meterStyle, mulberry32, newCompState, walkBar } from './patterns';
 import { parseChord } from '../theory/chords';
 
 const chartOf = (id: string) => parseChart(PROGRESSIONS.find((p) => p.id === id)!.chart);
@@ -286,5 +286,113 @@ describe('estilo latin', () => {
     expect(at('ride', 0)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(at('chick', 0)).toEqual([2, 6]);
     expect(hits.every((h) => h.vel > 0 && h.vel <= 1)).toBe(true);
+  });
+});
+
+describe('compases de 3/4 y 6/8', () => {
+  const waltz = parseChart('@3/4 Dm7 | G7 | Cmaj7 | Cmaj7 A7 | Dm7 G7 C7 | Cmaj7');
+  const comp68 = parseChart('@6/8 Am7 | D7 | Gmaj7 | Bm7b5 E7 | Am7');
+  const bar = (e: number, len: number) => Math.floor(e / len);
+
+  it('otros estilos de 4/4 se tocan como swing; la balada se conserva', () => {
+    expect(meterStyle('bossa', '3/4')).toBe('swing');
+    expect(meterStyle('latin', '6/8')).toBe('swing');
+    expect(meterStyle('two', '3/4')).toBe('swing');
+    expect(meterStyle('ballad', '6/8')).toBe('ballad');
+    expect(meterStyle('bossa', undefined)).toBe('bossa');
+  });
+
+  for (const [name, chart, len] of [['3/4', waltz, 6], ['6/8', comp68, 6]] as const) {
+    describe(name, () => {
+      const total = chart.bars * len;
+      for (const style of ['swing', 'ballad', 'bossa', 'latin'] as const) {
+        it(`${style}: nada cae fuera de la forma, todo está en rango y con intensidad válida`, () => {
+          for (let seed = 1; seed <= 8; seed++) {
+            const bass = bassLine(chart, style, mulberry32(seed), 40).hits;
+            expect(bass.length).toBeGreaterThanOrEqual(chart.bars);
+            for (const h of bass) {
+              expect(h.e).toBeGreaterThanOrEqual(0);
+              expect(h.e).toBeLessThan(total);
+              expect(h.dur).toBeGreaterThan(0);
+              expect(h.midi).toBeGreaterThanOrEqual(BASS_LOW);
+              expect(h.midi).toBeLessThanOrEqual(BASS_HIGH);
+              expect(h.vel).toBeGreaterThan(0);
+              expect(h.vel).toBeLessThanOrEqual(1);
+            }
+            for (const h of compLine(chart, style, mulberry32(seed), 2, newCompState())) {
+              expect(h.e).toBeGreaterThanOrEqual(0);
+              expect(h.e).toBeLessThan(total);
+              expect(h.midis.length).toBeGreaterThanOrEqual(3);
+              expect(h.vel).toBeLessThanOrEqual(1);
+            }
+            for (const h of drumLine(chart, style, mulberry32(seed), 2)) {
+              expect(h.e).toBeGreaterThanOrEqual(0);
+              expect(h.e).toBeLessThan(total);
+              expect(h.vel).toBeGreaterThan(0);
+              expect(h.vel).toBeLessThanOrEqual(1);
+            }
+          }
+        });
+      }
+    });
+  }
+
+  it('3/4 swing: el bajo camina de a tres con la fundamental en 1 y se acerca a la fundamental siguiente', () => {
+    const hits = bassLine(waltz, 'swing', mulberry32(3), 40).hits;
+    // compás 1 (Dm7, completo): tres notas en 0, 2 y 4
+    expect(hits.filter((h) => bar(h.e, 6) === 0).map((h) => h.e)).toEqual([0, 2, 4]);
+    expect(hits.find((h) => h.e === 0)!.midi % 12).toBe(2); // re
+    // la última nota se acerca (a un semitono o un tono) a la fundamental del compás siguiente (sol)
+    const approach = hits.find((h) => h.e === 4)!;
+    expect(circ(approach.midi, 7)).toBeLessThanOrEqual(2);
+    // compás de dos acordes (2+1 pulsos): fundamental y aproximación en el primero; fundamental sola en el segundo
+    expect(hits.filter((h) => bar(h.e, 6) === 3).map((h) => h.e)).toEqual([18, 20, 22]);
+    // compás de tres acordes (un pulso cada uno): un golpe por acorde
+    expect(hits.filter((h) => bar(h.e, 6) === 4).map((h) => h.e)).toEqual([24, 26, 28]);
+  });
+
+  it('6/8 swing: fundamental en el primer pulso y quinta en el segundo', () => {
+    const hits = bassLine(comp68, 'swing', mulberry32(4), 40).hits;
+    expect(hits.filter((h) => bar(h.e, 6) === 0).map((h) => h.e)).toEqual([0, 3]);
+    expect(hits.find((h) => h.e === 0)!.midi % 12).toBe(9); // la
+    expect(hits.find((h) => h.e === 3)!.midi % 12).toBe(4); // mi (la quinta de Am7)
+    // compás con dos acordes: uno por pulso
+    expect(hits.filter((h) => bar(h.e, 6) === 3).map((h) => h.e)).toEqual([18, 21]);
+  });
+
+  it('el piano del vals toca en los tiempos 2 y 3 (o una variante) y nunca en el compás entero seguido', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 30; seed++) {
+      const hits = compLine(parseChart('@3/4 Dm7 | G7 | Cmaj7 | Cmaj7'), 'swing', mulberry32(seed), 1, newCompState());
+      for (let b = 0; b < 4; b++) {
+        const pos = hits.filter((h) => bar(h.e, 6) === b).map((h) => h.e % 6);
+        expect(pos.length).toBeGreaterThanOrEqual(1);
+        expect(pos.length).toBeLessThanOrEqual(2);
+        seen.add(pos.join(','));
+      }
+    }
+    expect(seen.has('2,4')).toBe(true);
+    expect([...seen].every((x) => ['2,4', '2', '3,4', '0,4'].includes(x))).toBe(true);
+  });
+
+  it('la batería del vals lleva el ride 1, 2, "y" de 2, 3 y el pedal en el 3', () => {
+    const hits = drumLine(waltz, 'swing', mulberry32(2), 1);
+    const at = (v: string, b: number) => hits.filter((h) => h.voice === v && bar(h.e, 6) === b).map((h) => h.e % 6).sort((x, y) => x - y);
+    expect(at('ride', 1).filter((e) => e !== 3)).toEqual([0, 2, 4]);
+    expect(at('chick', 1)).toContain(4);
+    expect(at('kick', 1)).toContain(0);
+  });
+
+  it('la batería del 6/8 lleva el ride en 0, 2, 3 y 5, y el pedal en el segundo pulso', () => {
+    const hits = drumLine(comp68, 'swing', mulberry32(2), 1);
+    const at = (v: string, b: number) => hits.filter((h) => h.voice === v && bar(h.e, 6) === b).map((h) => h.e % 6).sort((x, y) => x - y);
+    expect(at('ride', 1)).toEqual([0, 2, 3, 5]);
+    expect(at('chick', 1)).toEqual([3]);
+    expect(at('kick', 1)).toEqual([0, 3]);
+  });
+
+  it('un compás de 4/4 no cambia: sigue ocupando ocho corcheas', () => {
+    const c = parseChart('Dm7 | G7');
+    expect(bassLine(c, 'swing', mulberry32(1), 40).hits.map((h) => h.e)).toEqual([0, 2, 4, 6, 8, 10, 12, 14]);
   });
 });

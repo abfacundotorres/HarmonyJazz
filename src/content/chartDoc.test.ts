@@ -123,3 +123,30 @@ describe('docLayout', () => {
     expect(docLayout({ bars: [b('Xx')] })).toBeNull();
   });
 });
+
+describe('grilla en 3/4 y 6/8', () => {
+  it('el compás se conserva al leer el texto, al compilar y al validar', () => {
+    const doc = docFromChart('@3/4 Dm7 G7 | Cmaj7');
+    expect(doc.meter).toBe('3/4');
+    expect(doc.bars.map((b) => b.chords)).toEqual([['Dm7', 'G7'], ['Cmaj7']]);
+    expect(compileDoc(doc)).toBe('@3/4 Dm7 G7 | Cmaj7');
+    expect(docFromChart(compileDoc(doc))).toEqual(doc);
+    expect(docFromChart('Dm7 | G7').meter).toBeUndefined();
+    expect(compileDoc({ bars: [{ chords: ['Dm7'] }] })).toBe('Dm7');
+    expect(sanitizeDoc({ meter: '6/8', bars: [{ chords: ['Am7', 'D7'] }] })).toEqual({ meter: '6/8', bars: [{ chords: ['Am7', 'D7'] }] });
+    expect(sanitizeDoc({ meter: '5/4', bars: [{ chords: ['Am7'] }] })).toEqual({ bars: [{ chords: ['Am7'] }] });
+  });
+  it('en 3/4 entran 3 acordes por compás y en 6/8, 2', () => {
+    expect(compileDoc({ meter: '3/4', bars: [{ chords: ['Dm7', 'G7', 'C7'] }] })).toBe('@3/4 Dm7 G7 C7');
+    expect(() => compileDoc({ meter: '3/4', bars: [{ chords: ['Dm7', 'G7', 'C7', 'F7'] }] })).toThrow(/entre 1 y 3 acordes \(en 3\/4\)/);
+    expect(() => compileDoc({ meter: '6/8', bars: [{ chords: ['Dm7', 'G7', 'C7'] }] })).toThrow(/entre 1 y 2/);
+    expect(sanitizeDoc({ meter: '6/8', bars: [{ chords: ['A', 'B', 'C'] }] })).toBe('Compás inválido');
+    expect(sanitizeDoc({ bars: [{ chords: ['A', 'B', 'C', 'D'] }] })).not.toBe('Compás inválido');
+  });
+  it('las repeticiones se despliegan igual y el diseño sigue funcionando', () => {
+    const doc = { meter: '3/4' as const, bars: [{ chords: ['Dm7'], repeatStart: true }, { chords: ['G7'], repeatEnd: true }, { chords: ['Cmaj7'] }] };
+    expect(compileDoc(doc)).toBe('@3/4 Dm7 | G7 | Dm7 | G7 | Cmaj7');
+    expect(docLayout(doc)!.order).toEqual([0, 1, 0, 1, 2]);
+    expect(playedBars(doc)).toBe(5);
+  });
+});

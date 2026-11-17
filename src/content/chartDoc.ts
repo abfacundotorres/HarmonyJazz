@@ -1,5 +1,5 @@
 import { parseChord } from '../theory/chords';
-import { MAX_BARS, parseChart } from '../theory/chart';
+import { MAX_BARS, maxChordsPerBar, type Meter, METERS, parseChart, splitMeter } from '../theory/chart';
 import { normalizeChartText } from './library';
 
 /**
@@ -18,6 +18,8 @@ export interface DocBar {
 
 export interface ChartDoc {
   bars: DocBar[];
+  /** Compás (4/4 si falta). En 3/4 entran hasta 3 acordes por compás y en 6/8 hasta 2. */
+  meter?: Meter;
 }
 
 export const SECTIONS = ['Intro', 'A', 'B', 'C', 'D', 'Coda'] as const;
@@ -27,23 +29,26 @@ export const emptyBar = (): DocBar => ({ chords: [''] });
 
 /** Documento plano (sin repeticiones) a partir de un cifrado de texto. */
 export function docFromChart(text: string): ChartDoc {
-  const bars = normalizeChartText(text)
+  const { meter, body } = splitMeter(text);
+  const bars = normalizeChartText(body)
     .split('|')
     .map((b) => b.trim())
     .filter(Boolean)
     .map((b): DocBar => ({ chords: b.split(/\s+/) }));
-  return { bars: bars.length ? bars : [emptyBar()] };
+  return { bars: bars.length ? bars : [emptyBar()], ...(meter ? { meter } : {}) };
 }
 
 /** Valida la forma de un documento de origen desconocido. Devuelve el documento limpio o un mensaje. */
 export function sanitizeDoc(raw: unknown): ChartDoc | string {
   const bars = (raw as { bars?: unknown } | null)?.bars;
+  const m = (raw as { meter?: unknown } | null)?.meter;
+  const meter: Meter | undefined = METERS.includes(m as Meter) ? (m as Meter) : undefined;
   if (!Array.isArray(bars) || bars.length === 0) return 'El documento está vacío';
   if (bars.length > MAX_BARS) return `Demasiados compases (máximo ${MAX_BARS})`;
   const out: DocBar[] = [];
   for (const b of bars) {
     const r = b as Partial<DocBar> | null;
-    if (!r || !Array.isArray(r.chords) || r.chords.length < 1 || r.chords.length > 4) return 'Compás inválido';
+    if (!r || !Array.isArray(r.chords) || r.chords.length < 1 || r.chords.length > maxChordsPerBar(meter)) return 'Compás inválido';
     const chords = r.chords.map((c) => (typeof c === 'string' ? c.trim().slice(0, MAX_CHORD_CHARS) : ''));
     const bar: DocBar = { chords };
     if (typeof r.section === 'string' && (SECTIONS as readonly string[]).includes(r.section)) bar.section = r.section;
@@ -52,11 +57,11 @@ export function sanitizeDoc(raw: unknown): ChartDoc | string {
     if (r.ending === 1 || r.ending === 2) bar.ending = r.ending;
     out.push(bar);
   }
-  return { bars: out };
+  return { bars: out, ...(meter ? { meter } : {}) };
 }
 
 /** Reemplaza los "%" por los acordes del compás anterior (en el orden escrito) y valida cada símbolo. */
-function resolve(bars: DocBar[]): DocBar[] {
+function resolve(bars: DocBar[], meter?: Meter): DocBar[] {
   const out: DocBar[] = [];
   bars.forEach((b, i) => {
     let chords = b.chords.map((c) => c.trim());
@@ -64,7 +69,7 @@ function resolve(bars: DocBar[]): DocBar[] {
       if (i === 0) throw new Error('Compás 1: no puede repetir un compás anterior (%)');
       chords = out[i - 1].chords;
     }
-    if (chords.length < 1 || chords.length > 4) throw new Error(`Compás ${i + 1}: debe tener entre 1 y 4 acordes`);
+    if (chords.length < 1 || chords.length > maxChordsPerBar(meter)) throw new Error(`Compás ${i + 1}: debe tener entre 1 y ${maxChordsPerBar(meter)} acordes${meter ? ` (en ${meter})` : ''}`);
     chords.forEach((c) => {
       if (!c) throw new Error(`Compás ${i + 1}: hay un acorde vacío`);
       try {
@@ -134,7 +139,7 @@ export interface DocLayout {
 export function docLayout(doc: ChartDoc): DocLayout | null {
   try {
     compileDoc(doc);
-    const bars = resolve(doc.bars);
+    const bars = resolve(doc.bars, doc.meter);
     return { bars, order: unrollOrder(bars) };
   } catch {
     return null;
@@ -143,14 +148,14 @@ export function docLayout(doc: ChartDoc): DocLayout | null {
 
 /** Cifrado plano ("|" y espacios) que toca el play-along. Lanza un Error con mensaje legible si algo no es válido. */
 export function compileDoc(doc: ChartDoc): string {
-  const resolved = resolve(doc.bars);
+  const resolved = resolve(doc.bars, doc.meter);
   resolved.forEach((b, i) => {
     if (b.ending === 2 && resolved[i - 1]?.ending !== 1 && resolved[i - 1]?.ending !== 2) {
       throw new Error(`Compás ${i + 1}: el final 2 necesita un final 1 antes`);
     }
   });
   const flat = unroll(resolved);
-  const text = flat.map((b) => b.chords.join(' ')).join(' | ');
+  const text = (doc.meter ? `@${doc.meter} ` : '') + flat.map((b) => b.chords.join(' ')).join(' | ');
   parseChart(text); // límite de compases
   return text;
 }
