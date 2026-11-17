@@ -11,12 +11,43 @@ export interface ChartChord {
   dur: number;
 }
 
+/** Compás: 4/4 si no se indica. En 3/4 el pulso es la negra y en 6/8 la negra con puntillo (dos pulsos por compás). */
+export type Meter = '3/4' | '6/8';
+export const METERS: readonly Meter[] = ['3/4', '6/8'];
+
 export interface Chart {
   bars: number;
   chords: ChartChord[];
+  /** Compás de la progresión (4/4 si falta). */
+  meter?: Meter;
 }
 
+/** Corcheas por compás de un compás de 4/4. Para una progresión cualquiera, `barLen`. */
 export const EIGHTHS_PER_BAR = 8;
+/** Corcheas por compás de la progresión: 8 (4/4) o 6 (3/4 y 6/8). */
+export const barLen = (c: { meter?: Meter }) => (c.meter ? 6 : 8);
+/** Corcheas por pulso: 2 (negra) en 4/4 y 3/4; 3 (negra con puntillo) en 6/8. */
+export const pulseLen = (c: { meter?: Meter }) => (c.meter === '6/8' ? 3 : 2);
+/** Pulsos por compás: 4, 3 o 2. */
+export const beatsPerBar = (c: { meter?: Meter }) => barLen(c) / pulseLen(c);
+/** Cuántos acordes entran en un compás: 4 en 4/4, 3 en 3/4 y 2 en 6/8. */
+export const maxChordsPerBar = (m?: Meter) => (m === '3/4' ? 3 : m === '6/8' ? 2 : 4);
+/** Texto de un compás para mostrar. */
+export const meterLabel = (m?: Meter) => m ?? '4/4';
+
+const METER_PREFIX = /^\s*@(4\/4|3\/4|6\/8)\s*/;
+/** Separa la indicación de compás del comienzo de un cifrado ("@3/4 Dm7 | G7"). */
+export function splitMeter(src: string): { meter?: Meter; body: string } {
+  const m = METER_PREFIX.exec(src);
+  if (!m) return { body: src };
+  return { meter: m[1] === '4/4' ? undefined : (m[1] as Meter), body: src.slice(m[0].length) };
+}
+/** Duraciones (en corcheas) de los acordes de un compás con `n` acordes, o null si no entran. */
+export function barDurations(n: number, meter?: Meter): number[] | null {
+  if (meter === '3/4') return n === 1 ? [6] : n === 2 ? [4, 2] : n === 3 ? [2, 2, 2] : null;
+  if (meter === '6/8') return n === 1 ? [6] : n === 2 ? [3, 3] : null;
+  return n === 1 ? [8] : n === 2 ? [4, 4] : n === 3 ? [4, 2, 2] : n === 4 ? [2, 2, 2, 2] : null;
+}
 export const MAX_BARS = 256;
 
 /** Recorta la carta a los compases [from, to] (0-based, inclusive) y reubica los tiempos desde 0. */
@@ -25,9 +56,10 @@ export function sliceChart(c: Chart, from: number, to: number): Chart {
   const b = Math.min(c.bars - 1, Math.max(from, to));
   return {
     bars: b - a + 1,
+    ...(c.meter ? { meter: c.meter } : {}),
     chords: c.chords
       .filter((x) => x.bar >= a && x.bar <= b)
-      .map((x) => ({ ...x, bar: x.bar - a, start: x.start - a * EIGHTHS_PER_BAR })),
+      .map((x) => ({ ...x, bar: x.bar - a, start: x.start - a * barLen(c) })),
   };
 }
 
@@ -46,7 +78,8 @@ export function semitoneInterval(n: number): Interval {
  * Un compás con 1 acorde = 4 tiempos, 2 acordes = 2+2, 3 acordes = 2+1+1, 4 = 1+1+1+1.
  * "%" repite el compás anterior.
  */
-export function parseChart(src: string): Chart {
+export function parseChart(text: string): Chart {
+  const { meter, body: src } = splitMeter(text);
   const bars = src
     .split('|')
     .map((b) => b.trim())
@@ -58,16 +91,15 @@ export function parseChart(src: string): Chart {
   bars.forEach((bar, i) => {
     const syms = bar === '%' ? prev : bar.split(/\s+/);
     prev = syms;
-    const durs =
-      syms.length === 1 ? [8] : syms.length === 2 ? [4, 4] : syms.length === 3 ? [4, 2, 2] : syms.length === 4 ? [2, 2, 2, 2] : null;
-    if (!durs) throw new Error(`Demasiados acordes en el compás ${i + 1}: ${bar}`);
-    let pos = i * EIGHTHS_PER_BAR;
+    const durs = barDurations(syms.length, meter);
+    if (!durs) throw new Error(`Demasiados acordes en el compás ${i + 1}: ${bar}${meter ? ` (en ${meter} entran hasta ${maxChordsPerBar(meter)})` : ''}`);
+    let pos = i * (meter ? 6 : 8);
     syms.forEach((s, k) => {
       chords.push({ chord: parseChord(s), bar: i, start: pos, dur: durs[k] });
       pos += durs[k];
     });
   });
-  return { bars: bars.length, chords };
+  return { bars: bars.length, ...(meter ? { meter } : {}), chords };
 }
 
 export function transposeChart(c: Chart, iv: Interval): Chart {
@@ -85,11 +117,11 @@ export function chartToString(c: Chart): string {
         .join(' '),
     );
   }
-  return '| ' + out.join(' | ') + ' |';
+  return (c.meter ? `@${c.meter} ` : '') + '| ' + out.join(' | ') + ' |';
 }
 
 export function chordAt(c: Chart, eighth: number): ChartChord | undefined {
-  const t = mod(eighth, c.bars * EIGHTHS_PER_BAR);
+  const t = mod(eighth, c.bars * barLen(c));
   return c.chords.find((x) => t >= x.start && t < x.start + x.dur);
 }
 

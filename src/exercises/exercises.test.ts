@@ -6,6 +6,7 @@ import { PROGRESSIONS } from '../content/progressions';
 import { lickInKey, parseLine } from '../content/licks';
 import { FIXTURE_LICKS as LICKS } from './fixtures';
 import { GENERATORS, generatorById, triadPair } from './generators';
+import abcjs from 'abcjs';
 import { toAbc, toAbcMap } from './abc';
 import { parseChord } from '../theory/chords';
 
@@ -14,7 +15,8 @@ const OPT = { low: 55, high: 77 }; // concierto ≈ escrito A3–G5
 describe('generadores', () => {
   for (const g of GENERATORS) {
     it(`${g.id}: cubre la carta sin huecos ni superposiciones y respeta el rango`, () => {
-      for (const p of PROGRESSIONS) {
+      // los generadores de líneas son de 4/4: las formas en 3/4 y 6/8 sólo sirven para el play-along
+      for (const p of PROGRESSIONS.filter((x) => !x.chart.startsWith('@'))) {
         const chart = parseChart(p.chart);
         const notes = g.run(chart, OPT);
         const total = chart.bars * 8;
@@ -107,7 +109,7 @@ describe('ABC', () => {
   });
 
   it('todas las combinaciones generan ABC sin errores', () => {
-    for (const p of PROGRESSIONS) {
+    for (const p of PROGRESSIONS.filter((x) => !x.chart.startsWith('@'))) {
       for (const k of ['C', 'Gb', 'B']) {
         const chart = p.key ? transposeChart(parseChart(p.chart), keyInterval(p.key, k)) : parseChart(p.chart);
         for (const g of GENERATORS) {
@@ -143,5 +145,48 @@ describe('mapa de notas de la partitura', () => {
     const notes = [{ start: 0, dur: 2, pitch: null }, note(2, 2, 2), { start: 4, dur: 2, pitch: null }, note(6, 2, 4)];
     const { firstPiece } = toAbcMap(chart, notes, { transpose: { steps: 0, semis: 0 }, key: 'C', mode: 'major' });
     expect(firstPiece).toEqual([0, 1]);
+  });
+});
+
+describe('partitura en 3/4 y 6/8', () => {
+  const note = (start: number, dur: number, letter: number, octave = 4) => ({ start, dur, pitch: { letter, acc: 0, octave } });
+  const opt = { transpose: { steps: 0, semis: 0 }, key: 'C', mode: 'major' as const };
+
+  it('3/4: el compás del encabezado, seis corcheas por compás y la partitura se lee sin avisos', () => {
+    const chart = parseChart('@3/4 Dm7 | G7 C7 | Cmaj7');
+    const notes = [note(0, 2, 1), note(2, 1, 3), note(3, 1, 4), note(4, 2, 5), note(6, 6, 4), note(12, 6, 0, 5)];
+    const abc = toAbc(chart, notes, opt);
+    expect(abc).toContain('M:3/4');
+    const [tune] = abcjs.parseOnly(abc);
+    expect(tune.warnings ?? []).toEqual([]);
+    // tres compases de seis corcheas = 18 corcheas = 9 negras
+    const body = abc.split('\n').slice(4).join(' ');
+    expect(body.split('|').filter((b) => b.trim() && b.trim() !== ']').length).toBe(3);
+  });
+
+  it('6/8: las notas no cruzan el pulso (una negra con puntillo que empieza a media corchea se parte y se liga)', () => {
+    const chart = parseChart('@6/8 Am7 | D7');
+    const notes = [note(0, 1, 5), note(1, 3, 4), note(4, 2, 2), note(6, 6, 1, 5)];
+    const abc = toAbc(chart, notes, opt);
+    expect(abc).toContain('M:6/8');
+    const [tune] = abcjs.parseOnly(abc);
+    expect(tune.warnings ?? []).toEqual([]);
+    const body = abc.split('\n').slice(4).join(' ').replace(/"[^"]*"/g, '');
+    // la nota de 3 corcheas que arranca en la corchea 1 queda como 2 + 1 ligadas; no hay negras de 4 corcheas en 6/8
+    expect(body).toMatch(/G2- G/);
+    expect(body).not.toMatch(/[A-Ga-g]4/);
+  });
+
+  it('una nota que dura el compás entero es una blanca con puntillo (6) en 3/4 y 6/8', () => {
+    for (const m of ['3/4', '6/8']) {
+      const abc = toAbc(parseChart(`@${m} Dm7 | G7`), [note(0, 6, 1), note(6, 6, 4)], opt);
+      expect(abc).toMatch(/D6.*\|.*G6/);
+      expect(abcjs.parseOnly(abc)[0].warnings ?? []).toEqual([]);
+    }
+  });
+
+  it('en 4/4 la partitura no cambia', () => {
+    const abc = toAbc(parseChart('Dm7 | G7'), [note(0, 8, 1), note(8, 8, 4)], opt);
+    expect(abc).toContain('M:4/4');
   });
 });

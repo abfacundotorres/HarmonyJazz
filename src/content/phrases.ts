@@ -44,6 +44,7 @@ export function buildPhrase(input: PhraseInput, id: string): Lick | string {
   let bars: number;
   try {
     const c = parseChart(input.chart.replace(/[\r\n]+/g, ' | '));
+    if (c.meter) return 'Las frases se escriben en 4/4: sacá la indicación de compás del cifrado';
     bars = c.bars;
     chartText = chartToString(transposeChart(c, iv)).replace(/^\| | \|$/g, '');
   } catch (e) {

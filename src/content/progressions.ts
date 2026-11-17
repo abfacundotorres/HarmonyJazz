@@ -206,6 +206,28 @@ export const PROGRESSIONS: Progression[] = [
     tempo: 120,
     notes: 'Substitución por terceras mayores (Countdown / 26-2). Patrones 1-2-3-5 sobre cada acorde.',
   },
+  {
+    id: 'vals-ii-v-i',
+    name: 'Vals: ii–V–I (forma de ejercicio, 3/4)',
+    category: 'Fundamentos',
+    key: 'C',
+    mode: 'major',
+    chart: '@3/4 Dm7 | G7 | Cmaj7 | Cmaj7 | Am7 | D7 | Gmaj7 | G7',
+    tempo: 150,
+    style: 'swing',
+    notes: 'Forma de ejercicio (no es un tema) en 3/4: ii–V–I y ii–V a la dominante. El bajo camina de a tres y el piano marca los tiempos 2 y 3. Practicá guide tones y frases de dos y tres tiempos.',
+  },
+  {
+    id: 'seis-octavos',
+    name: 'Compás de 6/8 (forma de ejercicio)',
+    category: 'Fundamentos',
+    key: 'G',
+    mode: 'major',
+    chart: '@6/8 Am7 | D7 | Gmaj7 | Cmaj7 | F#m7b5 | B7 | Em7 | Em7',
+    tempo: 100,
+    style: 'swing',
+    notes: 'Forma de ejercicio (no es un tema) en 6/8: dos pulsos por compás, cada uno de tres corcheas iguales (el tempo marca la negra con puntillo). Bajo en fundamental y quinta, ride en 1-3-4-6.',
+  },
 ];
 
 export const progressionById = (id: string) => PROGRESSIONS.find((p) => p.id === id)!;

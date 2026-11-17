@@ -1,5 +1,5 @@
 import { analyzePc, Chord } from '../theory/chords';
-import { Chart, chordAt, EIGHTHS_PER_BAR } from '../theory/chart';
+import { barLen, Chart, chordAt, pulseLen } from '../theory/chart';
 import { degreeNote, mod, placeNear } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
 
@@ -26,7 +26,7 @@ export function spellInContext(m: number, chord: Chord) {
  * Cada nota dura hasta la siguiente nota o hasta su fin (mínimo una corchea).
  */
 export function transcribe(events: RawEvent[], chart: Chart): ChorusTranscription[] {
-  const total = chart.bars * EIGHTHS_PER_BAR;
+  const total = chart.bars * barLen(chart);
   const abs = (e: RawEvent) => e.chorus * total + e.eighth;
   const sorted = [...events].sort((a, b) => abs(a) - abs(b));
 
@@ -86,12 +86,13 @@ export interface SoloAnalysis {
 }
 
 export function analyzeSolo(notes: MelNote[], chart: Chart): SoloAnalysis {
-  const total = chart.bars * EIGHTHS_PER_BAR;
+  const total = chart.bars * barLen(chart);
+  const pulse = pulseLen(chart);
   const played = notes.filter((n) => n.pitch);
   const midiOf = (n: MelNote) => (n.pitch!.octave + 1) * 12 + [0, 2, 4, 5, 7, 9, 11][n.pitch!.letter] + n.pitch!.acc;
   const roleOf = (n: MelNote) => analyzePc(chordAt(chart, n.start)!.chord, mod(midiOf(n), 12));
 
-  const strong = played.filter((n) => n.start % 2 === 0);
+  const strong = played.filter((n) => n.start % pulse === 0);
   const strongCT = strong.filter((n) => roleOf(n).role === 'chord').length;
 
   let changesPlayed = 0;
@@ -104,7 +105,7 @@ export function analyzeSolo(notes: MelNote[], chart: Chart): SoloAnalysis {
   }
 
   const covered = played.reduce((s, n) => s + n.dur, 0);
-  const offbeat = played.filter((n) => n.start % 2 === 1).length;
+  const offbeat = played.filter((n) => n.start % pulse !== 0).length;
   const chromatic = played.filter((n) => roleOf(n).role === 'chromatic').length;
   const ms = played.map(midiOf);
   const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);

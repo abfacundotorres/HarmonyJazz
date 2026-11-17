@@ -23,7 +23,7 @@ const unrolledText = (d: ChartDoc): string => {
   try {
     return compileDoc(d);
   } catch {
-    return d.bars.map((b) => b.chords.join(' ')).join(' | ');
+    return (d.meter ? `@${d.meter} ` : '') + d.bars.map((b) => b.chords.join(' ')).join(' | ');
   }
 };
 

@@ -1,7 +1,7 @@
 import { MutableRefObject, useEffect, useId, useRef, useState } from 'react';
 import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine';
 import type { MelNote } from '../../exercises/generators';
-import type { Chart } from '../../theory/chart';
+import { beatsPerBar, type Chart } from '../../theory/chart';
 import { useSettings } from '../hooks';
 import { NumberField } from './NumberField';
 import { usePosition } from '../usePosition';
@@ -33,6 +33,11 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   const [style, setStyle] = useState<Style>(initialStyle);
   useEffect(() => setStyle(initialStyle), [initialStyle]);
 
+  // compás de la progresión: en 3/4 y 6/8 hay swing y balada (los demás estilos son de 4/4)
+  const meter = chart.meter;
+  const bpb = beatsPerBar(chart);
+  const styleList = (Object.keys(STYLE_LABEL) as Style[]).filter((x) => !meter || x === 'swing' || x === 'ballad');
+  const shownStyle = styleList.includes(style) ? style : 'swing';
   // subir el tempo solo (de a `step` bpm cada `every` vueltas, hasta `max`)
   const [rampOn, setRampOn] = useState(false);
   const [rampStep, setRampStep] = useState(4);
@@ -148,16 +153,17 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
             <Chip on={mix.drums} onClick={() => tog('drums')}>Batería</Chip>
           </>
         )}
-        <Chip on={mix.metronome} onClick={() => tog('metronome')}>Sólo 2 y 4</Chip>
+        <Chip on={mix.metronome} onClick={() => tog('metronome')}>{meter === '3/4' ? 'Sólo 2 y 3' : meter === '6/8' ? 'Sólo el 2.º pulso' : 'Sólo 2 y 4'}</Chip>
         {allowMelody && melody && (
           <Chip on={mix.melody} onClick={() => tog('melody')}>Oír la línea</Chip>
         )}
       </div>
-      <select className="style" value={style} onChange={(e) => setStyle(e.target.value as Style)} aria-label="Estilo">
-        {(Object.keys(STYLE_LABEL) as Style[]).map((s) => (
+      <select className="style" value={shownStyle} onChange={(e) => setStyle(e.target.value as Style)} aria-label="Estilo">
+        {styleList.map((s) => (
           <option key={s} value={s}>{STYLE_LABEL[s]}</option>
         ))}
       </select>
+      {meter && <p className="muted small player-note">{meter === '3/4' ? 'Compás de 3/4: el tempo marca la negra (tres por compás).' : 'Compás de 6/8: el tempo marca la negra con puntillo (dos pulsos por compás).'}</p>}
       {error && <p className="error player-note">{error}</p>}
       {samples === 'loading' && <p className="muted small player-note" role="status">Cargando instrumentos reales (unos 3 MB)… la primera vez puede tardar un poco.</p>}
       {samples === 'synth' && <p className="muted small player-note" role="status">No se pudieron cargar los instrumentos reales (¿sin conexión?): se usan sonidos sintetizados.</p>}
@@ -196,7 +202,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
           </select>
         </label>
         <label>
-          <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4
+          <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de {bpb}
         </label>
         <label>
           <input type="checkbox" checked={rampOn} onChange={(e) => setRampOn(e.target.checked)} /> Acelerar solo

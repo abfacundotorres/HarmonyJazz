@@ -160,7 +160,7 @@ function parseStyleSpec(spec: string): Style | null {
   return null;
 }
 
-const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|modo)\s*[:=]\s*(.*)$/i;
+const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|modo|compás|compas|meter|metro|time)\s*[:=]\s*(.*)$/i;
 
 /**
  * Lee varios temas de un texto. Formato:
@@ -169,7 +169,8 @@ const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|m
  *   compositor: ...      (opcional)
  *   tonalidad: G menor   (opcional, en concierto)
  *   tempo: 140           (opcional)
- *   estilo: swing        (opcional: swing, en 2, balada, bossa)
+ *   estilo: swing        (opcional: swing, en 2, balada, bossa, latin)
+ *   compás: 3/4          (opcional: 4/4 por defecto; también 6/8)
  *   [A] Cm7 | F7 | Bbmaj7 | Ebmaj7 |
  *   Am7b5 | D7 | Gm | %
  *
@@ -198,7 +199,7 @@ export function parseBulk(text: string): BulkEntry[] {
     const meta = META.exec(line);
     if (meta) {
       const k = meta[1].toLowerCase();
-      const norm = k === 'tono' || k === 'tonalidad' ? 'key' : k === 'estilo' ? 'style' : k === 'compositor' ? 'composer' : k === 'modo' ? 'mode' : k;
+      const norm = k === 'tono' || k === 'tonalidad' ? 'key' : k === 'estilo' ? 'style' : k === 'compositor' ? 'composer' : k === 'modo' ? 'mode' : ['compás', 'compas', 'meter', 'metro', 'time'].includes(k) ? 'meter' : k;
       cur.meta[norm] = meta[2].trim();
       return;
     }
@@ -209,8 +210,12 @@ export function parseBulk(text: string): BulkEntry[] {
     const notes: string[] = [];
     const entry: BulkEntry = { line: d.line, name: d.name, tune: null, notes, error: null, bars: 0 };
     if (!d.name) return { ...entry, error: 'Falta el nombre después del #' };
-    const chartText = normalizeChartText(d.chart.join('\n'));
-    if (!chartText) return { ...entry, error: 'No tiene cifrado' };
+    const body = normalizeChartText(d.chart.join('\n'));
+    if (!body) return { ...entry, error: 'No tiene cifrado' };
+    // el compás puede venir como línea "compás: 3/4" o escrito al comienzo del cifrado ("@3/4 ...")
+    const ms = d.meta.meter ? /^\s*(4\/4|3\/4|6\/8)\s*$/.exec(d.meta.meter) : null;
+    if (d.meta.meter && !ms) notes.push(`No entendí el compás "${d.meta.meter}": se usa 4/4`);
+    const chartText = ms && ms[1] !== '4/4' && !/^\s*@/.test(body) ? `@${ms[1]} ${body}` : body;
 
     let chart;
     try {

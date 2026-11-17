@@ -44,3 +44,10 @@ describe('frases cargadas a mano', () => {
     expect(typeof validatePhrase({ id: 3 })).toBe('string');
   });
 });
+
+describe('frases y compás', () => {
+  it('las frases se escriben en 4/4: un cifrado con otro compás se rechaza con un mensaje claro', () => {
+    const r = buildPhrase({ name: 'x', key: 'C', mode: 'major', level: 'Intermedio', tempo: 120, chart: '@3/4 Dm7 | G7', line: 'D4 F4 A4', idea: '', reading: 'C' }, 'p');
+    expect(r).toMatch(/4\/4/);
+  });
+});

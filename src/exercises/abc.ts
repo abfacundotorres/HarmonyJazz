@@ -1,5 +1,5 @@
 import { chordSymbol, transposeChord } from '../theory/chords';
-import { Chart, EIGHTHS_PER_BAR } from '../theory/chart';
+import { barLen, Chart, pulseLen } from '../theory/chart';
 import {
   degreeNote, Interval, LETTERS, Note, noteName, parseNote, Pitch, simplify, simplifyPitch, transposeNote, transposePitch,
 } from '../theory/notes';
@@ -59,7 +59,9 @@ export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
  * ligadas (en cada compás y cambio de acorde), así que no siempre coinciden.
  */
 export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc: string; firstPiece: number[] } {
-  const total = chart.bars * EIGHTHS_PER_BAR;
+  const bl = barLen(chart);
+  const pl = pulseLen(chart);
+  const total = chart.bars * bl;
   const tonic = opt.key ? writtenMajorKey(opt.key, opt.mode ?? 'major', opt.transpose) : null;
   const keyAcc = tonic ? keySignature(tonic) : [0, 0, 0, 0, 0, 0, 0];
   const K = tonic ? noteName(tonic) : 'C';
@@ -81,7 +83,7 @@ export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc
     chordStarts.set(cc.start, chordSymbol(transposeChord(cc.chord, opt.transpose)));
   }
   const boundaries = new Set<number>([...chordStarts.keys()]);
-  for (let b = 0; b <= chart.bars; b++) boundaries.add(b * EIGHTHS_PER_BAR);
+  for (let b = 0; b <= chart.bars; b++) boundaries.add(b * bl);
 
   // trocear en límites de compás/acorde y en duraciones representables
   interface Piece { start: number; dur: number; pitch: Pitch | null; tie: boolean; first?: boolean }
@@ -96,8 +98,15 @@ export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc
       while (remaining > 0) {
         // silencios/notas largas a mitad de compás: partir en el tiempo 3 si cruzan
         let d = ALLOWED.find((a) => a <= remaining)!;
-        const pos = s % EIGHTHS_PER_BAR;
-        if (pos < 4 && pos + d > 4 && pos % 2 === 1) d = 4 - pos;
+        const pos = s % bl;
+        if (chart.meter === '6/8') {
+          // en 6/8 las notas no cruzan el pulso (3 corcheas) salvo que empiecen en él
+          const off = pos % 3;
+          if (off === 0) {
+            if (d === 4 || d === 8) d = 3;
+            if (d === 6 && pos !== 0) d = 3;
+          } else d = Math.min(d, 3 - off);
+        } else if (!chart.meter && pos < 4 && pos + d > 4 && pos % 2 === 1) d = 4 - pos;
         pieces.push({ start: s, dur: d, pitch: written, tie: false, first: !!written && i === 0 && s === cuts[0] });
         s += d;
         remaining -= d;
@@ -110,14 +119,14 @@ export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc
   let body = '';
   let accState = new Map<string, number>();
   pieces.forEach((p, idx) => {
-    const pos = p.start % EIGHTHS_PER_BAR;
+    const pos = p.start % bl;
     if (pos === 0) {
       if (idx > 0) {
-        const bar = p.start / EIGHTHS_PER_BAR;
+        const bar = p.start / bl;
         body += bar % barsPerLine === 0 ? ' |\n' : ' | ';
       }
       accState = new Map();
-    } else if (pos % 4 === 0 || p.dur >= 2 || (idx > 0 && pieces[idx - 1].dur >= 2)) {
+    } else if (pos % (chart.meter ? pl : 4) === 0 || p.dur >= 2 || (idx > 0 && pieces[idx - 1].dur >= 2)) {
       body += ' ';
     }
     const ch = chordStarts.get(p.start);
@@ -137,7 +146,7 @@ export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc
   const abc = [
     'X:1',
     opt.title ? `T:${opt.title}` : '',
-    'M:4/4',
+    `M:${chart.meter ?? '4/4'}`,
     'L:1/8',
     `K:${K}`,
     body,
