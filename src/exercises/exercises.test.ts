@@ -6,7 +6,7 @@ import { PROGRESSIONS } from '../content/progressions';
 import { lickInKey, parseLine } from '../content/licks';
 import { FIXTURE_LICKS as LICKS } from './fixtures';
 import { GENERATORS, generatorById, triadPair } from './generators';
-import { toAbc } from './abc';
+import { toAbc, toAbcMap } from './abc';
 import { parseChord } from '../theory/chords';
 
 const OPT = { low: 55, high: 77 }; // concierto ≈ escrito A3–G5
@@ -117,5 +117,31 @@ describe('ABC', () => {
         }
       }
     }
+  });
+});
+
+describe('mapa de notas de la partitura', () => {
+  const chart = parseChart('Dm7 G7 | Cmaj7 | Cmaj7');
+  const note = (start: number, dur: number, letter: number, octave = 4) => ({ start, dur, pitch: { letter, acc: 0, octave } });
+  it('cada nota que suena apunta a su primera pieza dibujada, aunque una nota larga se parta en ligadas', () => {
+    // re (corchea) · sol (negra) · do larga de 3 compases... cruza el cambio de acorde y las barras
+    const notes = [note(0, 1, 1), note(1, 2, 4), note(3, 13, 0, 5), note(16, 8, 4)];
+    const { abc, firstPiece } = toAbcMap(chart, notes, { transpose: { steps: 0, semis: 0 }, key: 'C', mode: 'major' });
+    expect(firstPiece).toHaveLength(4);
+    // contando en el ABC las notas dibujadas (sin silencios), la i-ésima pieza inicial es la de cada nota
+    const body = abc.split('\n').slice(4).join(' ').replace(/"[^"]*"/g, '');
+    const drawn = [...body.matchAll(/[\^_=]*[A-Ga-g][,']*\d*-?/g)].map((m) => m[0]);
+    expect(drawn[firstPiece[0]]).toMatch(/^D/);
+    expect(drawn[firstPiece[1]]).toMatch(/^G/);
+    expect(drawn[firstPiece[2]]).toMatch(/^c/);
+    expect(drawn[firstPiece[3]]).toMatch(/^G/);
+    // la nota larga ocupó más de una pieza: la siguiente empieza varias posiciones después
+    expect(firstPiece[3] - firstPiece[2]).toBeGreaterThan(1);
+    expect(toAbc(chart, notes, { transpose: { steps: 0, semis: 0 }, key: 'C', mode: 'major' })).toBe(abc);
+  });
+  it('los silencios no cuentan como notas dibujadas', () => {
+    const notes = [{ start: 0, dur: 2, pitch: null }, note(2, 2, 2), { start: 4, dur: 2, pitch: null }, note(6, 2, 4)];
+    const { firstPiece } = toAbcMap(chart, notes, { transpose: { steps: 0, semis: 0 }, key: 'C', mode: 'major' });
+    expect(firstPiece).toEqual([0, 1]);
   });
 });

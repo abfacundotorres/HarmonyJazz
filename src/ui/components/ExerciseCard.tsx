@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Style } from '../../audio/engine';
-import { toAbc } from '../../exercises/abc';
+import { toAbcMap } from '../../exercises/abc';
 import type { MelNote } from '../../exercises/generators';
 import type { Chart } from '../../theory/chart';
 import { KeySelect } from './KeySelect';
@@ -34,10 +34,18 @@ export function ExerciseCard(p: ExerciseCardProps) {
   const masteryKey = p.keyValue ?? 'todas';
   const record = mastery[p.id] ?? {};
 
-  const abc = useMemo(
-    () => toAbc(p.chart, p.notes, { transpose: iv, key: p.keyValue, mode: p.mode, barsPerLine: 4 }),
+  const { abc, firstPiece } = useMemo(
+    () => toAbcMap(p.chart, p.notes, { transpose: iv, key: p.keyValue, mode: p.mode, barsPerLine: 4 }),
     [p.chart, p.notes, iv, p.keyValue, p.mode],
   );
+  // la nota que suena (cuando se oye la línea): se recuerda entre aviso y aviso de tiempo, y se borra al parar
+  const mine = pos && pos.owner === p.id ? pos : null;
+  const [note, setNote] = useState(-1);
+  useEffect(() => {
+    if (!mine) return;
+    if (mine.note !== undefined) setNote(mine.note);
+    else if (mine.countIn || mine.chorus < 0) setNote(-1);
+  }, [mine]);
 
   const mark = () => markDone(p.id, masteryKey, tempo);
   const doneCount = Object.keys(record).filter((k) => k !== 'todas').length;
@@ -55,7 +63,7 @@ export function ExerciseCard(p: ExerciseCardProps) {
           <p className="muted small">{doneCount}/12 tonalidades dominadas</p>
         </>
       )}
-      <Notation abc={abc} highlightBar={bar} />
+      <Notation abc={abc} highlightBar={bar} highlightNote={note >= 0 ? firstPiece[note] : undefined} />
       <Player chart={p.chart} tempo={tempo} onTempo={setTempo} melody={p.notes} allowMelody style={p.style} owner={p.id} />
       <div className="row">
         <button className="primary" onClick={mark}>

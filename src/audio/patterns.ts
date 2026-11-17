@@ -9,7 +9,7 @@ import { degreePc, mod, pc } from '../theory/notes';
 import { SCALES } from '../theory/scales';
 import { buildVoicing } from '../theory/voicings';
 
-export type Style = 'swing' | 'two' | 'ballad' | 'bossa';
+export type Style = 'swing' | 'two' | 'ballad' | 'bossa' | 'latin';
 
 // ---------- azar con semilla ----------
 
@@ -42,7 +42,7 @@ function weighted<T>(r: Rng, items: [T, number][]): T {
  * a ritmo lento se acerca al tresillo y a ritmo rápido casi a corcheas iguales. `amount` es el ajuste del usuario.
  */
 export function effectiveSwing(tempo: number, amount: number, style: Style): number {
-  if (style === 'bossa') return 0.5;
+  if (style === 'bossa' || style === 'latin') return 0.5;
   const pts: [number, number][] = [[80, 1.15], [100, 1.1], [160, 0.9], [200, 0.65], [260, 0.35], [320, 0.25]];
   let f = pts[pts.length - 1][1];
   for (let i = 0; i < pts.length - 1; i++) {
@@ -194,6 +194,17 @@ export function bassLine(chart: Chart, style: Style, r: Rng, prev: number): { hi
       last = root;
       return;
     }
+    if (style === 'latin') {
+      // tumbao: fundamental en 1, quinta en el "y" de 2 y la fundamental (o su octava) anticipando el 4
+      const root = place(c.root, last);
+      const fifth = place(mod(c.root + 7, 12), root + 5);
+      const upper = place(c.root, root + 7);
+      const spec: [number, number, number, number][] =
+        beats >= 4 ? [[0, 2.6, root, 0.92], [3, 1.6, fifth, 0.8], [6, 1.6, upper !== root ? upper : root, 0.82]] : beats >= 2 ? [[0, 2.6, root, 0.92], [3, 0.9, fifth, 0.8]] : [[0, 1.8, root, 0.9]];
+      for (const [e, d, m, v] of spec) hits.push({ e: cc.start + e, dur: d, midi: m, vel: v });
+      last = beats >= 4 ? upper : root;
+      return;
+    }
     if (style === 'two' || style === 'ballad') {
       const root = place(c.root, last);
       const fifth = place(mod(c.root + 7, 12), root + 4);
@@ -272,6 +283,19 @@ export function compLine(chart: Chart, style: Style, r: Rng, chorus: number, st:
       if (cc.dur >= 8 && r() < 0.4) push(5, 3, between(r, 0.22, 0.3));
       return;
     }
+    if (style === 'latin') {
+      // montuno: acordes cortos y sincopados sobre las corcheas rectas
+      if (cc.dur >= 8) {
+        const cell = weighted(r, [
+          [[[1, 1], [3, 1], [6, 1]], 3],
+          [[[0, 1], [3, 1], [5, 1], [7, 1]], 2],
+          [[[1, 1], [4, 1], [6, 1], [7, 1]], 2],
+        ] as [[number, number][], number][]);
+        cell.forEach(([e, d]) => push(e, d * 0.8, between(r, 0.4, 0.55)));
+      } else if (cc.dur >= 4) push(1, 1, between(r, 0.4, 0.52));
+      else push(0, 1, between(r, 0.4, 0.5));
+      return;
+    }
     if (style === 'bossa') {
       if (cc.dur >= 8) {
         const cell = weighted(r, [[[[0, 2], [3, 3], [6, 2]], 1], [[[1, 2], [4, 1], [6, 2]], 1], [[[0, 2], [3, 2], [7, 1]], 1]] as [[number, number][], number][]);
@@ -335,6 +359,22 @@ export function drumLine(chart: Chart, style: Style, r: Rng, chorus: number): Dr
       for (const e of clave) add('stick', e0 + e, between(r, 0.42, 0.55));
       for (const [e, v] of [[0, 0.5], [3, 0.3], [4, 0.45], [7, 0.3]] as const) add('kick', e0 + e, v + between(r, -0.04, 0.04));
       if (fillP > 0 && r() < fillP) add('ghost', e0 + 6, 0.3);
+      continue;
+    }
+
+    if (style === 'latin') {
+      // clave 3-2 / 2-3 en el palito; ride en corcheas rectas con acento en la clave; pedal en 2 y 4; bombo suave en 1 y 3
+      const clave = b % 2 === 0 ? [0, 3, 6] : [2, 4];
+      for (let e = 0; e < 8; e++) add('ride', e0 + e, clave.includes(e) ? between(r, 0.46, 0.56) : between(r, 0.24, 0.32));
+      for (const e of clave) add('stick', e0 + e, between(r, 0.44, 0.56));
+      add('chick', e0 + 2, between(r, 0.4, 0.5));
+      add('chick', e0 + 6, between(r, 0.4, 0.5));
+      add('kick', e0, between(r, 0.3, 0.4));
+      add('kick', e0 + 4, between(r, 0.2, 0.3));
+      if (fillP > 0 && r() < fillP) {
+        add('ghost', e0 + 5, between(r, 0.3, 0.4));
+        add('snare', e0 + 7, between(r, 0.5, 0.6));
+      }
       continue;
     }
 
