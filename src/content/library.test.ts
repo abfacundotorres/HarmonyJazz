@@ -167,3 +167,17 @@ Dm7 | G7
     expect(e[0].notes.join(' ')).toMatch(/estilo/);
   });
 });
+
+describe('estilo en la carga de texto', () => {
+  const style = (t: string) => {
+    const r = parseBulk(`# T\nestilo: ${t}\nDm7 | G7 | Cmaj7 | Cmaj7`)[0];
+    return r.tune?.style;
+  };
+  it('reconoce bossa y latin por separado (latin ya no cae en bossa)', () => {
+    expect(style('bossa nova')).toBe('bossa');
+    expect(style('latin')).toBe('latin');
+    expect(style('Latino')).toBe('latin');
+    expect(style('afrocubano')).toBe('latin');
+    expect(style('swing en 2')).toBe('two');
+  });
+});

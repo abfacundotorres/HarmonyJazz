@@ -3,6 +3,7 @@ import { Chart, EIGHTHS_PER_BAR } from '../theory/chart';
 import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
+import { Ramp, rampTempo } from './ramp';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, mulberry32, newCompState, Rng, Style } from './patterns';
 
 export interface Mix {
@@ -14,7 +15,7 @@ export interface Mix {
   metronome: boolean;
 }
 
-/** swing = walking en 4; two = bajo en 2; ballad = ride suave y piano sostenido; bossa = corcheas rectas. */
+/** swing = walking en 4; two = bajo en 2; ballad = ride suave y piano sostenido; bossa = corcheas rectas; latin = tumbao, montuno y clave. */
 export type { Style };
 
 /** "phone" compensa la falta de graves de un altavoz chico; "normal" es la respuesta completa (auriculares, parlantes). */
@@ -25,6 +26,7 @@ export const STYLE_LABEL: Record<Style, string> = {
   two: 'Swing en 2',
   ballad: 'Balada',
   bossa: 'Bossa nova',
+  latin: 'Latin (clave y montuno)',
 };
 
 export interface PlayOptions {
@@ -39,6 +41,8 @@ export interface PlayOptions {
   mix: Mix;
   /** Quién inició la reproducción (para que la UI resalte sólo ese reproductor). */
   owner?: string;
+  /** Subir el tempo solo: `step` bpm cada `every` vueltas, hasta `max`. */
+  ramp?: Ramp;
 }
 
 export interface Position {
@@ -49,6 +53,10 @@ export interface Position {
   /** tiempo dentro del compás, 0..3; -1 durante la cuenta. */
   beat: number;
   countIn: boolean;
+  /** Tempo de esta vuelta (cambia si se pidió subirlo solo). */
+  tempo?: number;
+  /** Nota de la melodía guía que acaba de empezar (índice entre las que suenan); sólo en los avisos de nota. */
+  note?: number;
 }
 
 type Listener = (p: Position) => void;
@@ -367,7 +375,7 @@ export class JazzEngine {
   /** Momento (tiempo de AudioContext) en que empieza cada chorus. */
   /** Grilla que entra en el próximo chorus (la edición en vivo no corta lo que suena). */
   private pendingChart: Chart | null = null;
-  private chorusStarts: { chorus: number; time: number }[] = [];
+  private chorusStarts: { chorus: number; time: number; tempo: number }[] = [];
   playing = false;
   private keepAlive: HTMLAudioElement | null = null;
   /**
@@ -511,6 +519,7 @@ export class JazzEngine {
     t.bpm.value = opts.tempo;
     const beat = 60 / opts.tempo;
     const barSec = 4 * beat;
+    const tempoOf = (k: number) => rampTempo(opts.tempo, opts.ramp, k);
     const inst = this.inst!;
     const draw = Tone.getDraw();
 
@@ -540,11 +549,13 @@ export class JazzEngine {
         this.lastOpts = cur;
         this.pendingChart = null;
       }
-      this.chorusStarts.push({ chorus, time });
+      // cada vuelta usa su tempo; el reloj del Transport no cambia (sigue marcando segundos reales), así que no se desfasa nada
+      const tc = tempoOf(chorus);
+      this.chorusStarts.push({ chorus, time, tempo: tc });
       if (this.chorusStarts.length > 64) this.chorusStarts.shift();
-      this.scheduleChorus(cur, time, chorus, state);
+      this.scheduleChorus({ ...cur, tempo: tc }, time, chorus, state);
       chorus++;
-      const next = at + cur.chart.bars * barSec;
+      const next = at + cur.chart.bars * 4 * (60 / tc);
       this.repeatId = t.scheduleOnce((tm) => runChorus(tm, next), next);
     };
     this.repeatId = t.scheduleOnce((tm) => runChorus(tm, offset), offset);
@@ -604,11 +615,12 @@ export class JazzEngine {
         : raw.currentTime - (performance.now() - perfMs) / 1000;
     const start = [...this.chorusStarts].reverse().find((c) => c.time <= ctxTime + 0.05);
     if (!start) return null;
-    const beat = 60 / opts.tempo;
+    const tempo = start.tempo;
+    const beat = 60 / tempo;
     const pos = (ctxTime - start.time) / beat;
     const b = Math.floor(pos);
     const frac = pos - b;
-    const sw = this.swingOf(opts);
+    const sw = this.swingOf({ ...opts, tempo });
     // posiciones posibles dentro del tiempo: 0 (tiempo), sw (contratiempo), 1 (siguiente tiempo)
     const cands: [number, number][] = [[0, 0], [sw, 1], [1, 2]];
     const best = cands.reduce((a, c) => (Math.abs(c[0] - frac) < Math.abs(a[0] - frac) ? c : a));
@@ -656,7 +668,7 @@ export class JazzEngine {
     const totalBeats = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
     // la pasada dura compases enteros para que el pulso siga alineado al repetir
     const bars = Math.max(1, Math.ceil(totalBeats / 4 - 1e-6));
-    const tempoOf = (k: number) => (opts.ramp ? Math.min(Math.max(opts.tempo, opts.ramp.max), opts.tempo + opts.ramp.step * Math.floor(k / Math.max(1, opts.ramp.every))) : opts.tempo);
+    const tempoOf = (k: number) => rampTempo(opts.tempo, opts.ramp, k);
     const offset = opts.countIn ? (4 * 60) / opts.tempo : 0;
 
     if (opts.countIn) {
@@ -736,7 +748,7 @@ export class JazzEngine {
     // posición para la UI
     const ui = (fn: () => void, t: number) => Tone.getDraw().schedule(() => gen === this.gen && fn(), t);
     chords.forEach((cc, i) => {
-      defer(at(cc.start), (t) => ui(() => this.emit({ chorus, bar: cc.bar, chordIndex: i, beat: (cc.start % 8) / 2, countIn: false }), t));
+      defer(at(cc.start), (t) => ui(() => this.emit({ chorus, bar: cc.bar, chordIndex: i, beat: (cc.start % 8) / 2, countIn: false, tempo: opts.tempo }), t));
     });
     for (let b = 0; b < opts.chart.bars; b++) {
       for (let k = 1; k < 4; k++) {
@@ -744,7 +756,7 @@ export class JazzEngine {
         defer(at(e), (t) =>
           ui(() => {
             const ci = chords.findIndex((c) => e >= c.start && e < c.start + c.dur);
-            this.emit({ chorus, bar: b, chordIndex: ci, beat: k, countIn: false });
+            this.emit({ chorus, bar: b, chordIndex: ci, beat: k, countIn: false, tempo: opts.tempo });
           }, t),
         );
       }
@@ -783,11 +795,20 @@ export class JazzEngine {
     }
 
     if (mix.melody && opts.melody) {
+      let idx = 0;
       for (const n of opts.melody) {
-        if (!n.pitch || n.start >= total) continue;
+        if (!n.pitch) continue;
+        const noteIdx = idx++;
+        if (n.start >= total) continue;
         const start = at(n.start);
         const end = at(n.start + n.dur);
-        defer(start, (t) => inst.horn.triggerAttackRelease(midiToFreq(midi(n.pitch!)), Math.max(0.05, (end - start) * 0.92), t, 0.8));
+        defer(start, (t) => {
+          inst.horn.triggerAttackRelease(midiToFreq(midi(n.pitch!)), Math.max(0.05, (end - start) * 0.92), t, 0.8);
+          // aviso de nota: la partitura resalta la que suena
+          const bar = Math.floor(n.start / EIGHTHS_PER_BAR);
+          const ci = chords.findIndex((c) => n.start >= c.start && n.start < c.start + c.dur);
+          ui(() => this.emit({ chorus, bar, chordIndex: ci, beat: (n.start % EIGHTHS_PER_BAR) / 2, countIn: false, tempo: opts.tempo, note: noteIdx }), t);
+        });
       }
     }
 

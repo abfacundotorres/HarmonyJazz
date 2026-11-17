@@ -702,3 +702,5 @@ input[type='range'], input[type='checkbox'] { accent-color: var(--accent); }
 .reviewlist .link small { color: var(--muted); }
 .reviewlist li > a { padding: .5em .8em; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); min-height: 44px; }
 .reviewlist li > a b { color: var(--accent); }
+.ramp { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 4px 0 8px 1.6em; }
+.ramp input { width: 4.4em; text-align: center; }

@@ -50,6 +50,15 @@ export function writtenMajorKey(key: string, mode: 'major' | 'minor', iv: Interv
 }
 
 export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
+  return toAbcMap(chart, notes, opt).abc;
+}
+
+/**
+ * Lo mismo que `toAbc`, y además dónde cae cada nota de la melodía en el dibujo: `firstPiece[i]` es el índice (entre las
+ * notas dibujadas, sin silencios) de la primera pieza de la i-ésima nota que suena. Una nota larga se parte en varias
+ * ligadas (en cada compás y cambio de acorde), así que no siempre coinciden.
+ */
+export function toAbcMap(chart: Chart, notes: MelNote[], opt: AbcOptions): { abc: string; firstPiece: number[] } {
   const total = chart.bars * EIGHTHS_PER_BAR;
   const tonic = opt.key ? writtenMajorKey(opt.key, opt.mode ?? 'major', opt.transpose) : null;
   const keyAcc = tonic ? keySignature(tonic) : [0, 0, 0, 0, 0, 0, 0];
@@ -75,7 +84,7 @@ export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
   for (let b = 0; b <= chart.bars; b++) boundaries.add(b * EIGHTHS_PER_BAR);
 
   // trocear en límites de compás/acorde y en duraciones representables
-  interface Piece { start: number; dur: number; pitch: Pitch | null; tie: boolean }
+  interface Piece { start: number; dur: number; pitch: Pitch | null; tie: boolean; first?: boolean }
   const pieces: Piece[] = [];
   for (const n of filled) {
     const end = Math.min(n.start + n.dur, total);
@@ -89,7 +98,7 @@ export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
         let d = ALLOWED.find((a) => a <= remaining)!;
         const pos = s % EIGHTHS_PER_BAR;
         if (pos < 4 && pos + d > 4 && pos % 2 === 1) d = 4 - pos;
-        pieces.push({ start: s, dur: d, pitch: written, tie: false });
+        pieces.push({ start: s, dur: d, pitch: written, tie: false, first: !!written && i === 0 && s === cuts[0] });
         s += d;
         remaining -= d;
         if (remaining > 0 || i < cuts.length - 2) pieces[pieces.length - 1].tie = !!written;
@@ -117,7 +126,15 @@ export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
   });
   body += ' |]';
 
-  return [
+  const firstPiece: number[] = [];
+  let drawn = 0;
+  for (const p of pieces) {
+    if (!p.pitch) continue;
+    if (p.first) firstPiece.push(drawn);
+    drawn++;
+  }
+
+  const abc = [
     'X:1',
     opt.title ? `T:${opt.title}` : '',
     'M:4/4',
@@ -127,4 +144,5 @@ export function toAbc(chart: Chart, notes: MelNote[], opt: AbcOptions): string {
   ]
     .filter(Boolean)
     .join('\n');
+  return { abc, firstPiece };
 }

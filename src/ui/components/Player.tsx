@@ -3,6 +3,8 @@ import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine
 import type { MelNote } from '../../exercises/generators';
 import type { Chart } from '../../theory/chart';
 import { useSettings } from '../hooks';
+import { NumberField } from './NumberField';
+import { usePosition } from '../usePosition';
 import { useWakeLock } from '../wakeLock';
 
 export interface PlayerProps {
@@ -31,8 +33,18 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   const [style, setStyle] = useState<Style>(initialStyle);
   useEffect(() => setStyle(initialStyle), [initialStyle]);
 
+  // subir el tempo solo (de a `step` bpm cada `every` vueltas, hasta `max`)
+  const [rampOn, setRampOn] = useState(false);
+  const [rampStep, setRampStep] = useState(4);
+  const [rampEvery, setRampEvery] = useState(2);
+  const [rampMax, setRampMax] = useState(200);
+  const ramp = rampOn ? { step: rampStep, every: rampEvery, max: Math.max(rampMax, tempo) } : undefined;
+  const pos = usePosition();
+  /** Tempo de la vuelta que suena (distinto del elegido si se está subiendo solo). */
+  const live = pos && pos.owner === id && playing && pos.tempo ? Math.round(pos.tempo) : null;
+
   const opts = (): PlayOptions => ({
-    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id,
+    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id, ramp,
   });
   const optsRef = useRef(opts);
   optsRef.current = opts;
@@ -57,7 +69,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tempo, settings.swing, mix, style, chart, melody]);
+  }, [tempo, settings.swing, mix, style, chart, melody, rampOn, rampStep, rampEvery, rampMax]);
 
   // detener al desmontar
   useEffect(() => () => {
@@ -120,7 +132,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       </button>
       <label className="tempo">
         <span>
-          <b>{tempo}</b> bpm
+          <b>{tempo}</b> bpm{live !== null && live !== tempo ? <> · sonando a <b>{live}</b></> : null}
         </span>
         <input type="range" min={40} max={320} step={2} value={tempo} onChange={(e) => onTempo(Number(e.target.value))} />
       </label>
@@ -186,6 +198,22 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
         <label>
           <input type="checkbox" checked={countIn} onChange={(e) => setCountIn(e.target.checked)} /> Cuenta de 4
         </label>
+        <label>
+          <input type="checkbox" checked={rampOn} onChange={(e) => setRampOn(e.target.checked)} /> Acelerar solo
+        </label>
+        {rampOn && (
+          <div className="ramp">
+            <span>
+              Sube (bpm) <NumberField label="Cuánto sube, en bpm" value={rampStep} min={1} max={20} onCommit={setRampStep} />
+            </span>
+            <span>
+              Cada (vueltas) <NumberField label="Cada cuántas vueltas sube" value={rampEvery} min={1} max={20} onCommit={setRampEvery} />
+            </span>
+            <span>
+              Hasta (bpm) <NumberField label="Máximo al que llega, en bpm" value={rampMax} min={40} max={320} onCommit={setRampMax} />
+            </span>
+          </div>
+        )}
       </details>
     </div>
   );

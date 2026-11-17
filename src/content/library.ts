@@ -22,7 +22,7 @@ export interface UserTune {
 
 export const MAX_TUNES = 500;
 export const MAX_CHART_CHARS = 20000;
-const STYLES: Style[] = ['swing', 'two', 'ballad', 'bossa'];
+const STYLES: Style[] = ['swing', 'two', 'ballad', 'bossa', 'latin'];
 
 export interface Library {
   tunes: UserTune[];
@@ -155,7 +155,8 @@ function parseStyleSpec(spec: string): Style | null {
   if (/^(swing|walking)$/.test(t)) return 'swing';
   if (/^(two|en ?2|swing en 2|2)$/.test(t)) return 'two';
   if (/^(ballad|balada)$/.test(t)) return 'ballad';
-  if (/^(bossa|bossa ?nova|latin|latino)$/.test(t)) return 'bossa';
+  if (/^(bossa|bossa ?nova)$/.test(t)) return 'bossa';
+  if (/^(latin|latino|latin jazz|afro ?cuban[oa]?)$/.test(t)) return 'latin';
   return null;
 }
 

@@ -235,11 +235,56 @@ describe('batería', () => {
   });
 
   it('todas las intensidades son válidas', () => {
-    for (const style of ['swing', 'two', 'ballad', 'bossa'] as const) for (const x of drumLine(chart, style, mulberry32(9), 3)) {
+    for (const style of ['swing', 'two', 'ballad', 'bossa', 'latin'] as const) for (const x of drumLine(chart, style, mulberry32(9), 3)) {
       expect(x.vel).toBeGreaterThan(0);
       expect(x.vel).toBeLessThanOrEqual(1);
       expect(x.e).toBeGreaterThanOrEqual(0);
       expect(x.e).toBeLessThan(chart.bars * 8);
     }
+  });
+});
+
+describe('estilo latin', () => {
+  const chart = parseChart('Dm7 | G7 | Cmaj7 | Cmaj7');
+  it('el swing no se aplica (corcheas rectas)', () => {
+    expect(effectiveSwing(120, 0.7, 'latin')).toBe(0.5);
+  });
+  it('el bajo hace el tumbao: fundamental en 1, quinta en el "y" de 2 y octava o fundamental en el 4, siempre en registro', () => {
+    const hits = bassLine(chart, 'latin', mulberry32(5), 40).hits;
+    for (let b = 0; b < 4; b++) {
+      const bar = hits.filter((h) => Math.floor(h.e / 8) === b).map((h) => h.e % 8);
+      expect(bar).toEqual([0, 3, 6]);
+    }
+    expect(hits.every((h) => h.midi >= BASS_LOW && h.midi <= BASS_HIGH)).toBe(true);
+    const rootPc = [2, 7, 0, 0];
+    hits.filter((h) => h.e % 8 === 0).forEach((h, i) => expect(h.midi % 12).toBe(rootPc[i]));
+    hits.filter((h) => h.e % 8 === 3).forEach((h, i) => expect(h.midi % 12).toBe((rootPc[i] + 7) % 12));
+  });
+  it('el piano toca montuno: acordes cortos y sincopados, nunca en los cuatro tiempos seguidos', () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const hits = compLine(chart, 'latin', mulberry32(seed), 1, newCompState());
+      expect(hits.length).toBeGreaterThanOrEqual(8);
+      expect(hits.length).toBeLessThanOrEqual(16);
+      for (const h of hits) {
+        expect(h.dur).toBeLessThanOrEqual(1);
+        expect(h.vel).toBeGreaterThan(0.3);
+        expect(h.vel).toBeLessThanOrEqual(1);
+      }
+      for (let b = 0; b < 4; b++) {
+        const pos = hits.filter((h) => Math.floor(h.e / 8) === b).map((h) => h.e % 8);
+        expect(pos.length).toBeGreaterThanOrEqual(3);
+        expect(new Set(pos).size).toBe(pos.length);
+      }
+    }
+  });
+  it('la batería lleva la clave 3-2 / 2-3 en el palito y el ride en corcheas', () => {
+    const hits = drumLine(chart, 'latin', mulberry32(2), 1);
+    const at = (v: string, b: number) => hits.filter((h) => h.voice === v && Math.floor(h.e / 8) === b).map((h) => h.e % 8).sort((x, y) => x - y);
+    expect(at('stick', 0)).toEqual([0, 3, 6]);
+    expect(at('stick', 1)).toEqual([2, 4]);
+    expect(at('stick', 2)).toEqual([0, 3, 6]);
+    expect(at('ride', 0)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(at('chick', 0)).toEqual([2, 6]);
+    expect(hits.every((h) => h.vel > 0 && h.vel <= 1)).toBe(true);
   });
 });
