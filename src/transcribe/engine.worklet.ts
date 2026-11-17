@@ -22,7 +22,8 @@ export type WorkletIn =
   | { type: 'loop'; start: number | null; end: number }
   | { type: 'gap'; seconds: number }
   | { type: 'center'; mode: CenterMode }
-  | { type: 'click'; click: ClickOpts | null };
+  | { type: 'click'; click: ClickOpts | null }
+  | { type: 'quality'; high: boolean };
 
 export interface WorkletPos {
   type: 'pos';
@@ -60,6 +61,7 @@ class HjPlayer extends AudioWorkletProcessor {
       else if (m.type === 'gap') c.setGap(m.seconds);
       else if (m.type === 'center') c.setCenter(m.mode);
       else if (m.type === 'click') c.setClick(m.click);
+      else if (m.type === 'quality') c.setQuality(m.high);
       this.report();
     };
   }

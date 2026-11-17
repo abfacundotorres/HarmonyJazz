@@ -16,6 +16,7 @@ import { ViewMode, WaveView } from './WaveView';
 
 const RATE_PRESETS = [50, 60, 70, 80, 90, 100];
 const NUDGE = 0.1;
+const LIGHT_KEY = 'hj:transcribir:liviano';
 const newId = (p: string) => p + ':' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 const NOTE_PCS = [['Do', 0], ['Do♯', 1], ['Re', 2], ['Mi♭', 3], ['Mi', 4], ['Fa', 5], ['Fa♯', 6], ['Sol', 7], ['La♭', 8], ['La', 9], ['Si♭', 10], ['Si', 11]] as const;
 
@@ -136,6 +137,9 @@ function Loaded({
   const [snapOn, setSnapOn] = useState(true);
   const [loopName, setLoopName] = useState('');
   const [msg, setMsg] = useState('');
+  // estiramiento liviano: preferencia del aparato (no del audio)
+  const [light, setLightState] = useState(() => { try { return localStorage.getItem(LIGHT_KEY) === '1'; } catch { return false; } });
+  const setLight = (v: boolean) => { setLightState(v); try { if (v) localStorage.setItem(LIGHT_KEY, '1'); else localStorage.removeItem(LIGHT_KEY); } catch { /* sin almacenamiento */ } };
   useWakeLock(playing);
   const [refPc, setRefPc] = useState(0);
   const [refOct, setRefOct] = useState(4);
@@ -222,6 +226,7 @@ function Loaded({
     return () => offs.forEach((f) => f());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine]);
+  useEffect(() => engine.setQuality(!light), [engine, light]);
   useEffect(() => engine.setRate(rate), [engine, rate]);
   useEffect(() => engine.setPitch(semis, cents), [engine, semis, cents]);
   useEffect(() => engine.setFilters(filters), [engine, filters]);
@@ -856,6 +861,14 @@ function Loaded({
         <label>
           <input type="checkbox" checked={simple} onChange={(e) => onSimple(e.target.checked)} /> Usar el reproductor simple
         </label>
+        {engine.kind === 'buffer' && (
+          <>
+            {' '}
+            <label>
+              <input type="checkbox" checked={light} onChange={(e) => setLight(e.target.checked)} /> Estiramiento liviano (si el audio lento se entrecorta en este aparato; suena menos limpio)
+            </label>
+          </>
+        )}
       </p>
       <p className="muted small keyhelp">Teclado: espacio = reproducir · [ ] = inicio y fin · L = loop · M = marcador · ← → = saltar 5 s (Mayús: 1 s) · ↑ ↓ = velocidad · + − = zoom.</p>
     </section>
