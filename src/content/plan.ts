@@ -102,7 +102,7 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
         lesson.summary,
         'Hacé el primer ejercicio en la tonalidad del día y marcá la tonalidad como dominada cuando salga limpio a tempo.',
       ],
-      link: `#/lecciones/${lesson.id}?k=${key}`,
+      link: `#/lecciones/${lesson.id}?k=${key}&ex=0`,
       linkLabel: 'Ir a la lección',
     },
     lick

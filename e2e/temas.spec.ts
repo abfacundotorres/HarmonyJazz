@@ -4,10 +4,10 @@ import { expect, test } from './helpers';
 
 const axeSrc = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const THEMES = ['vintage', 'club', 'partitura', 'bn-azul', 'bn-naranja', 'bn-rojo'];
-const ROUTES = ['#/hoy', '#/playalong', '#/lecciones/guide-tones', '#/escalas'];
+const ROUTES = ['#/hoy', '#/mas', '#/playalong', '#/lecciones/guide-tones', '#/escalas'];
 
-test('el tema se elige en Hoy, se aplica al instante y se recuerda al recargar', async ({ page }) => {
-  await page.goto('/#/hoy');
+test('el tema se elige en Más, se aplica al instante y se recuerda al recargar', async ({ page }) => {
+  await page.goto('/#/mas');
   const html = page.locator('html');
   await expect(html).not.toHaveAttribute('data-theme', /.+/);
   await page.getByRole('radio', { name: 'Blue Note · azul' }).click();
@@ -57,7 +57,7 @@ for (const theme of THEMES.filter((t) => !['vintage', 'club'].includes(t))) {
     for (const r of ROUTES) {
       test(r, async ({ page }) => {
         await page.goto('/' + r);
-        await expect(page.locator('nav')).toBeVisible();
+        await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await page.waitForTimeout(600);
         const violations = await page.evaluate(async (src) => {

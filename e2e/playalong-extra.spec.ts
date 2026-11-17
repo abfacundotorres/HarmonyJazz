@@ -27,6 +27,7 @@ test('acelerar solo: cada vuelta sube lo pedido y la pantalla dice a cuánto sue
 
 test('al oír la línea de un ejercicio, la partitura resalta la nota que suena y lo deja de hacer al parar', async ({ page }) => {
   await page.goto('/#/lecciones/guide-tones');
+  await page.locator('#ex-0 > summary').click();
   const card = page.locator('section.exercise').first();
   await card.getByRole('button', { name: 'Oír la línea' }).click();
   await card.getByRole('button', { name: 'Reproducir' }).click();
@@ -40,6 +41,7 @@ test('al oír la línea de un ejercicio, la partitura resalta la nota que suena 
 
 test('sin oír la línea no se resalta ninguna nota', async ({ page }) => {
   await page.goto('/#/lecciones/guide-tones');
+  await page.locator('#ex-0 > summary').click();
   const card = page.locator('section.exercise').first();
   await card.getByRole('button', { name: 'Reproducir' }).click();
   await page.waitForTimeout(3500);

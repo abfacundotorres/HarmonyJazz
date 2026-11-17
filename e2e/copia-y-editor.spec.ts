@@ -4,7 +4,7 @@ test.describe('copia de seguridad', () => {
   const card = (page: import('@playwright/test').Page) => page.locator('.card', { has: page.getByRole('heading', { name: 'Copia de seguridad' }) });
 
   test('guardar, borrar y restaurar devuelve los datos; la contraseña no viaja', async ({ page }) => {
-    await page.goto('/#/hoy');
+    await page.goto('/#/mas');
     await page.evaluate(() => {
       localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:1', name: 'Mi tema', composer: '', key: 'C', mode: 'major', chart: 'Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120, style: 'swing' }] }));
       localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'lesson:x': { C: 130 } }));
@@ -23,13 +23,13 @@ test.describe('copia de seguridad', () => {
     });
     page.on('dialog', (d) => d.accept());
     await card(page).locator('input[type=file]').setInputFiles(file!);
-    await expect(page.locator('nav')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => page.evaluate(() => localStorage.getItem('harmonyjazz:mastery'))).toBe('{"lesson:x":{"C":130}}');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:library')!).tunes[0].name)).toBe('Mi tema');
   });
 
   test('un archivo que no es una copia se rechaza; una copia con datos dañados los descarta y lo dice', async ({ page }) => {
-    await page.goto('/#/hoy');
+    await page.goto('/#/mas');
     await expect(card(page)).toBeVisible();
     page.on('dialog', (d) => d.accept());
     await card(page).locator('input[type=file]').setInputFiles({ name: 'malo.json', mimeType: 'application/json', buffer: Buffer.from('{"hola":1}') });
@@ -37,7 +37,7 @@ test.describe('copia de seguridad', () => {
     const danada = JSON.stringify({ app: 'harmonyjazz', data: { library: { tunes: 5 }, settings: { volume: 'x', view: 'C' } } });
     await card(page).locator('input[type=file]').setInputFiles({ name: 'danada.json', mimeType: 'application/json', buffer: Buffer.from(danada) });
     await expect(card(page).getByText(/Se ignoraron datos dañados de la copia: library/)).toBeVisible();
-    await expect(page.locator('nav')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible({ timeout: 10_000 });
   });
 });
 

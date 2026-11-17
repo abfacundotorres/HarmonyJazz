@@ -8,7 +8,7 @@ describe('progreso: nombres y filas', () => {
     const d = describeItem(`${l.id}:1`, [])!;
     expect(d.title).toBe(l.title);
     expect(d.detail).toBe(l.exercises[1].label);
-    expect(d.href('Bb')).toBe(`#/lecciones/${l.id}?k=Bb`);
+    expect(d.href('Bb')).toBe(`#/lecciones/${l.id}?k=Bb&ex=1`);
     const s = describeItem('scale:dorian:thirds', [])!;
     expect(s.title).toBe('Dórica');
     expect(s.href('F')).toBe('#/escalas?e=dorian&p=thirds&k=F');

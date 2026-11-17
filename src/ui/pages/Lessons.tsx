@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Lesson, LessonExercise, LESSONS, lessonById } from '../../content/lessons';
 import { progressionById } from '../../content/progressions';
 import { generatorById } from '../../exercises/generators';
@@ -14,7 +14,8 @@ import { useMastery, useReading, useRoute, useSettings } from '../hooks';
 export function Lessons() {
   const { path, query } = useRoute();
   const lesson = path[1] ? lessonById(path[1]) : undefined;
-  if (lesson) return <LessonView lesson={lesson} initialKey={query.get('k')} />;
+  const ex = Number(query.get('ex'));
+  if (lesson) return <LessonView lesson={lesson} initialKey={query.get('k')} initialEx={query.has('ex') && Number.isInteger(ex) ? ex : null} />;
   return <LessonList />;
 }
 
@@ -58,8 +59,28 @@ function LessonList() {
   );
 }
 
-function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string | null }) {
+/** Sección plegable de una lección. Con `lazy`, el contenido (partituras, reproductores) se arma recién al abrirla. */
+function Fold({ title, meta, defaultOpen, lazy, id, children }: { title: string; meta?: string; defaultOpen?: boolean; lazy?: boolean; id?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const ref = useRef<HTMLDetailsElement>(null);
+  // si se llegó desde un enlace a este ejercicio, queda a la vista
+  useEffect(() => {
+    if (defaultOpen) ref.current?.scrollIntoView({ block: 'start' });
+  }, [defaultOpen]);
+  return (
+    <details ref={ref} className="card study fold" id={id} open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>
+        <h3>{title}</h3>
+        {meta && <span className="muted small"> {meta}</span>}
+      </summary>
+      {(!lazy || open) && children}
+    </details>
+  );
+}
+
+function LessonView({ lesson, initialKey, initialEx }: { lesson: Lesson; initialKey: string | null; initialEx: number | null }) {
   const { iv } = useReading();
+  const [mastery] = useMastery();
   /** Los textos usan nombres de notas en concierto (tonalidad de Do): se traducen a la lectura elegida. */
   const loc = (t: string) => localizeNotes(t, 'C', 'C', iv);
   return (
@@ -69,60 +90,57 @@ function LessonView({ lesson, initialKey }: { lesson: Lesson; initialKey: string
         <span className="badge">{lesson.area}</span>
         <h2>{lesson.title}</h2>
         <p className="lead">{loc(lesson.summary)}</p>
+      </section>
+      <Fold title="Teoría">
         <Prose lines={lesson.body.map(loc)} />
-        <h3 className="h4like">En la trompeta</h3>
+        <h4 className="h4like">En la trompeta</h4>
         <ul>{lesson.trumpet.map((t, i) => <li key={i}>{loc(t)}</li>)}</ul>
         {lesson.listen && (
           <>
-            <h3 className="h4like">Para escuchar</h3>
+            <h4 className="h4like">Para escuchar</h4>
             <ul>{lesson.listen.map((t, i) => <li key={i}>{t}</li>)}</ul>
           </>
         )}
-      </section>
-      <details className="card study" open>
-        <summary>
-          <h3>Paso a paso</h3>
-        </summary>
+      </Fold>
+      <Fold title="Paso a paso">
         <ol className="steps">
           {lesson.steps.map((t, i) => (
             <li key={i}>{loc(t)}</li>
           ))}
         </ol>
-      </details>
-      <details className="card study" open>
-        <summary>
-          <h3>Por qué funciona</h3>
-        </summary>
+      </Fold>
+      <Fold title="Por qué funciona">
         <ul className="whylist">
           {lesson.why.map((t, i) => (
             <li key={i}>{loc(t)}</li>
           ))}
         </ul>
-      </details>
-      <details className="card study">
-        <summary>
-          <h3>Plan de una semana</h3>
-        </summary>
+      </Fold>
+      <Fold title="Plan de una semana">
         <ol className="steps">
           {lesson.week.map((t, i) => (
             <li key={i}><b>Día {i + 1}.</b> {loc(t)}</li>
           ))}
         </ol>
-      </details>
-      <details className="card study">
-        <summary>
-          <h3>Errores frecuentes</h3>
-        </summary>
+      </Fold>
+      <Fold title="Errores frecuentes">
         <ul className="whylist">
           {lesson.mistakes.map((t, i) => (
             <li key={i}>{loc(t)}</li>
           ))}
         </ul>
-      </details>
+      </Fold>
       <h3 className="sectionhead">Ejercicios ({lesson.exercises.length})</h3>
-      {lesson.exercises.map((ex, i) => (
-        <LessonExerciseCard key={`${lesson.id}:${i}`} id={`${lesson.id}:${i}`} ex={ex} initialKey={initialKey} />
-      ))}
+      {lesson.exercises.map((ex, i) => {
+        const id = `${lesson.id}:${i}`;
+        const done = Object.keys(mastery[id] ?? {}).filter((k) => k !== 'todas').length;
+        const tempo = ex.tempo ?? progressionById(ex.progression).tempo;
+        return (
+          <Fold key={id} id={`ex-${i}`} title={ex.label} meta={`♩ ${tempo} · ${done}/12 tonalidades`} lazy defaultOpen={initialEx === i}>
+            <LessonExerciseCard id={id} ex={ex} initialKey={initialKey} />
+          </Fold>
+        );
+      })}
     </div>
   );
 }

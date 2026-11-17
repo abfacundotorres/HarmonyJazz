@@ -29,7 +29,7 @@ test('ningún dato guardado dañado rompe una pantalla', async ({ page }) => {
         errors.length = 0;
         await page.evaluate((h) => (location.hash = h), r);
         await page.waitForTimeout(150);
-        if (!(await page.locator('nav').count()) || errors.length) broken.push(`${key}=${v} en ${r} ${errors[0] ?? ''}`);
+        if (!(await page.getByRole('navigation', { name: 'Secciones' }).count()) || errors.length) broken.push(`${key}=${v} en ${r} ${errors[0] ?? ''}`);
       }
     }
   }
@@ -77,5 +77,5 @@ test('si el almacenamiento está lleno, se avisa que lo último no quedó guarda
   await page.evaluate(() => ((window as unknown as { __lleno: boolean }).__lleno = true));
   await sel.selectOption('45');
   await expect(page.locator('.updatebar.warn')).toContainText('No se pudo guardar');
-  await expect(page.locator('nav')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
 });

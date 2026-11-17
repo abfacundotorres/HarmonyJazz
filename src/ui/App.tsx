@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { stopAll } from '../audio/stopAll';
 import { applyTheme } from './themes';
 import { useRoute, useSettings } from './hooks';
+import { GROUPS, groupOf, pageLabel } from './nav';
 import { Today } from './pages/Today';
 
 // Cada pantalla viaja en su propio archivo: Hoy abre sin esperar al motor de audio ni a las partituras.
@@ -14,6 +15,7 @@ const PAGES = {
   transcribir: () => import('./pages/Transcribe').then((m) => ({ default: m.Transcribe })),
   escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
+  mas: () => import('./pages/More').then((m) => ({ default: m.More })),
 };
 const Progress = lazy(PAGES.progreso);
 const PlayAlong = lazy(PAGES.playalong);
@@ -23,21 +25,17 @@ const Vocab = lazy(PAGES.vocabulario);
 const Transcribe = lazy(PAGES.transcribir);
 const Listen = lazy(PAGES.escucha);
 const Credits = lazy(PAGES.creditos);
+const More = lazy(PAGES.mas);
 
-const NAV = [
-  ['hoy', 'Hoy'],
-  ['progreso', 'Progreso'],
-  ['playalong', 'Play-along'],
-  ['lecciones', 'Lecciones'],
-  ['escalas', 'Escalas'],
-  ['vocabulario', 'Vocabulario'],
-  ['transcribir', 'Transcribir'],
-  ['escucha', 'Afinador'],
-] as const;
+
 
 export function App() {
   const { path } = useRoute();
   const page = path[0] ?? 'hoy';
+  const group = groupOf(page);
+  // cada grupo abre en la última pantalla que se vio en él
+  const [lastIn, setLastIn] = useState<Record<string, string>>({});
+  useEffect(() => setLastIn((m) => (m[group.id] === page ? m : { ...m, [group.id]: page })), [group.id, page]);
   const [settings, setSettings] = useSettings();
   const [updated, setUpdated] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -84,7 +82,7 @@ export function App() {
     <div className="app">
       {saveFailed && (
         <div className="updatebar warn" role="alert">
-          No se pudo guardar el último cambio: el almacenamiento del navegador está lleno o bloqueado. Bajá una copia de tus datos (en Hoy) y liberá espacio.{' '}
+          No se pudo guardar el último cambio: el almacenamiento del navegador está lleno o bloqueado. Bajá una copia de tus datos (en Más) y liberá espacio.{' '}
           <button onClick={() => setSaveFailed(false)}>Entendido</button>
         </div>
       )}
@@ -98,10 +96,10 @@ export function App() {
         <a href="#/hoy" className="brand">
           <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
-        <nav>
-          {NAV.map(([id, label]) => (
-            <a key={id} href={`#/${id}`} className={page === id ? 'on' : ''}>
-              {label}
+        <nav aria-label="Secciones">
+          {GROUPS.map((g) => (
+            <a key={g.id} href={`#/${lastIn[g.id] ?? g.pages[0][0]}`} className={g.id === group.id ? 'on' : ''} aria-current={g.id === group.id ? 'page' : undefined}>
+              {g.label}
             </a>
           ))}
         </nav>
@@ -122,7 +120,16 @@ export function App() {
         </div>
       </header>
       <main>
-        <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : (NAV.find(([id]) => id === page)?.[1] ?? 'HarmonyJazz')}</h1>
+        {group.pages.length > 1 && (
+          <nav className="subnav" aria-label={`Pantallas de ${group.label}`}>
+            {group.pages.map(([id, label]) => (
+              <a key={id} href={`#/${id}`} className={id === page ? 'on' : ''} aria-current={id === page ? 'page' : undefined}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
+        <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : pageLabel(page)}</h1>
         <Suspense fallback={<p className="muted" role="status">Cargando…</p>}>
           {page === 'hoy' && <Today />}
           {page === 'progreso' && <Progress />}
@@ -133,6 +140,7 @@ export function App() {
           {page === 'transcribir' && <Transcribe />}
           {page === 'escucha' && <Listen />}
           {page === 'creditos' && <Credits />}
+          {page === 'mas' && <More />}
         </Suspense>
       </main>
       <footer className="credits">

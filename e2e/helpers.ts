@@ -37,7 +37,7 @@ export const testLoose = base.extend({
 
 export { expect };
 
-export const ROUTES = ['#/hoy', '#/progreso', '#/playalong', '#/lecciones', '#/lecciones/guide-tones', '#/escalas', '#/vocabulario', '#/transcribir', '#/escucha'];
+export const ROUTES = ['#/hoy', '#/progreso', '#/mas', '#/playalong', '#/lecciones', '#/lecciones/guide-tones', '#/escalas', '#/vocabulario', '#/transcribir', '#/escucha'];
 
 /** Segundos de un texto "m:ss.s". */
 export const secs = (txt: string) => {
@@ -102,4 +102,20 @@ export async function openAudio(page: Page, wav: Buffer, name = 'prueba.wav') {
   await page.waitForSelector('canvas.wave');
   await expect(page.getByText('Motor preciso')).toBeVisible({ timeout: 30_000 });
   await page.waitForTimeout(600);
+}
+
+/** Abre un bloque del plan de Hoy (empiezan plegados salvo el primero sin hacer) y devuelve su tarjeta. */
+export async function openBlock(page: Page, title: string) {
+  const block = page.locator('article.block', { hasText: title }).first();
+  const head = block.locator('.bhead');
+  if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click();
+  return block;
+}
+
+/** Despliega todos los ejercicios de una lección (empiezan plegados). */
+export async function openExercises(page: Page) {
+  const heads = page.locator('details.fold[id^="ex-"] > summary');
+  await heads.first().waitFor();
+  const n = await heads.count();
+  for (let i = 0; i < n; i++) await heads.nth(i).click();
 }

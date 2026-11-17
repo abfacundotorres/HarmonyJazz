@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { expect, openBlock, test } from './helpers';
 
 test.describe('estudio de escalas', () => {
   // lectura en concierto: el nombre de cada tonalidad coincide con la clave que se guarda
@@ -121,9 +121,9 @@ test.describe('estudio de escalas', () => {
 
   test('el plan de Hoy incluye la escala del día y su enlace abre esa escala', async ({ page }) => {
     await page.goto('/#/hoy');
-    const bloque = page.locator('article.block', { hasText: 'Escala del día' });
+    const bloque = await openBlock(page, 'Escala del día');
     await expect(bloque).toBeVisible();
-    const titulo = (await bloque.getByRole('heading').innerText()).replace('Escala del día: ', '');
+    const titulo = (await bloque.locator('.btitle').innerText()).replace('Escala del día: ', '');
     await bloque.getByRole('link', { name: /Estudiar la escala/ }).click();
     await expect(page.getByRole('heading', { name: titulo, exact: true }).first()).toBeVisible();
     await expect(page.locator('ol.steppath button.on')).toHaveCount(1);

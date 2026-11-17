@@ -704,3 +704,30 @@ input[type='range'], input[type='checkbox'] { accent-color: var(--accent); }
 .reviewlist li > a b { color: var(--accent); }
 .ramp { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 4px 0 8px 1.6em; }
 .ramp input { width: 4.4em; text-align: center; }
+
+/* Barra de grupos y sub-pestañas */
+.subnav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+.subnav a { color: var(--muted); padding: .3em .85em; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+.subnav a.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.top nav a[aria-current='page'] { font-weight: 700; }
+
+/* Hoy: bloques plegables */
+.block > header { display: flex; align-items: center; gap: 8px; margin: 0; }
+.block > header h2 { flex: 1; margin: 0; min-width: 0; }
+.bhead { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; text-align: left; border: 0; background: transparent; padding: 0; color: var(--text); font: inherit; cursor: pointer; }
+.bhead .btitle { flex: 1; min-width: 0; font-family: var(--serif); font-size: 1.05rem; line-height: 1.2; font-weight: var(--head-weight); text-transform: var(--head-case); }
+.bhead .mins { color: var(--muted); font-size: .85rem; white-space: nowrap; font-family: ui-sans-serif, system-ui, sans-serif; text-transform: none; }
+.bhead .chev { color: var(--accent); }
+.block .bbody { margin-top: 8px; }
+.block:not(.open) { padding-top: 6px; padding-bottom: 6px; }
+.block.done .btitle { text-decoration: line-through; text-decoration-thickness: 1px; opacity: .75; }
+details.info { margin: 12px 0; }
+details.info summary { cursor: pointer; color: var(--muted); }
+/* Lecciones: secciones plegables; lo que va adentro no repite la tarjeta */
+.fold > summary h3 { display: block; flex: 1 1 0; min-width: 0; margin: 0; }
+.fold > summary .muted { flex: 0 0 100%; padding-left: 1.3rem; }
+.fold > .card, .fold > details.card { border: 0; border-top: 1px dashed var(--line); border-radius: 0; box-shadow: none; background: transparent; padding: 10px 0 0; margin: 10px 0 0; }
+.fold > summary + .card { border-top: 0; margin-top: 4px; }
+.settingslist { display: grid; gap: 14px; margin: 8px 0; }
+.settingslist label { display: grid; gap: 6px; text-align: left; }
+.settingslist input[type='range'], .settingslist select { width: 100%; }

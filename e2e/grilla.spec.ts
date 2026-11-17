@@ -39,7 +39,7 @@ test.describe('grilla de reproducción', () => {
   });
 
   test('el ajuste de cifrado completo muestra maj7 y m7', async ({ page }) => {
-    await page.getByText('Más', { exact: true }).click();
+    await page.locator('.player summary', { hasText: 'Más' }).click();
     await page.getByLabel('Estilo de cifrado').selectOption('full');
     await expect(page.locator('.board .bar').nth(0)).toContainText('Dm7');
     await expect(page.locator('.board .bar').nth(2)).toContainText('Cmaj7');

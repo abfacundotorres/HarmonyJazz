@@ -7,7 +7,7 @@ base.describe('contraseña de acceso', () => {
     await page.fill('#gate-pw', 'contraseña-incorrecta');
     await page.click('button[type=submit]');
     await expect(page.getByText('Contraseña incorrecta.')).toBeVisible();
-    await expect(page.locator('nav')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toHaveCount(0);
   });
 
   base('con la contraseña correcta se entra y queda recordada', async ({ page }) => {
@@ -16,9 +16,9 @@ base.describe('contraseña de acceso', () => {
     await page.goto('/');
     await page.fill('#gate-pw', pw!);
     await page.click('button[type=submit]');
-    await expect(page.locator('nav')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
     await page.reload();
-    await expect(page.locator('nav')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
   });
 
   base('el botón de entrar está desactivado con el campo vacío', async ({ page }) => {

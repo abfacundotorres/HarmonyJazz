@@ -6,7 +6,7 @@ test.describe('pantallas', () => {
   for (const r of ROUTES) {
     test(`${r}: carga, tiene un título principal y no se desborda`, async ({ page }) => {
       await page.goto('/' + r);
-      await expect(page.locator('nav')).toBeVisible();
+      await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
       await expect(page.locator('h1')).toHaveCount(1);
       await page.waitForTimeout(500);
       const { sw, vw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, vw: window.innerWidth }));
