@@ -47,6 +47,12 @@ export function Credits() {
           <a href="https://openfontlicense.org/" {...ext}>SIL Open Font License 1.1</a>. Se distribuye con la app a través del paquete <code>@fontsource/dm-serif-display</code>.{' '}
           <a href="./licenses/DM-Serif-Display-OFL.txt" {...ext}>Texto de la licencia</a>.
         </p>
+        <p>
+          Algunos temas usan otras tipografías, también bajo la <a href="https://openfontlicense.org/" {...ext}>SIL Open Font License 1.1</a> y distribuidas con la app:{' '}
+          <b>Barlow Condensed</b> (Copyright 2017 The Barlow Project Authors; paquete <code>@fontsource/barlow-condensed</code>;{' '}
+          <a href="./licenses/Barlow-Condensed-OFL.txt" {...ext}>licencia</a>) en los temas Blue Note, y <b>Libre Baskerville</b> (Copyright 2012 The Libre Baskerville Project Authors; paquete{' '}
+          <code>@fontsource/libre-baskerville</code>; <a href="./licenses/Libre-Baskerville-OFL.txt" {...ext}>licencia</a>) en el tema Papel de partitura.
+        </p>
       </section>
 
       <section className="card">

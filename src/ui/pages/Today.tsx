@@ -7,6 +7,7 @@ import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/b
 import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
+import { ThemeCard } from '../components/ThemeCard';
 import { useLog, useMastery, useReading, useSettings } from '../hooks';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
@@ -164,6 +165,8 @@ export function Today() {
           La tonalidad cambia cada día siguiendo el ciclo de cuartas: en 12 días pasás por todas. El foco de armonía se elige en Lecciones ("Fijar como foco"); si no hay ninguno, rota cada 3 días.
         </p>
       </section>
+
+      <ThemeCard />
 
       <BackupCard onSaved={() => setDue(false)} />
     </div>

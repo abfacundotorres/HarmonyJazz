@@ -3,6 +3,8 @@
  * de seguridad ajena o estar dañado: nada de eso debe dejar la app en blanco. Cada validador devuelve el dato limpio
  * (con sólo lo válido) o null si no sirve y hay que descartarlo.
  */
+import { THEME_IDS } from '../ui/themes';
+
 export type Sanitizer = (raw: unknown) => unknown;
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -24,6 +26,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('volume', num(raw.volume, -14, 2));
   set('output', oneOf(raw.output, ['auto', 'phone', 'normal'] as const));
   set('chordStyle', oneOf(raw.chordStyle, ['ireal', 'full'] as const));
+  set('theme', oneOf(raw.theme, THEME_IDS));
   return out;
 };
 
