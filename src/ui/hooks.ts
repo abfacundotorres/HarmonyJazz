@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Library } from '../content/library';
+import { bumpSeen, dayNum, type Seen } from '../state/progress';
 import { DEFAULT_SETTINGS, Mastery, PracticeLog, Settings, usePersistent } from '../state/storage';
 import { BB_TRUMPET, INTERVAL, Interval, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
 
@@ -31,6 +32,7 @@ export const navigate = (to: string) => {
 export const useSettings = () => usePersistent<Settings>('settings', DEFAULT_SETTINGS);
 export const useLog = () => usePersistent<PracticeLog>('log', {});
 export const useMastery = () => usePersistent<Mastery>('mastery', {});
+export const useSeen = () => usePersistent<Seen>('seen', {});
 export const usePersistentLibrary = () => usePersistent<Library>('library', { tunes: [] });
 
 /** Transposición de lectura según la vista elegida. */
@@ -44,4 +46,17 @@ export function useReading(): { iv: Interval; view: Settings['view']; keyLabel: 
       keyLabel: (k: string) => noteName(simplify(transposeNote(parseNote(k), iv)), true),
     };
   }, [s.view]);
+}
+
+/** Marca un ejercicio como "salió limpio" en una tonalidad: guarda el mejor tempo y la fecha, para el repaso espaciado. */
+export function useMark() {
+  const [, setMastery] = useMastery();
+  const [, setSeen] = useSeen();
+  return useCallback(
+    (id: string, key: string, bpm: number) => {
+      setMastery((m) => ({ ...m, [id]: { ...(m[id] ?? {}), [key]: Math.max(bpm, m[id]?.[key] ?? 0) } }));
+      setSeen((s) => bumpSeen(s, id, key, dayNum()));
+    },
+    [setMastery, setSeen],
+  );
 }

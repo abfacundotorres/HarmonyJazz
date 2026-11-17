@@ -4,11 +4,14 @@ import { localDayNumber, suggest } from '../../content/scaleStudy';
 import { localizeNotes } from '../../exercises/localize';
 import type { PhraseLibrary } from '../../content/phrases';
 import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/backup';
+import { dayNum, dueItems } from '../../state/progress';
 import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { BackupCard } from '../components/BackupCard';
+import { ReviewList } from '../components/ReviewList';
 import { ThemeCard } from '../components/ThemeCard';
-import { useLog, useMastery, useReading, useSettings } from '../hooks';
+import { phraseNames, showable } from '../progressItems';
+import { useLog, useMastery, useReading, useSeen, useSettings } from '../hooks';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
 function useToday(): Date {
@@ -80,8 +83,10 @@ export function Today() {
   const [due, setDue] = useState(backupDue);
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
   const [mastery] = useMastery();
+  const [seen] = useSeen();
   const scale = useMemo(() => suggest(mastery, localDayNumber(today)), [mastery, today]);
   const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale), [today, settings.minutes, settings.focusLesson, pl, scale]);
+  const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
   const day = log[plan.date] ?? { done: [], minutes: 0 };
   const total = plan.blocks.reduce((s, b) => s + b.minutes, 0);
   const s = streak(log, today);
@@ -138,6 +143,16 @@ export function Today() {
           </span>
         </div>
       </section>
+
+      {review.length > 0 && (
+        <section className="card" id="repaso">
+          <h2 className="h3like">Para repasar</h2>
+          <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} />
+          <p>
+            <a className="button" href="#/progreso">{review.length > 3 ? `Ver los ${review.length} pendientes →` : 'Ver mi progreso →'}</a>
+          </p>
+        </section>
+      )}
 
       <div className="blocks">
         {plan.blocks.map((b, i) => (

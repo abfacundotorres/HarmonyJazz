@@ -37,7 +37,7 @@ export const testLoose = base.extend({
 
 export { expect };
 
-export const ROUTES = ['#/hoy', '#/playalong', '#/lecciones', '#/lecciones/guide-tones', '#/escalas', '#/vocabulario', '#/transcribir', '#/escucha'];
+export const ROUTES = ['#/hoy', '#/progreso', '#/playalong', '#/lecciones', '#/lecciones/guide-tones', '#/escalas', '#/vocabulario', '#/transcribir', '#/escucha'];
 
 /** Segundos de un texto "m:ss.s". */
 export const secs = (txt: string) => {

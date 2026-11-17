@@ -6,7 +6,7 @@ import type { Chart } from '../../theory/chart';
 import { KeySelect } from './KeySelect';
 import { Notation } from './Notation';
 import { Player } from './Player';
-import { useMastery, useReading } from '../hooks';
+import { useMark, useMastery, useReading } from '../hooks';
 import { usePosition } from '../usePosition';
 
 export interface ExerciseCardProps {
@@ -27,7 +27,8 @@ export interface ExerciseCardProps {
 export function ExerciseCard(p: ExerciseCardProps) {
   const { iv, view } = useReading();
   const [tempo, setTempo] = useState(p.tempo);
-  const [mastery, setMastery] = useMastery();
+  const [mastery] = useMastery();
+  const markDone = useMark();
   const pos = usePosition();
   const bar = pos && pos.owner === p.id && !pos.countIn ? pos.bar : -1;
   const masteryKey = p.keyValue ?? 'todas';
@@ -38,8 +39,7 @@ export function ExerciseCard(p: ExerciseCardProps) {
     [p.chart, p.notes, iv, p.keyValue, p.mode],
   );
 
-  const mark = () =>
-    setMastery((m) => ({ ...m, [p.id]: { ...(m[p.id] ?? {}), [masteryKey]: Math.max(tempo, m[p.id]?.[masteryKey] ?? 0) } }));
+  const mark = () => markDone(p.id, masteryKey, tempo);
   const doneCount = Object.keys(record).filter((k) => k !== 'todas').length;
 
   return (
