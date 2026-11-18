@@ -13,6 +13,8 @@ interface Props {
   tempo: number;
   onTempo: (bpm: number) => void;
   running: boolean;
+  /** Empezar o parar (botón sobre el zócalo del aparato). */
+  onToggle: () => void;
   /** Pulsos agendados por el motor (el péndulo los lee en cada cuadro). */
   beats: MutableRefObject<SwingBeat[]>;
   /** Reloj de audio de lo que se oye ahora. */
@@ -20,7 +22,7 @@ interface Props {
 }
 
 /** Metrónomo de péndulo (tipo Maelzel) dibujado en SVG. La varilla se anima con el reloj de audio; la pesa se arrastra para cambiar el tempo. */
-export function Pendulum({ tempo, onTempo, running, beats, now }: Props) {
+export function Pendulum({ tempo, onTempo, running, onToggle, beats, now }: Props) {
   const svg = useRef<SVGSVGElement>(null);
   const rod = useRef<SVGGElement>(null);
   const angle = useRef(0);
@@ -91,49 +93,99 @@ export function Pendulum({ tempo, onTempo, running, beats, now }: Props) {
 
   const wy = PIVOT.y - dist(tempo);
   return (
-    <svg ref={svg} className="pendulum" viewBox="0 34 240 346" role="group" aria-label="Metrónomo de péndulo" onPointerMove={(e) => drag.current && toTempo(e)} onPointerUp={() => (drag.current = false)} onPointerCancel={() => (drag.current = false)}>
+    <div className="pend-wrap">
+    <svg ref={svg} className="pendulum" viewBox="0 40 240 370" role="group" aria-label="Metrónomo de péndulo" onPointerMove={(e) => drag.current && toTempo(e)} onPointerUp={() => (drag.current = false)} onPointerCancel={() => (drag.current = false)}>
       <defs>
         <linearGradient id="pend-wood" x1="0" x2="1">
-          <stop offset="0" stopColor="#8a5a2b" />
-          <stop offset="0.45" stopColor="#c58f55" />
-          <stop offset="1" stopColor="#7a4b21" />
+          <stop offset="0" stopColor="#7a4a22" />
+          <stop offset="0.3" stopColor="#b9814a" />
+          <stop offset="0.55" stopColor="#a56d3a" />
+          <stop offset="1" stopColor="#5e3718" />
+        </linearGradient>
+        <linearGradient id="pend-panel" x1="0" x2="1">
+          <stop offset="0" stopColor="#4a2b10" />
+          <stop offset="0.4" stopColor="#6d4420" />
+          <stop offset="1" stopColor="#3d230c" />
         </linearGradient>
         <linearGradient id="pend-brass" x1="0" x2="1">
-          <stop offset="0" stopColor="#8a6a1f" />
-          <stop offset="0.5" stopColor="#f0d078" />
-          <stop offset="1" stopColor="#8a6a1f" />
+          <stop offset="0" stopColor="#7d5a14" />
+          <stop offset="0.3" stopColor="#e9c868" />
+          <stop offset="0.55" stopColor="#fff0b0" />
+          <stop offset="0.75" stopColor="#c99a2e" />
+          <stop offset="1" stopColor="#6e4d0f" />
         </linearGradient>
-        <linearGradient id="pend-rod" x1="0" x2="1">
-          <stop offset="0" stopColor="#bfb7a6" />
-          <stop offset="0.5" stopColor="#f6f1e4" />
-          <stop offset="1" stopColor="#bfb7a6" />
+        <linearGradient id="pend-steel" x1="0" x2="1">
+          <stop offset="0" stopColor="#8d8a82" />
+          <stop offset="0.35" stopColor="#f4f1ea" />
+          <stop offset="0.6" stopColor="#cfcabd" />
+          <stop offset="1" stopColor="#77736a" />
         </linearGradient>
+        <linearGradient id="pend-top" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d9a468" />
+          <stop offset="1" stopColor="#8a5a2b" />
+        </linearGradient>
+        <radialGradient id="pend-shadow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#000" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        {/* veta de la madera: ruido estirado en vertical, sólo se dibuja una vez (no se anima) */}
+        <filter id="pend-grain" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.018 0.55" numOctaves="3" seed="11" result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.16  0 0 0 0 0.07  0 0 0 0 0.02  0 0 0 2.6 -0.95" result="g" />
+          <feComposite in="g" in2="SourceGraphic" operator="in" />
+        </filter>
       </defs>
       <g aria-hidden="true">
-        <rect x="14" y="356" width="212" height="16" rx="4" fill="#5d3a18" />
-        <polygon points="26,358 214,358 158,66 82,66" fill="url(#pend-wood)" stroke="#4b2d10" strokeWidth="2" />
-        <polygon points="40,350 200,350 153,86 87,86" fill="#6b4421" opacity="0.55" />
-        <rect x="76" y="58" width="88" height="12" rx="3" fill="#5d3a18" />
-        <ellipse cx="120" cy="334" rx="40" ry="9" fill="#3a230d" opacity="0.5" />
+        <ellipse cx="120" cy="396" rx="112" ry="10" fill="url(#pend-shadow)" />
+        {/* zócalo */}
+        <rect x="12" y="350" width="216" height="46" rx="9" fill="url(#pend-wood)" stroke="#3a2008" strokeWidth="1.5" />
+        <rect x="12" y="350" width="216" height="46" rx="9" fill="#000" filter="url(#pend-grain)" opacity="0.7" />
+        <rect x="14" y="351" width="212" height="5" rx="3" fill="#fff" opacity="0.22" />
+        {/* cuerpo piramidal */}
+        <polygon points="28,352 212,352 160,62 80,62" fill="url(#pend-wood)" stroke="#3a2008" strokeWidth="2" strokeLinejoin="round" />
+        <polygon points="28,352 212,352 160,62 80,62" fill="#000" filter="url(#pend-grain)" opacity="0.75" />
+        <polyline points="30,350 82,64" fill="none" stroke="#f3cf9a" strokeOpacity="0.55" strokeWidth="2.2" strokeLinecap="round" />
+        <polyline points="210,350 158,64" fill="none" stroke="#2c1706" strokeOpacity="0.5" strokeWidth="2.2" strokeLinecap="round" />
+        {/* tapa */}
+        <path d="M74 66 L74 56 Q74 48 82 48 L158 48 Q166 48 166 56 L166 66 Z" fill="url(#pend-top)" stroke="#3a2008" strokeWidth="1.5" />
+        <rect x="80" y="50" width="80" height="3" rx="1.5" fill="#fff" opacity="0.3" />
+        {/* frente hundido con marco de latón */}
+        <polygon points="46,336 194,336 152,88 88,88" fill="url(#pend-panel)" stroke="url(#pend-brass)" strokeWidth="2.4" strokeLinejoin="round" />
+        <polygon points="50,333 190,333 150,92 90,92" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="1.5" />
+        {/* placa de latón y tornillos */}
+        <rect x="99" y="96" width="42" height="9" rx="2" fill="url(#pend-brass)" stroke="#6e4d0f" strokeWidth="0.8" />
+        <line x1="104" x2="136" y1="100.5" y2="100.5" stroke="#6e4d0f" strokeWidth="0.8" opacity="0.7" />
+        {[[58, 328], [182, 328], [95, 100], [145, 100]].map(([x, y]) => (
+          <g key={`${x}-${y}`}>
+            <circle cx={x} cy={y} r="2.6" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="0.6" />
+            <line x1={x - 1.7} x2={x + 1.7} y1={y - 0.5} y2={y + 0.5} stroke="#5a3f0a" strokeWidth="0.7" />
+          </g>
+        ))}
+        {/* llave de cuerda en el costado */}
+        <path d="M204 262 q14 -3 18 -14 q3 -8 -3 -9 q-5 0 -6 6 q-1 5 -9 7 z M204 262 q14 3 18 14 q3 8 -3 9 q-5 0 -6 -6 q-1 -5 -9 -7 z" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="0.9" />
+        <circle cx="203" cy="262" r="5" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="0.9" />
       </g>
       <g ref={rod}>
         <g aria-hidden="true">
-          <rect x="114" y={PIVOT.y - D_MAX - 14} width="12" height={D_MAX + 14 + 30} rx="2" fill="url(#pend-rod)" stroke="#7d7461" strokeWidth="1" />
+          <rect x="116" y={PIVOT.y - D_MAX - 14} width="8" height={D_MAX + 14 + 34} rx="2.5" fill="url(#pend-steel)" stroke="#4d493f" strokeWidth="0.9" />
+          <rect x="116" y={PIVOT.y - D_MAX - 14} width="8" height="6" rx="2.5" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="0.8" />
           {SCALE_MARKS.map((m, i) => {
             const y = PIVOT.y - dist(m);
             const big = i % 2 === 0;
             return (
               <g key={m}>
-                <line x1="114" x2={big ? 121 : 118} y1={y} y2={y} stroke="#3b3426" strokeWidth="1" />
+                <line x1="116" x2={big ? 123 : 120} y1={y} y2={y} stroke="#2b261b" strokeWidth="0.9" />
                 {big && (
-                  <text x="123" y={y + 2.4} fontSize="7" fill="#3b3426" fontFamily="system-ui, sans-serif">
+                  <text x="125.5" y={y + 2.3} fontSize="7.5" fill="#fff6dc" stroke="#1a140a" strokeWidth="0.35" paintOrder="stroke" fontFamily="system-ui, sans-serif">
                     {m}
                   </text>
                 )}
               </g>
             );
           })}
-          <circle cx="120" cy={PIVOT.y + 24} r="7" fill="url(#pend-brass)" stroke="#6c5316" strokeWidth="1" />
+          {/* contrapeso inferior */}
+          <circle cx="120" cy={PIVOT.y + 26} r="8" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="1" />
+          <ellipse cx="117.5" cy={PIVOT.y + 23.5} rx="2.6" ry="1.6" fill="#fff" opacity="0.6" />
         </g>
         <g
           className="pend-weight"
@@ -154,14 +206,21 @@ export function Pendulum({ tempo, onTempo, running, beats, now }: Props) {
           }}
         >
           <circle r="30" fill="transparent" />
-          <path d="M-19 13 L-12 -13 L12 -13 L19 13 Z" fill="url(#pend-brass)" stroke="#6c5316" strokeWidth="1.5" />
-          <line x1="-15" x2="15" y1="0" y2="0" stroke="#6c5316" strokeWidth="1" opacity="0.7" />
+          <path d="M-19 14 L-12 -14 L12 -14 L19 14 Z" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="1.4" strokeLinejoin="round" />
+          <path d="M-13.5 -10 L13.5 -10" stroke="#fff" strokeOpacity="0.55" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M-16 9 L16 9" stroke="#5a3f0a" strokeOpacity="0.5" strokeWidth="1.2" />
+          <rect x="-4" y="-5" width="8" height="9" rx="2" fill="#5a3f0a" opacity="0.55" />
         </g>
       </g>
       <g aria-hidden="true">
-        <circle cx={PIVOT.x} cy={PIVOT.y} r="9" fill="url(#pend-brass)" stroke="#6c5316" strokeWidth="1.5" />
-        <circle cx={PIVOT.x} cy={PIVOT.y} r="2.6" fill="#3b2a08" />
+        <circle cx={PIVOT.x} cy={PIVOT.y} r="10" fill="url(#pend-brass)" stroke="#5a3f0a" strokeWidth="1.4" />
+        <circle cx={PIVOT.x} cy={PIVOT.y} r="3.4" fill="#4a3308" />
+        <ellipse cx={PIVOT.x - 3.5} cy={PIVOT.y - 4} rx="3" ry="1.8" fill="#fff" opacity="0.55" />
       </g>
     </svg>
+    <button className="pend-play" onClick={onToggle} aria-label={running ? 'Parar' : 'Empezar'} aria-pressed={running} title={running ? 'Parar' : 'Empezar'}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">{running ? <rect x="6" y="6" width="12" height="12" rx="1.5" /> : <path d="M8 5.5 L19 12 L8 18.5 Z" />}</svg>
+    </button>
+    </div>
   );
 }

@@ -9,7 +9,7 @@
  * Para sumar muestras propias más adelante alcanza con agregar una entrada a `VOICES` con su `render`.
  */
 
-export type VoiceId = 'wood' | 'click' | 'hat' | 'cowbell';
+export type VoiceId = 'wood' | 'click' | 'hat' | 'cowbell' | 'custom';
 /** Fuerte (primer pulso), pulso y subdivisión. */
 export type HitKind = 'strong' | 'beat' | 'sub';
 
@@ -198,17 +198,111 @@ function cowbell(kind: HitKind, sr: number, variant: number): Float32Array {
   return finish(mix(len, [[body, 1], [hit, 0.3]]), sr, HIT_LEVEL[kind]);
 }
 
+/**
+ * "Mi sonido": un único modelo con perillas, para que lo armes a tu gusto. Mezcla una caja de madera (resonancias
+ * graves y secas), resonancias metálicas (cencerro, campana), un golpe de ruido (el ataque) y un siseo (hi-hat).
+ */
+export interface SoundParams {
+  /** Altura base (Hz): más grave ↔ más agudo. */
+  pitch: number;
+  /** Cuerpo de madera: resonancias secas y graves de la caja (0 a 1). */
+  wood: number;
+  /** Cuerpo metálico: resonancias inarmónicas y largas (0 a 1). */
+  metal: number;
+  /** Ataque: golpe seco de ruido al principio (0 a 1). */
+  attack: number;
+  /** Siseo: ruido brillante de hi-hat (0 a 1). */
+  hiss: number;
+  /** Duración: cuánto resuena (0,3 a 3, 1 = normal). */
+  decay: number;
+  /** Cuánto más agudo suena el primer pulso, en semitonos (0 a 12). */
+  accent: number;
+}
+export const CUSTOM_RANGES: { [K in keyof SoundParams]: [number, number] } = {
+  pitch: [200, 4000],
+  wood: [0, 1],
+  metal: [0, 1],
+  attack: [0, 1],
+  hiss: [0, 1],
+  decay: [0.3, 3],
+  accent: [0, 12],
+};
+export const DEFAULT_CUSTOM: SoundParams = { pitch: 1000, wood: 0.9, metal: 0.1, attack: 0.5, hiss: 0, decay: 1, accent: 4 };
+/** Puntos de partida para armar el propio. */
+export const CUSTOM_PRESETS: { name: string; p: SoundParams }[] = [
+  { name: 'Madera', p: DEFAULT_CUSTOM },
+  { name: 'Madera grave (caja)', p: { pitch: 520, wood: 1, metal: 0, attack: 0.35, hiss: 0, decay: 1.3, accent: 5 } },
+  { name: 'Bloque agudo', p: { pitch: 2200, wood: 0.7, metal: 0.15, attack: 0.6, hiss: 0, decay: 0.7, accent: 3 } },
+  { name: 'Campanita', p: { pitch: 1600, wood: 0.1, metal: 1, attack: 0.2, hiss: 0, decay: 1.8, accent: 7 } },
+  { name: 'Hi-hat seco', p: { pitch: 900, wood: 0.1, metal: 0.3, attack: 0.3, hiss: 1, decay: 0.5, accent: 0 } },
+  { name: 'Clic limpio', p: { pitch: 1900, wood: 0, metal: 0, attack: 0.3, hiss: 0, decay: 0.4, accent: 5 } },
+];
+const clampTo = (v: number, [a, b]: [number, number]) => Math.min(b, Math.max(a, Number.isFinite(v) ? v : a));
+/** Deja cada perilla dentro de su rango (los valores que faltan o están rotos toman el de "Madera"). */
+export function cleanCustom(raw: unknown): SoundParams {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const out = { ...DEFAULT_CUSTOM };
+  for (const k of Object.keys(out) as (keyof SoundParams)[]) if (typeof o[k] === 'number') out[k] = clampTo(o[k] as number, CUSTOM_RANGES[k]);
+  return out;
+}
+
+export function renderCustom(raw: SoundParams, kind: HitKind, sr: number, variant: number): Float32Array {
+  const p = cleanCustom(raw);
+  const rand = rng(5000 + variant * 7 + (kind === 'strong' ? 1 : kind === 'beat' ? 2 : 3));
+  const f0 = p.pitch * detune(variant) * (kind === 'strong' ? Math.pow(2, p.accent / 12) : kind === 'sub' ? 1.1 : 1);
+  const d = p.decay;
+  const len = Math.round(sr * Math.min(1.2, 0.12 + 0.2 * d + (p.metal > 0.3 ? 0.15 * d : 0)));
+  const parts: [Float32Array, number][] = [];
+  if (p.wood > 0 || p.metal === 0) {
+    // sin madera ni metal queda un "ping" de seno puro (clic limpio)
+    const modes: Mode[] = [{ f: f0, a: 1, tau: 0.03 * d * (p.wood > 0 ? 1 : 0.25) }];
+    if (p.wood > 0) {
+      modes.push(
+        { f: f0 * 0.5, a: 0.5 * p.wood, tau: 0.045 * d },
+        { f: f0 * 2.31, a: 0.6 * p.wood, tau: 0.018 * d },
+        { f: f0 * 3.76, a: 0.28 * p.wood, tau: 0.011 * d },
+        { f: f0 * 5.4, a: 0.12 * p.wood, tau: 0.007 * d },
+      );
+    }
+    parts.push([modal(len, sr, modes, rand), 1]);
+  }
+  if (p.metal > 0) {
+    parts.push([
+      modal(
+        len,
+        sr,
+        [
+          { f: f0 * 0.6, a: 1, tau: 0.09 * d },
+          { f: f0 * 0.86, a: 0.85, tau: 0.06 * d },
+          { f: f0 * 1.21, a: 0.25, tau: 0.03 * d },
+          { f: f0 * 1.73, a: 0.15, tau: 0.02 * d },
+        ],
+        rand,
+      ),
+      p.metal,
+    ]);
+  }
+  if (p.attack > 0) parts.push([biquad(noise(len, sr, 0.0016, rand), 'bp', Math.min(7000, f0 * 3), 0.9, sr), 0.55 * p.attack]);
+  if (p.hiss > 0) {
+    const tau = (kind === 'strong' ? 0.05 : kind === 'beat' ? 0.026 : 0.014) * d;
+    parts.push([biquad(noise(len, sr, tau, rand), 'hp', 6500, 0.7, sr), p.hiss]);
+  }
+  return finish(mix(len, parts), sr, HIT_LEVEL[kind]);
+}
+
 export const VOICES: VoiceInfo[] = [
   { id: 'wood', name: 'Madera (péndulo)', render: wood },
   { id: 'click', name: 'Clic electrónico', render: click },
   { id: 'hat', name: 'Hi-hat', render: hat },
   { id: 'cowbell', name: 'Cencerro', render: cowbell },
+  { id: 'custom', name: 'Mi sonido', render: (k, sr, v) => renderCustom(DEFAULT_CUSTOM, k, sr, v) },
 ];
 
 export const isVoiceId = (v: unknown): v is VoiceId => VOICES.some((x) => x.id === v);
 
 /** Todas las variantes de un golpe de una voz. */
-export function renderHit(voice: VoiceId, kind: HitKind, sampleRate: number): Float32Array[] {
+export function renderHit(voice: VoiceId, kind: HitKind, sampleRate: number, custom: SoundParams = DEFAULT_CUSTOM): Float32Array[] {
+  if (voice === 'custom') return Array.from({ length: VARIANTS }, (_, i) => renderCustom(custom, kind, sampleRate, i));
   const v = VOICES.find((x) => x.id === voice) ?? VOICES[0];
   return Array.from({ length: VARIANTS }, (_, i) => v.render(kind, sampleRate, i));
 }

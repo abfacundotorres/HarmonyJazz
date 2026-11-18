@@ -73,6 +73,29 @@ test.describe('metrónomo', () => {
     await page.getByRole('button', { name: 'Parar' }).click();
   });
 
+  test('el botón del aparato empieza y para, y "Mi sonido" se arma con las perillas y se recuerda', async ({ page }) => {
+    await page.goto('/#/metronomo');
+    const play = page.locator('.pend-play');
+    await expect(play).toBeVisible();
+    await expect(play).toHaveAttribute('aria-label', 'Empezar');
+    await play.click();
+    await expect(play).toHaveAttribute('aria-label', 'Parar');
+    await expect(page.getByText(/Compás 1/)).toBeVisible({ timeout: 10_000 });
+    await play.click();
+    await expect(play).toHaveAttribute('aria-label', 'Empezar');
+    await page.getByText('Crear mi sonido').click();
+    await page.getByLabel('Punto de partida').selectOption('Madera grave (caja)');
+    await expect(page.getByLabel('Sonido')).toHaveValue('custom');
+    const altura = page.getByLabel(/^Altura/);
+    await altura.fill('700');
+    await expect(page.getByText('700 Hz')).toBeVisible();
+    await page.getByRole('button', { name: 'Probar el fuerte' }).click();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:metro')!))).toMatchObject({ sound: 'custom', custom: { pitch: 700, wood: 1 } });
+    await page.reload();
+    await page.getByText('Crear mi sonido').click();
+    await expect(page.getByText('700 Hz')).toBeVisible();
+  });
+
   test('"Marcar el tempo" pide varios toques', async ({ page }) => {
     await page.goto('/#/metronomo');
     await page.getByRole('button', { name: 'Marcar el tempo' }).click();

@@ -60,6 +60,7 @@ describe('restaurar una copia dañada', () => {
 
 describe('herramientas de práctica: datos guardados', () => {
   it('el metrónomo recorta los números y descarta lo que no es válido', () => {
+    expect((sanitizeKey('metro', { custom: { pitch: 1e9, wood: 'x' }, sound: 'custom' }) as { custom: { pitch: number; wood: number }; sound: string })).toMatchObject({ sound: 'custom', custom: { pitch: 4000, wood: 0.9 } });
     expect(sanitizeKey('metro', { tempo: 900, beats: 'x', sub: 5, sound: 'cowbell', accent: 'si', backbeat: true, play: 0 })).toEqual({ tempo: 320, sound: 'cowbell', backbeat: true, play: 1 });
   });
   it('las notas largas guardadas descartan las filas dañadas y recortan los valores', () => {
