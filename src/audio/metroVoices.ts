@@ -9,7 +9,7 @@
  * Para sumar muestras propias más adelante alcanza con agregar una entrada a `VOICES` con su `render`.
  */
 
-export type VoiceId = 'wood' | 'click' | 'hat' | 'cowbell' | 'custom';
+export type VoiceId = 'wood' | 'click' | 'hat' | 'cowbell' | 'real' | 'custom';
 /** Fuerte (primer pulso), pulso y subdivisión. */
 export type HitKind = 'strong' | 'beat' | 'sub';
 
@@ -112,7 +112,7 @@ function noise(len: number, sr: number, tau: number, rand: () => number): Float3
 
 function mix(len: number, parts: [Float32Array, number][]): Float32Array {
   const out = new Float32Array(len);
-  for (const [p, g] of parts) for (let i = 0; i < len; i++) out[i] += p[i] * g;
+  for (const [p, g] of parts) for (let i = 0; i < len && i < p.length; i++) out[i] += p[i] * g;
   return out;
 }
 
@@ -130,6 +130,66 @@ function finish(x: Float32Array, sr: number, peak: number): Float32Array {
 
 /** Desvío pequeño y distinto en cada variante: ±0,7 % de afinación. */
 const detune = (variant: number) => 1 + [0, 0.007, -0.006][variant % VARIANTS];
+
+// ---------------------------------------------------------------------------------------------------------------
+// Golpes grabados
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Seis golpes de un metrónomo mecánico real (public/samples/metronome/ticks.wav: 6 segmentos de 0,2 s, mono). Son
+ * recortes de una grabación con licencia libre (créditos en samples/CREDITS.txt) a los que se les reconstruyó el
+ * pico recortado. Los carga el motor y los registra con `setRealBase`; mientras no estén, la voz grabada cae en la
+ * madera sintetizada.
+ */
+export const REAL_SEG_SECONDS = 0.2;
+export const REAL_COUNT = 6;
+/** Frecuencia dominante de los golpes grabados (Hz): con la "Altura" de Mi sonido en este valor suenan sin cambiar. */
+export const REAL_REF_HZ = 1500;
+
+let realBase: { ticks: Float32Array[]; sr: number } | null = null;
+export const setRealBase = (b: { ticks: Float32Array[]; sr: number } | null) => {
+  realBase = b;
+};
+export const hasRealBase = () => realBase !== null;
+
+/** Parte un buffer con los seis golpes seguidos. */
+export function splitReal(all: Float32Array, sr: number): Float32Array[] {
+  const seg = Math.round(sr * REAL_SEG_SECONDS);
+  return Array.from({ length: REAL_COUNT }, (_, i) => all.slice(i * seg, (i + 1) * seg));
+}
+
+/** Cambia la altura de un golpe (`ratio` > 1 sube y acorta) con interpolación cúbica, y lo lleva a la frecuencia `outSr`. */
+export function resample(x: Float32Array, ratio: number, inSr: number, outSr: number): Float32Array {
+  const step = (ratio * inSr) / outSr;
+  const len = Math.max(1, Math.floor((x.length - 1) / step));
+  const out = new Float32Array(len);
+  const at = (i: number) => x[Math.min(x.length - 1, Math.max(0, i))];
+  for (let n = 0; n < len; n++) {
+    const pos = n * step;
+    const i = Math.floor(pos);
+    const f = pos - i;
+    const [a, b, c, d] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    out[n] = b + 0.5 * f * (c - a + f * (2 * a - 5 * b + 4 * c - d + f * (3 * (b - c) + d - a)));
+  }
+  return out;
+}
+
+/** Un golpe grabado a la altura pedida, con el pico en 1 (o null si todavía no se cargaron). */
+function realLayer(sr: number, variant: number, ratio: number): Float32Array | null {
+  if (!realBase) return null;
+  const y = resample(realBase.ticks[variant % realBase.ticks.length], Math.min(2.5, Math.max(0.4, ratio)), realBase.sr, sr);
+  let max = 0;
+  for (let i = 0; i < y.length; i++) max = Math.max(max, Math.abs(y[i]));
+  if (max > 0) for (let i = 0; i < y.length; i++) y[i] /= max;
+  return y;
+}
+
+/** El golpe grabado tal cual (el fuerte y la subdivisión, apenas más agudos). Sin grabación cargada, suena la madera. */
+function recorded(kind: HitKind, sr: number, variant: number): Float32Array {
+  const layer = realLayer(sr, variant, kind === 'strong' ? 1.19 : kind === 'sub' ? 1.12 : 1);
+  if (!layer) return wood(kind, sr, variant);
+  return finish(layer, sr, HIT_LEVEL[kind]);
+}
 
 /** Madera: el "tac" de un metrónomo de péndulo. Cuerpo de caja grave más resonancias de madera dura y un golpe seco. */
 function wood(kind: HitKind, sr: number, variant: number): Float32Array {
@@ -217,6 +277,8 @@ export interface SoundParams {
   decay: number;
   /** Cuánto más agudo suena el primer pulso, en semitonos (0 a 12). */
   accent: number;
+  /** Mezcla de un golpe grabado de un metrónomo mecánico real (0 a 1). Sigue a la altura. */
+  real: number;
 }
 export const CUSTOM_RANGES: { [K in keyof SoundParams]: [number, number] } = {
   pitch: [200, 4000],
@@ -226,16 +288,19 @@ export const CUSTOM_RANGES: { [K in keyof SoundParams]: [number, number] } = {
   hiss: [0, 1],
   decay: [0.3, 3],
   accent: [0, 12],
+  real: [0, 1],
 };
-export const DEFAULT_CUSTOM: SoundParams = { pitch: 1000, wood: 0.9, metal: 0.1, attack: 0.5, hiss: 0, decay: 1, accent: 4 };
+export const DEFAULT_CUSTOM: SoundParams = { pitch: 1000, wood: 0.9, metal: 0.1, attack: 0.5, hiss: 0, decay: 1, accent: 4, real: 0 };
 /** Puntos de partida para armar el propio. */
 export const CUSTOM_PRESETS: { name: string; p: SoundParams }[] = [
   { name: 'Madera', p: DEFAULT_CUSTOM },
-  { name: 'Madera grave (caja)', p: { pitch: 520, wood: 1, metal: 0, attack: 0.35, hiss: 0, decay: 1.3, accent: 5 } },
-  { name: 'Bloque agudo', p: { pitch: 2200, wood: 0.7, metal: 0.15, attack: 0.6, hiss: 0, decay: 0.7, accent: 3 } },
-  { name: 'Campanita', p: { pitch: 1600, wood: 0.1, metal: 1, attack: 0.2, hiss: 0, decay: 1.8, accent: 7 } },
-  { name: 'Hi-hat seco', p: { pitch: 900, wood: 0.1, metal: 0.3, attack: 0.3, hiss: 1, decay: 0.5, accent: 0 } },
-  { name: 'Clic limpio', p: { pitch: 1900, wood: 0, metal: 0, attack: 0.3, hiss: 0, decay: 0.4, accent: 5 } },
+  { name: 'Madera grave (caja)', p: { pitch: 520, wood: 1, metal: 0, attack: 0.35, hiss: 0, decay: 1.3, accent: 5, real: 0 } },
+  { name: 'Grabación con cuerpo de madera', p: { pitch: 1300, wood: 0.5, metal: 0, attack: 0.1, hiss: 0, decay: 1.2, accent: 3, real: 0.9 } },
+  { name: 'Sólo la grabación', p: { pitch: REAL_REF_HZ, wood: 0, metal: 0, attack: 0, hiss: 0, decay: 1, accent: 3, real: 1 } },
+  { name: 'Bloque agudo', p: { pitch: 2200, wood: 0.7, metal: 0.15, attack: 0.6, hiss: 0, decay: 0.7, accent: 3, real: 0 } },
+  { name: 'Campanita', p: { pitch: 1600, wood: 0.1, metal: 1, attack: 0.2, hiss: 0, decay: 1.8, accent: 7, real: 0 } },
+  { name: 'Hi-hat seco', p: { pitch: 900, wood: 0.1, metal: 0.3, attack: 0.3, hiss: 1, decay: 0.5, accent: 0, real: 0 } },
+  { name: 'Clic limpio', p: { pitch: 1900, wood: 0, metal: 0, attack: 0.3, hiss: 0, decay: 0.4, accent: 5, real: 0 } },
 ];
 const clampTo = (v: number, [a, b]: [number, number]) => Math.min(b, Math.max(a, Number.isFinite(v) ? v : a));
 /** Deja cada perilla dentro de su rango (los valores que faltan o están rotos toman el de "Madera"). */
@@ -251,9 +316,11 @@ export function renderCustom(raw: SoundParams, kind: HitKind, sr: number, varian
   const rand = rng(5000 + variant * 7 + (kind === 'strong' ? 1 : kind === 'beat' ? 2 : 3));
   const f0 = p.pitch * detune(variant) * (kind === 'strong' ? Math.pow(2, p.accent / 12) : kind === 'sub' ? 1.1 : 1);
   const d = p.decay;
-  const len = Math.round(sr * Math.min(1.2, 0.12 + 0.2 * d + (p.metal > 0.3 ? 0.15 * d : 0)));
+  const rl = p.real > 0 ? realLayer(sr, variant, f0 / REAL_REF_HZ) : null;
+  const len = Math.max(rl?.length ?? 0, Math.round(sr * Math.min(1.2, 0.12 + 0.2 * d + (p.metal > 0.3 ? 0.15 * d : 0))));
   const parts: [Float32Array, number][] = [];
-  if (p.wood > 0 || p.metal === 0) {
+  const onlyReal = !!rl && p.real >= 0.95 && p.wood === 0 && p.metal === 0;
+  if (!onlyReal && (p.wood > 0 || p.metal === 0)) {
     // sin madera ni metal queda un "ping" de seno puro (clic limpio)
     const modes: Mode[] = [{ f: f0, a: 1, tau: 0.03 * d * (p.wood > 0 ? 1 : 0.25) }];
     if (p.wood > 0) {
@@ -283,6 +350,7 @@ export function renderCustom(raw: SoundParams, kind: HitKind, sr: number, varian
     ]);
   }
   if (p.attack > 0) parts.push([biquad(noise(len, sr, 0.0016, rand), 'bp', Math.min(7000, f0 * 3), 0.9, sr), 0.55 * p.attack]);
+  if (rl) parts.push([rl, 1.6 * p.real]);
   if (p.hiss > 0) {
     const tau = (kind === 'strong' ? 0.05 : kind === 'beat' ? 0.026 : 0.014) * d;
     parts.push([biquad(noise(len, sr, tau, rand), 'hp', 6500, 0.7, sr), p.hiss]);
@@ -295,6 +363,7 @@ export const VOICES: VoiceInfo[] = [
   { id: 'click', name: 'Clic electrónico', render: click },
   { id: 'hat', name: 'Hi-hat', render: hat },
   { id: 'cowbell', name: 'Cencerro', render: cowbell },
+  { id: 'real', name: 'Metrónomo mecánico (grabación)', render: recorded },
   { id: 'custom', name: 'Mi sonido', render: (k, sr, v) => renderCustom(DEFAULT_CUSTOM, k, sr, v) },
 ];
 
@@ -303,6 +372,7 @@ export const isVoiceId = (v: unknown): v is VoiceId => VOICES.some((x) => x.id =
 /** Todas las variantes de un golpe de una voz. */
 export function renderHit(voice: VoiceId, kind: HitKind, sampleRate: number, custom: SoundParams = DEFAULT_CUSTOM): Float32Array[] {
   if (voice === 'custom') return Array.from({ length: VARIANTS }, (_, i) => renderCustom(custom, kind, sampleRate, i));
+  if (voice === 'real') return Array.from({ length: REAL_COUNT }, (_, i) => recorded(kind, sampleRate, i));
   const v = VOICES.find((x) => x.id === voice) ?? VOICES[0];
   return Array.from({ length: VARIANTS }, (_, i) => v.render(kind, sampleRate, i));
 }

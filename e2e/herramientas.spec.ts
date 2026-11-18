@@ -96,6 +96,25 @@ test.describe('metrónomo', () => {
     await expect(page.getByText('700 Hz')).toBeVisible();
   });
 
+  test('la voz grabada de un metrónomo mecánico se carga y suena, y "Mi sonido" puede mezclarla', async ({ page }) => {
+    const ticks = page.waitForResponse((r) => r.url().endsWith('/samples/metronome/ticks.wav'));
+    await page.goto('/#/metronomo');
+    await page.getByLabel('Sonido').selectOption('real');
+    await page.getByText('Crear mi sonido').click();
+    await page.getByRole('button', { name: 'Probar el pulso' }).click();
+    const res = await ticks;
+    expect(res.status()).toBe(200);
+    expect((await res.body()).length).toBe(105884);
+    await page.getByLabel('Punto de partida').selectOption('Grabación con cuerpo de madera');
+    await expect(page.getByLabel('Sonido')).toHaveValue('custom');
+    await expect(page.getByLabel(/^Grabación/)).toHaveValue('0.9');
+    await page.getByRole('button', { name: 'Probar el fuerte' }).click();
+    await page.getByRole('button', { name: 'Empezar' }).click();
+    await expect(page.getByText(/Compás 1/)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: 'Parar' }).click();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:metro')!))).toMatchObject({ sound: 'custom', custom: { real: 0.9 } });
+  });
+
   test('"Marcar el tempo" pide varios toques', async ({ page }) => {
     await page.goto('/#/metronomo');
     await page.getByRole('button', { name: 'Marcar el tempo' }).click();

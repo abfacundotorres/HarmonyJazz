@@ -5,7 +5,7 @@ import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
 import { Ramp, rampTempo } from './ramp';
 import { barPlan, type MetroOpts } from './metronomePlan';
-import { type HitKind, renderHit, type SoundParams, type VoiceId, VARIANTS } from './metroVoices';
+import { type HitKind, hasRealBase, renderHit, setRealBase, type SoundParams, splitReal, type VoiceId } from './metroVoices';
 import type { SwingBeat } from './pendulum';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, meterStyle, mulberry32, newCompState, Rng, Style } from './patterns';
 
@@ -730,7 +730,7 @@ export class JazzEngine {
   /** Variantes de un golpe del metrónomo, generadas una sola vez por voz, golpe y frecuencia de muestreo. */
   private metroHit(voice: VoiceId, kind: HitKind, custom?: SoundParams): Tone.ToneAudioBuffer[] {
     const sr = Tone.getContext().sampleRate;
-    const key = `${voice}:${kind}:${sr}${voice === 'custom' ? JSON.stringify(custom) : ''}`;
+    const key = `${voice}:${kind}:${sr}:${hasRealBase()}${voice === 'custom' ? JSON.stringify(custom) : ''}`;
     let b = this.metroBuffers.get(key);
     if (!b) {
       if (this.metroBuffers.size > 60) this.metroBuffers.clear(); // al mover las perillas se generan muchos
@@ -739,9 +739,25 @@ export class JazzEngine {
     }
     return b;
   }
+  private metroBasePromise: Promise<void> | null = null;
+  /** Carga (una vez) los golpes grabados de un metrónomo mecánico. Si no se puede, el metrónomo sigue con las voces sintetizadas. */
+  private loadMetroBase(): Promise<void> {
+    this.metroBasePromise ??= (async () => {
+      try {
+        const res = await fetch(new URL('metronome/ticks.wav', SAMPLE_BASE()).href);
+        if (!res.ok) throw new Error(String(res.status));
+        const buf = await Tone.getContext().rawContext.decodeAudioData(await res.arrayBuffer());
+        setRealBase({ ticks: splitReal(buf.getChannelData(0), buf.sampleRate), sr: buf.sampleRate });
+      } catch {
+        this.metroBasePromise = null; // se vuelve a intentar la próxima vez
+      }
+    })();
+    return this.metroBasePromise;
+  }
   /** Un solo golpe de prueba (para oír la voz o "Mi sonido" mientras se ajusta). */
   async previewMetroHit(voice: VoiceId, kind: HitKind, custom?: SoundParams) {
     await this.init();
+    await this.loadMetroBase();
     this.playMetroHit(voice, kind, Tone.now() + 0.02, custom);
   }
   private playMetroHit(voice: VoiceId, kind: HitKind, time: number, custom?: SoundParams) {
@@ -749,7 +765,7 @@ export class JazzEngine {
     if (!this.metroBus) this.metroBus = new Tone.Volume(-4).connect(inst.master);
     const variants = this.metroHit(voice, kind, custom);
     // rotación de variantes: nunca dos golpes seguidos idénticos
-    const src = new Tone.ToneBufferSource(variants[this.metroN++ % VARIANTS]).connect(this.metroBus);
+    const src = new Tone.ToneBufferSource(variants[this.metroN++ % variants.length]).connect(this.metroBus);
     src.onended = () => src.dispose();
     src.start(time);
   }
@@ -771,6 +787,7 @@ export class JazzEngine {
   ): Promise<boolean> {
     const entry = this.gen;
     await this.init();
+    await this.loadMetroBase();
     if (entry !== this.gen) return false;
     this.stop();
     const gen = this.gen;
