@@ -137,6 +137,20 @@ export const sanitizeLongNotes: Sanitizer = (raw) => {
   return { rows: out };
 };
 
+/** Aciertos del entrenamiento del oído: por ítem, respuestas, aciertos y último día. */
+export const sanitizeEar: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, { n: number; ok: number; d: number }> = {};
+  for (const [id, v] of Object.entries(raw).slice(0, 400)) {
+    if (id.length > 30 || !isObj(v)) continue;
+    const n = num(v.n, 0, 1e6);
+    const ok = num(v.ok, 0, 1e6);
+    const d = num(v.d, 0, 1e6);
+    if (n !== undefined && ok !== undefined && d !== undefined) out[id] = { n: Math.round(n), ok: Math.min(Math.round(ok), Math.round(n)), d: Math.round(d) };
+  }
+  return out;
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -149,6 +163,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   editor: sanitizeEditor,
   metro: sanitizeMetro,
   longnotes: sanitizeLongNotes,
+  ear: sanitizeEar,
 };
 
 /**

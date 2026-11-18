@@ -35,6 +35,7 @@ test.describe('navegación en cinco grupos', () => {
     for (const [ruta, grupo, titulo] of [
       ['#/vocabulario', 'Estudiar', 'Vocabulario'],
       ['#/escucha', 'Escuchar', 'Afinador y notas largas'],
+      ['#/oido', 'Escuchar', 'Entrenamiento del oído'],
       ['#/progreso', 'Hoy', 'Tu progreso'],
       ['#/creditos', 'Más', 'Créditos y licencias'],
     ] as const) {
