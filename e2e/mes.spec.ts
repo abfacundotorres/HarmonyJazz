@@ -26,6 +26,20 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('article.block .bhead').nth(2)).toContainText('Lenguaje: Células 1-2-3-5');
   });
 
+  test('cada tarea de los focos nuevos trae ideas de lenguaje para tocar (frases sobre el ii–V–I)', async ({ page }) => {
+    await page.goto('/#/mes');
+    await page.locator('#f-l-triadas-menores').check();
+    await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
+    const block = await openBlock(page, 'Lenguaje: Tríadas menores');
+    await block.locator('details.exercise summary').first().click();
+    const ideas = block.locator('details.ideas');
+    await expect(ideas.locator('summary')).toHaveText('Ideas para tocar (10)');
+    await ideas.locator('summary').click();
+    await expect(ideas.locator('svg').first()).toBeVisible();
+    await expect(ideas.getByText(/Idea 10/).first()).toBeVisible();
+    await expect(ideas.locator('figcaption')).toContainText('10 ideas de tres compases sobre el ii–V–I');
+  });
+
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: cinco bloques que suman la hora', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();

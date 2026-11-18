@@ -283,6 +283,7 @@ function Block({ n, block, done, onToggle, tonalKey, defaultOpen }: { n: number;
 function Exercise({ ex, tonalKey }: { ex: PracticeExercise; tonalKey: string }) {
   const { view } = useReading();
   const [open, setOpen] = useState(false);
+  const [ideasOpen, setIdeasOpen] = useState(false);
   const abc = open ? abcOf(ex, tonalKey) : null;
   return (
     <details className="exercise" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
@@ -301,6 +302,19 @@ function Exercise({ ex, tonalKey }: { ex: PracticeExercise; tonalKey: string }) 
             </Suspense>
             {ex.abcCaption && <figcaption className="muted small">{ex.abcCaption}{view === 'C' ? ' (en concierto)' : ' (escrito para trompeta en Si♭)'}</figcaption>}
           </figure>
+        )}
+        {ex.ideas && (
+          <details className="ideas" onToggle={(e) => setIdeasOpen((e.target as HTMLDetailsElement).open)}>
+            <summary>Ideas para tocar ({ex.ideas.count})</summary>
+            {ideasOpen && (
+              <figure>
+                <Suspense fallback={<p className="muted small">Cargando la partitura…</p>}>
+                  <Notation abc={ex.ideas.abc(tonalKey)} transpose={view === 'C' ? -2 : 0} />
+                </Suspense>
+                <figcaption className="muted small">{ex.ideas.caption}{view === 'C' ? ' (en concierto)' : ' (escrito para trompeta en Si♭)'}</figcaption>
+              </figure>
+            )}
+          </details>
         )}
         <h4>Cómo se hace</h4>
         <ol>{ex.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>

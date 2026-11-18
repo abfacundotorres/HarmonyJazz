@@ -10,6 +10,8 @@ import { analyzePc, parseChord, prettyDegree } from '../theory/chords';
 import { mod, parseNote, pc } from '../theory/notes';
 import { TRIAD_FACTS } from './focusFacts';
 import type { Focus, FocusTask } from './focus';
+import { ideaBars, SETS } from './ideas';
+import { abcFromBars, tonicOf } from './shapeAbc';
 import { EXAMPLES, exampleAbc } from './shapeExamples';
 
 const task = (id: string, short: string, goal: string, steps: string[], more: Partial<FocusTask> = {}): FocusTask => ({ id, short, goal, steps, ...more });
@@ -638,12 +640,63 @@ const LANG_CELULAS: Focus = {
   ],
 };
 
+/** Tareas con ideas de lenguaje: el material (`SETS`), la semilla que cambia las combinaciones y qué se destaca. */
+const IDEAS: Record<string, { set: keyof typeof SETS; seed: number; what: string }> = {
+  'foco-trm-mapa': { set: 'menores', seed: 0, what: 'tríadas menores del mapa' },
+  'foco-trm-negras': { set: 'menores', seed: 1, what: 'tríadas menores en corcheas' },
+  'foco-trm-g7': { set: 'menores', seed: 2, what: 'tríadas menores, con la de Sol menor sobre el dominante' },
+  'foco-trm-cells': { set: 'menores', seed: 3, what: 'células de tríada menor' },
+  'foco-trm-ritmo': { set: 'menores', seed: 4, what: 'tríadas menores con distintos ritmos' },
+  'foco-trm-lesson': { set: 'menores', seed: 5, what: 'tríadas menores' },
+  'foco-trmm-mapa': { set: 'mayoresMenores', seed: 0, what: 'las cuatro tríadas de cada acorde' },
+  'foco-trmm-alternar': { set: 'mayoresMenores', seed: 1, what: 'tríadas mayores y menores alternadas' },
+  'foco-trmm-oidoacorde': { set: 'mayoresMenores', seed: 2, what: 'tríadas mayores y menores' },
+  'foco-trmm-cells': { set: 'mayoresMenores', seed: 3, what: 'frases que cambian de tríada' },
+  'foco-trmm-ritmo': { set: 'mayoresMenores', seed: 4, what: 'tríadas con distintos ritmos' },
+  'foco-trmm-lesson': { set: 'mayoresMenores', seed: 5, what: 'tríadas mayores y menores' },
+  'foco-a7-iivi': { set: 'cuatroNotas', seed: 0, what: 'arpegios de cuatro notas' },
+  'foco-a7-guia': { set: 'cuatroNotas', seed: 1, what: 'arpegios que terminan en la nota guía' },
+  'foco-a7-lesson1': { set: 'cuatroNotas', seed: 2, what: 'arpegios desde la fundamental y desde la 3ª' },
+  'foco-a7-inversiones': { set: 'cuatroNotas', seed: 3, what: 'arpegios en cualquier orden' },
+  'foco-a7-ritmo': { set: 'cuatroNotas', seed: 4, what: 'arpegios con distintos ritmos' },
+  'foco-a7-menor': { set: 'menorCuatroNotas', seed: 0, what: 'arpegios sobre el ii–V–i menor' },
+  'foco-cel-mapa': { set: 'celulas', seed: 0, what: 'células sobre su acorde' },
+  'foco-cel-conectar': { set: 'celulas', seed: 1, what: 'células conectadas' },
+  'foco-cel-rotar': { set: 'celulas', seed: 2, what: 'células rotadas' },
+  'foco-cel-ritmo': { set: 'celulas', seed: 3, what: 'células con distintos ritmos' },
+  'foco-cel-menorlesson': { set: 'celulas', seed: 4, what: 'células mayores y menores' },
+};
+export const IDEAS_PER_TASK = 10;
+/** Material de cada foco para las tareas que no tienen uno propio (ciclos, oído y tema). */
+const FOCUS_SET: Record<string, { set: keyof typeof SETS; what: string }> = {
+  'l-triadas-menores': { set: 'menores', what: 'tríadas menores' },
+  'l-triadas-mayor-menor': { set: 'mayoresMenores', what: 'tríadas mayores y menores' },
+  'l-acordes-7': { set: 'cuatroNotas', what: 'arpegios de cuatro notas' },
+  'l-celulas-1235': { set: 'celulas', what: 'células de cuatro notas' },
+};
+
 /** A cada tarea con ejemplo se le agrega su pentagrama en la tonalidad del día. */
 const withExamples = (f: Focus): Focus => ({
   ...f,
-  weeks: f.weeks.map((w) => ({
+  weeks: f.weeks.map((w, wi) => ({
     ...w,
-    tasks: w.tasks.map((t) => (EXAMPLES[t.id] ? { ...t, abc: (k: string) => exampleAbc(t.id, k)!, abcCaption: EXAMPLES[t.id].caption } : t)),
+    tasks: w.tasks.map((t, ti) => {
+      const ex = EXAMPLES[t.id] ? { abc: (k: string) => exampleAbc(t.id, k)!, abcCaption: EXAMPLES[t.id].caption } : {};
+      const id = IDEAS[t.id] ?? { ...FOCUS_SET[f.id], seed: 6 + wi * 3 + ti };
+      const ideas = id
+        ? {
+            ideas: {
+              count: IDEAS_PER_TASK,
+              caption: `${IDEAS_PER_TASK} ideas de tres compases sobre el ii–V–I: ${id.what}. Cada una arranca cerca de donde terminó la anterior y cierra en la 3ª o la 5ª del último acorde. Tocalas, cambialas y quedate con las que te suenen tuyas.`,
+              abc: (k: string) => {
+                const t0 = tonicOf(k);
+                return abcFromBars(ideaBars(SETS[id.set](t0), IDEAS_PER_TASK, id.seed), t0, 80);
+              },
+            },
+          }
+        : {};
+      return { ...t, ...ex, ...ideas };
+    }),
   })),
 });
 
