@@ -10,6 +10,7 @@ import { analyzePc, parseChord, prettyDegree } from '../theory/chords';
 import { mod, parseNote, pc } from '../theory/notes';
 import { TRIAD_FACTS } from './focusFacts';
 import type { Focus, FocusTask } from './focus';
+import { EXAMPLES, exampleAbc } from './shapeExamples';
 
 const task = (id: string, short: string, goal: string, steps: string[], more: Partial<FocusTask> = {}): FocusTask => ({ id, short, goal, steps, ...more });
 const PA = { link: '#/playalong?p=ii-v-i&k={k}', linkLabel: 'Abrir el ii–V–I' };
@@ -637,4 +638,13 @@ const LANG_CELULAS: Focus = {
   ],
 };
 
-export const SHAPE_LANG_FOCI: Focus[] = [LANG_TRIADS_MENORES, LANG_TRIADS_MAYOR_MENOR, LANG_ACORDES_7, LANG_CELULAS];
+/** A cada tarea con ejemplo se le agrega su pentagrama en la tonalidad del día. */
+const withExamples = (f: Focus): Focus => ({
+  ...f,
+  weeks: f.weeks.map((w) => ({
+    ...w,
+    tasks: w.tasks.map((t) => (EXAMPLES[t.id] ? { ...t, abc: (k: string) => exampleAbc(t.id, k)!, abcCaption: EXAMPLES[t.id].caption } : t)),
+  })),
+});
+
+export const SHAPE_LANG_FOCI: Focus[] = [LANG_TRIADS_MENORES, LANG_TRIADS_MAYOR_MENOR, LANG_ACORDES_7, LANG_CELULAS].map(withExamples);
