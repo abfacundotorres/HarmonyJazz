@@ -764,7 +764,7 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .evo { display: inline-block; height: 10px; border-radius: 5px; background: var(--accent); min-width: 4px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.pendulum { display: block; width: min(100%, 230px); margin: 0 auto; touch-action: pan-y; user-select: none; }
+.pendulum { display: block; display: block; margin: 0 auto; touch-action: pan-y; user-select: none; }
 .pend-weight { cursor: grab; touch-action: none; outline: none; }
 .pend-weight:focus-visible path { stroke: var(--accent); stroke-width: 4; }
 .pend-tempo { text-align: center; margin: 4px 0 0; font-size: 1.05rem; }
@@ -772,3 +772,12 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .pend-tempo span { color: var(--muted); font-style: italic; margin-left: 6px; }
 .metro-adv > summary { cursor: pointer; list-style-position: inside; }
 .metro-adv > summary h3 { display: inline; }
+.pend-wrap { position: relative; width: min(100%, 240px); margin: 0 auto; }
+.pend-wrap .pendulum { width: 100%; }
+.pend-play { position: absolute; left: 50%; top: 91.4%; transform: translate(-50%, -50%); width: 52px; height: 52px; padding: 0; border-radius: 50%; border: 2px solid #5a3f0a; background: radial-gradient(circle at 35% 30%, #fff0b0, #e0b648 45%, #8a6414); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), inset 0 -3px 5px rgba(90, 63, 10, 0.5); display: grid; place-items: center; cursor: pointer; }
+.pend-play:active { transform: translate(-50%, -48%); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 2px 5px rgba(90, 63, 10, 0.6); }
+.pend-play svg { width: 26px; height: 26px; fill: #2e2006; }
+.pend-play:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.metro-page .knob { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 8px 0; }
+.metro-page .knob input[type='range'] { grid-column: 1; width: 100%; }
+.metro-page .knob output { grid-column: 2; min-width: 4.5em; text-align: right; font-variant-numeric: tabular-nums; }

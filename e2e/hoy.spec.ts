@@ -17,7 +17,7 @@ test.describe('Hoy', () => {
     await expect(page.locator('details.exercise[open] .paper svg').first()).toBeVisible();
     // las demás pantallas se traen de fondo: se llega a Escalas por el grupo Estudiar
     await page.getByRole('link', { name: 'Estudiar' }).click();
-    await page.getByRole('link', { name: 'Escalas' }).click();
+    await page.getByRole('link', { name: 'Escalas', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Estudio de escalas' })).toBeVisible();
   });
 

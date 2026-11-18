@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HIT_LEVEL, type HitKind, renderHit, VARIANTS, VOICES } from './metroVoices';
+import { cleanCustom, CUSTOM_PRESETS, CUSTOM_RANGES, DEFAULT_CUSTOM, HIT_LEVEL, type HitKind, renderCustom, renderHit, type SoundParams, VARIANTS, VOICES } from './metroVoices';
 
 const SR = 44100;
 const KINDS: HitKind[] = ['strong', 'beat', 'sub'];
@@ -48,5 +48,38 @@ describe('voces del metrónomo', () => {
   });
   it('el hi-hat es más brillante que la madera', () => {
     expect(zcr(renderHit('hat', 'beat', SR)[0])).toBeGreaterThan(zcr(renderHit('wood', 'beat', SR)[0]) * 1.5);
+  });
+});
+
+describe('Mi sonido (perillas)', () => {
+  const kinds: HitKind[] = ['strong', 'beat', 'sub'];
+  it('todos los puntos de partida y los extremos de cada perilla dan un golpe válido', () => {
+    const cases: SoundParams[] = CUSTOM_PRESETS.map((x) => x.p);
+    for (const k of Object.keys(CUSTOM_RANGES) as (keyof SoundParams)[]) for (const v of CUSTOM_RANGES[k]) cases.push({ ...DEFAULT_CUSTOM, [k]: v });
+    cases.push({ pitch: 200, wood: 0, metal: 0, attack: 0, hiss: 0, decay: 0.3, accent: 0 }); // casi nada: igual tiene que sonar algo
+    for (const p of cases) for (const kind of kinds) for (let v = 0; v < VARIANTS; v++) {
+      const x = renderCustom(p, kind, 48000, v);
+      expect(x.every(Number.isFinite)).toBe(true);
+      expect(peak(x)).toBeCloseTo(HIT_LEVEL[kind], 2);
+      expect(Math.abs(x[x.length - 1])).toBeLessThan(1e-3);
+    }
+  });
+  it('más grave suena más lento (menos cruces por cero) y el siseo la vuelve brillante', () => {
+    const low = renderCustom({ ...DEFAULT_CUSTOM, pitch: 400, attack: 0 }, 'beat', SR, 0);
+    const high = renderCustom({ ...DEFAULT_CUSTOM, pitch: 2500, attack: 0 }, 'beat', SR, 0);
+    expect(zcr(high)).toBeGreaterThan(zcr(low) * 1.5);
+    const hiss = renderCustom({ ...DEFAULT_CUSTOM, wood: 0, hiss: 1 }, 'beat', SR, 0);
+    expect(zcr(hiss)).toBeGreaterThan(zcr(renderCustom(DEFAULT_CUSTOM, 'beat', SR, 0)));
+  });
+  it('"duración" alarga la resonancia y el acento sube la altura del primer pulso', () => {
+    expect(renderCustom({ ...DEFAULT_CUSTOM, decay: 3 }, 'beat', SR, 0).length).toBeGreaterThan(renderCustom({ ...DEFAULT_CUSTOM, decay: 0.3 }, 'beat', SR, 0).length);
+    const strong = renderCustom({ ...DEFAULT_CUSTOM, attack: 0, accent: 12 }, 'strong', SR, 0);
+    const beat = renderCustom({ ...DEFAULT_CUSTOM, attack: 0, accent: 12 }, 'beat', SR, 0);
+    expect(zcr(strong)).toBeGreaterThan(zcr(beat) * 1.3);
+  });
+  it('cleanCustom acota lo que se sale y reemplaza lo roto', () => {
+    expect(cleanCustom({ pitch: 99999, wood: -4, decay: 'x', accent: 3 })).toEqual({ ...DEFAULT_CUSTOM, pitch: 4000, wood: 0, accent: 3 });
+    expect(cleanCustom(null)).toEqual(DEFAULT_CUSTOM);
+    expect(cleanCustom({ pitch: NaN }).pitch).toBe(CUSTOM_RANGES.pitch[0]);
   });
 });
