@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { expect, openBlock, test } from './helpers';
 
 test.describe('Hoy', () => {
   test('abre sin cargar el motor de audio ni las partituras; la partitura llega al abrir un ejercicio', async ({ page }) => {
@@ -13,8 +13,10 @@ test.describe('Hoy', () => {
     await page.goto('/#/hoy');
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
     // el ejercicio de técnica siempre trae pentagrama
-    await page.locator('article.block').nth(1).locator('details.exercise summary').first().click();
+    await (await openBlock(page, 'Técnica en la tonalidad del día')).locator('details.exercise summary').first().click();
     await expect(page.locator('details.exercise[open] .paper svg').first()).toBeVisible();
+    // las demás pantallas se traen de fondo: se llega a Escalas por el grupo Estudiar
+    await page.getByRole('link', { name: 'Estudiar' }).click();
     await page.getByRole('link', { name: 'Escalas' }).click();
     await expect(page.getByRole('heading', { name: 'Estudio de escalas' })).toBeVisible();
   });
@@ -36,6 +38,7 @@ test.describe('Hoy', () => {
     await expect(block.getByRole('button', { name: /Iniciar el temporizador, quedan 00:00/ })).toBeVisible();
     // pausar conserva lo que falta
     const second = page.locator('article.block').nth(1);
+    await second.locator('.bhead').click();
     await second.getByRole('button', { name: /Iniciar el temporizador/ }).click();
     await page.clock.runFor(2000);
     await second.getByRole('button', { name: /Pausar el temporizador/ }).click();
@@ -63,18 +66,21 @@ test.describe('Hoy', () => {
       localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'scale:ionian:octave': { C: 80 } }));
     });
     await page.goto('/#/hoy');
-    await expect(page.locator('.notice')).toContainText('Todavía no hiciste ninguna copia');
-    await page.locator('.notice').getByRole('button', { name: 'Ir a la copia' }).click();
+    await expect(page.locator('.notice:not(.monthbar)')).toContainText('Todavía no hiciste ninguna copia');
+    await page.locator('.notice:not(.monthbar)').getByRole('link', { name: 'Ir a la copia' }).click();
+    await expect(page).toHaveURL(/#\/mas/);
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Guardar copia' }).click();
     await download;
-    await expect(page.locator('.notice')).toHaveCount(0);
+    await page.goto('/#/hoy');
+    await expect(page.locator('.hero')).toContainText('Tonalidad del día');
+    await expect(page.locator('.notice:not(.monthbar)')).toHaveCount(0);
   });
 
   test('sin datos propios no hay aviso de copia', async ({ page }) => {
     await page.goto('/#/hoy');
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
-    await expect(page.locator('.notice')).toHaveCount(0);
+    await expect(page.locator('.notice:not(.monthbar)')).toHaveCount(0);
   });
 
   test('leyendo en Si♭, los nombres de las progresiones de la app también están en Si♭; en concierto quedan como son', async ({ page }) => {

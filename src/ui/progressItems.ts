@@ -19,7 +19,7 @@ export function describeItem(id: string, phrases: Pick<Lick, 'id' | 'name'>[]): 
   if (it.kind === 'lesson') {
     const l = LESSONS.find((x) => x.id === it.lesson);
     const ex = l?.exercises[it.idx];
-    return l && ex ? { title: l.title, detail: ex.label, href: (k) => `#/lecciones/${l.id}?k=${k}` } : null;
+    return l && ex ? { title: l.title, detail: ex.label, href: (k) => `#/lecciones/${l.id}?k=${k}&ex=${it.idx}` } : null;
   }
   if (it.kind === 'scale') {
     const sc = SCALES[it.scale];

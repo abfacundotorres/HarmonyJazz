@@ -3,7 +3,7 @@ import { expect, test } from './helpers';
 test.describe('créditos', () => {
   test('el enlace del pie abre la pantalla de créditos dentro de la app, también con el service worker activo', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('nav')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) await new Promise<void>((r) => navigator.serviceWorker.addEventListener('controllerchange', () => r()));
@@ -32,7 +32,7 @@ test.describe('créditos', () => {
     // y la raíz de la app sigue sirviéndose desde el caché sin conexión
     await context.setOffline(true);
     await tab.goto('/');
-    await expect(tab.locator('nav')).toBeVisible();
+    await expect(tab.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
     await context.setOffline(false);
   });
 });

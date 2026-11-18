@@ -2,7 +2,7 @@ import { expect, test } from './helpers';
 
 test('la app abre y suena sin conexión (service worker + caché)', async ({ page, context }) => {
   await page.goto('/');
-  await expect(page.locator('nav')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
   // espera a que el service worker tome el control y guarde todo
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -12,7 +12,7 @@ test('la app abre y suena sin conexión (service worker + caché)', async ({ pag
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.locator('nav')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
   await page.evaluate(() => (location.hash = '#/playalong'));
   await expect(page.locator('.player')).toBeVisible();
   const r = await page.evaluate(async () => {

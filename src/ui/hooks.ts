@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Library } from '../content/library';
 import { bumpSeen, dayNum, type Seen } from '../state/progress';
+import { EMPTY_MONTH, type MonthPlan } from '../content/monthPlan';
 import { DEFAULT_SETTINGS, Mastery, PracticeLog, Settings, usePersistent } from '../state/storage';
 import { BB_TRUMPET, INTERVAL, Interval, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
 
@@ -32,6 +33,7 @@ export const navigate = (to: string) => {
 export const useSettings = () => usePersistent<Settings>('settings', DEFAULT_SETTINGS);
 export const useLog = () => usePersistent<PracticeLog>('log', {});
 export const useMastery = () => usePersistent<Mastery>('mastery', {});
+export const useMonth = () => usePersistent<MonthPlan>('month', EMPTY_MONTH);
 export const useSeen = () => usePersistent<Seen>('seen', {});
 export const usePersistentLibrary = () => usePersistent<Library>('library', { tunes: [] });
 

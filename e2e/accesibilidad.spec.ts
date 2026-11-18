@@ -11,7 +11,7 @@ for (const scheme of ['light', 'dark'] as const) {
     for (const r of ROUTES) {
       test(r, async ({ page }) => {
         await page.goto('/' + r);
-        await expect(page.locator('nav')).toBeVisible();
+        await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
         await page.waitForTimeout(600);
         const violations = await page.evaluate(async (src) => {
           (0, eval)(src);

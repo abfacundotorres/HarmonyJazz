@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { expect, openBlock, openExercises, test } from './helpers';
 
 // 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
@@ -46,6 +46,7 @@ test.describe('técnica del día: el pentagrama sale en la tonalidad del día', 
   test('escala en terceras, escrita para Si♭ y en concierto', async ({ page }) => {
     await page.clock.setFixedTime(DIA_TERCERAS);
     await page.goto('/#/hoy');
+    await openBlock(page, 'Técnica en la tonalidad del día');
     const ex = page.locator('details.exercise', { hasText: 'Escala mayor de la tonalidad del día en terceras' });
     await ex.locator('summary').click();
     await expect(ex.locator('.paper svg')).toBeVisible();
@@ -61,7 +62,8 @@ test.describe('técnica del día: el pentagrama sale en la tonalidad del día', 
 test.describe('lecciones: cómo practicar cada ejercicio', () => {
   test('cada ejercicio trae su guía de práctica, desplegable y sin desborde', async ({ page }) => {
     await page.goto('/#/lecciones/guide-tones');
-    const guias = page.locator('details.study', { hasText: 'Cómo practicar este ejercicio' });
+    await openExercises(page);
+    const guias = page.locator('details.study:not(.fold)', { hasText: 'Cómo practicar este ejercicio' });
     await expect(guias.first()).toBeVisible();
     expect(await guias.count()).toBeGreaterThanOrEqual(5);
     await guias.first().locator('summary').click();
@@ -80,6 +82,7 @@ test.describe('técnica rítmica y de ligaduras', () => {
       await page.clock.setFixedTime(dia);
       await page.goto('/#/hoy');
       await page.reload();
+      await openBlock(page, 'Técnica en la tonalidad del día');
       const ex = page.locator('details.exercise', { hasText: titulos[i] }).first();
       await ex.locator('summary').click();
       await expect(ex.locator('.paper svg')).toBeVisible();

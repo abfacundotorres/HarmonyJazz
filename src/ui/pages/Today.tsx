@@ -7,11 +7,11 @@ import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/b
 import { dayNum, dueItems } from '../../state/progress';
 import { streak, usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
-import { BackupCard } from '../components/BackupCard';
 import { ReviewList } from '../components/ReviewList';
-import { ThemeCard } from '../components/ThemeCard';
 import { phraseNames, showable } from '../progressItems';
-import { useLog, useMastery, useReading, useSeen, useSettings } from '../hooks';
+import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings } from '../hooks';
+import { buildMonthPlan, monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
+import { focusById } from '../../content/focus';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
 function useToday(): Date {
@@ -80,16 +80,27 @@ export function Today() {
   const [log, setLog] = useLog();
   const { keyLabel, view, iv } = useReading();
   const today = useToday();
-  const [due, setDue] = useState(backupDue);
+  const [due] = useState(backupDue);
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
   const [mastery] = useMastery();
   const [seen] = useSeen();
   const scale = useMemo(() => suggest(mastery, localDayNumber(today)), [mastery, today]);
-  const plan = useMemo(() => buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale), [today, settings.minutes, settings.focusLesson, pl, scale]);
+  // plan del mes (focos elegidos) si lo hay; si no, el plan de rotación de siempre
+  const [mp] = useMonth();
+  const [lib] = usePersistentLibrary();
+  const tunes = useMemo(() => phraseNames(lib.tunes as unknown[] | undefined), [lib]);
+  const monthOn = monthActive(mp, today, tunes);
+  const session = useMemo(() => sessionNumber(log, mp.startDay, dayNum(today)), [log, mp.startDay, today]);
+  const plan = useMemo(
+    () => (monthOn ? buildMonthPlan(today, settings.minutes, mp, session, repertoireName(mp.rep, tunes)!) : buildPlan(today, settings.minutes, settings.focusLesson, pl.phrases ?? [], scale)),
+    [monthOn, today, settings.minutes, settings.focusLesson, pl, scale, mp, session, tunes],
+  );
   const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
   const day = log[plan.date] ?? { done: [], minutes: 0 };
   const total = plan.blocks.reduce((s, b) => s + b.minutes, 0);
   const s = streak(log, today);
+  /** El primer bloque sin hacer arranca abierto; los demás, plegados. */
+  const firstOpen = plan.blocks.find((b) => !day.done.includes(b.id))?.id;
 
   const toggle = (id: string) =>
     setLog((l) => {
@@ -99,21 +110,29 @@ export function Today() {
       return { ...l, [plan.date]: { done, minutes: mins } };
     });
 
-  // últimos 28 días
-  const days = Array.from({ length: 28 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (27 - i));
-    const k = isoDate(d);
-    return { k, m: log[k]?.minutes ?? 0, d };
-  });
-  const maxM = Math.max(30, ...days.map((d) => d.m));
-
   return (
     <div className="page today">
       {due !== false && (
         <p className="notice" role="status">
           <span>{due === null ? 'Todavía no hiciste ninguna copia de seguridad de tus datos.' : `Hace ${due} días que no hacés una copia de seguridad.`}</span>{' '}
-          <button onClick={() => document.getElementById('copia')?.scrollIntoView({ behavior: 'smooth' })}>Ir a la copia</button>
+          <a className="button" href="#/mas">Ir a la copia</a>
+        </p>
+      )}
+      {monthOn ? (
+        <p className="notice monthbar" role="status">
+          <span>
+            <b>{monthName(mp.month)}:</b> {focusById(mp.tech)?.title} · {focusById(mp.lang)?.title} · {repertoireName(mp.rep, tunes)}
+          </span>
+          <a href="#/mes">Ver mi mes</a>
+        </p>
+      ) : (
+        <p className="notice monthbar" role="status">
+          <span>
+            {mp.month !== '' && mp.month !== monthOf(today)
+              ? 'Empezó un mes nuevo: elegí tus focos (o seguí con los de antes).'
+              : 'Elegí pocos focos para el mes y trabajalos a fondo: técnica, lenguaje y un tema.'}
+          </span>
+          <a className="button" href="#/mes">Elegir los focos del mes</a>
         </p>
       )}
       <section className="card hero">
@@ -122,10 +141,18 @@ export function Today() {
           <div className="big">{keyLabel(plan.key)}</div>
           <span className="muted small">{view === 'Bb' ? `concierto ${plan.key}` : ''}</span>
         </div>
-        <div>
-          <span className="lbl">Tema de la semana</span>
-          <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>
-        </div>
+        {monthOn && plan.month ? (
+          <div>
+            <span className="lbl">Tu mes</span>
+            <div className="mid">Semana {plan.month.week + 1} de 4</div>
+            <span className="muted small">sesión {plan.month.session}</span>
+          </div>
+        ) : (
+          <div>
+            <span className="lbl">Tema de la semana</span>
+            <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>
+          </div>
+        )}
         <div>
           <span className="lbl">Racha</span>
           <div className="big">{s}</div>
@@ -157,6 +184,7 @@ export function Today() {
       <div className="blocks">
         {plan.blocks.map((b, i) => (
           <Block
+            defaultOpen={b.id === firstOpen}
             key={`${plan.date}:${b.id}:${b.minutes}`}
             n={i + 1}
             block={b.id === 'tune' ? { ...b, title: localizeNotes(b.title, 'C', 'C', iv) } : b}
@@ -167,28 +195,18 @@ export function Today() {
         ))}
       </div>
 
-      <section className="card">
-        <h2 className="h3like">Últimas 4 semanas</h2>
-        <div className="heat" role="img" aria-label="Minutos practicados por día">
-          {days.map((d) => (
-            <div key={d.k} title={`${d.k}: ${d.m} min`} className={d.k === plan.date ? 'today' : ''}>
-              <i style={{ height: `${(d.m / maxM) * 100}%` }} />
-            </div>
-          ))}
-        </div>
+      <details className="info">
+        <summary>¿Cómo se arma el plan de hoy?</summary>
         <p className="muted small">
           La tonalidad cambia cada día siguiendo el ciclo de cuartas: en 12 días pasás por todas. El foco de armonía se elige en Lecciones ("Fijar como foco"); si no hay ninguno, rota cada 3 días.
         </p>
-      </section>
-
-      <ThemeCard />
-
-      <BackupCard onSaved={() => setDue(false)} />
+      </details>
     </div>
   );
 }
 
-function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: ReturnType<typeof buildPlan>['blocks'][number]; done: boolean; onToggle: () => void; tonalKey: string }) {
+function Block({ n, block, done, onToggle, tonalKey, defaultOpen }: { n: number; block: ReturnType<typeof buildPlan>['blocks'][number]; done: boolean; onToggle: () => void; tonalKey: string; defaultOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [left, setLeft] = useState(block.minutes * 60);
   /** Hora (ms) en que termina; null = en pausa. Se mide contra el reloj: con la pantalla apagada el conteo no se atrasa. */
   const [endAt, setEndAt] = useState<number | null>(null);
@@ -226,27 +244,37 @@ function Block({ n, block, done, onToggle, tonalKey }: { n: number; block: Retur
   const mm = String(Math.floor(left / 60)).padStart(2, '0');
   const ss = String(left % 60).padStart(2, '0');
 
+  const bodyId = `blk-${block.id}`;
   return (
-    <article className={`card block ${done ? 'done' : ''}`}>
+    <article className={`card block ${done ? 'done' : ''} ${open ? 'open' : ''}`}>
       <header>
-        <span className="num">{n}</span>
-        <h2 className="h3like">{block.title}</h2>
-        <span className="mins">{block.minutes} min</span>
-      </header>
-      <ul>
-        {block.detail.map((d, i) =>
-          typeof d === 'string' ? <li key={i}>{d}</li> : <li key={d.id}><Exercise ex={d} tonalKey={tonalKey} /></li>,
-        )}
-      </ul>
-      <footer className="row">
-        <button onClick={toggleTimer} className={running ? 'on' : ''} aria-label={`${running ? 'Pausar' : 'Iniciar'} el temporizador, quedan ${mm}:${ss}`}>
-          {running ? '❚❚' : '▶'} {mm}:{ss}
-        </button>
-        {block.link && <a className="button" href={block.link}>{block.linkLabel} →</a>}
+        <h2 className="h3like">
+          <button className="bhead" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
+            <span className="num">{n}</span>
+            <span className="btitle">{block.title}</span>
+            <span className="mins">{running ? `${mm}:${ss}` : `${block.minutes} min`}</span>
+            <span className="chev" aria-hidden>{open ? '▾' : '▸'}</span>
+          </button>
+        </h2>
         <label className="check">
-          <input type="checkbox" checked={done} onChange={onToggle} /> Hecho
+          <input type="checkbox" checked={done} onChange={onToggle} aria-label={`Hecho: ${block.title}`} />
         </label>
-      </footer>
+      </header>
+      {open && (
+        <div id={bodyId} className="bbody">
+          <ul>
+            {block.detail.map((d, i) =>
+              typeof d === 'string' ? <li key={i}>{d}</li> : <li key={d.id}><Exercise ex={d} tonalKey={tonalKey} /></li>,
+            )}
+          </ul>
+          <footer className="row">
+            <button onClick={toggleTimer} className={running ? 'on' : ''} aria-label={`${running ? 'Pausar' : 'Iniciar'} el temporizador, quedan ${mm}:${ss}`}>
+              {running ? '❚❚' : '▶'} {mm}:{ss}
+            </button>
+            {block.link && <a className="button" href={block.link}>{block.linkLabel} →</a>}
+          </footer>
+        </div>
+      )}
     </article>
   );
 }
