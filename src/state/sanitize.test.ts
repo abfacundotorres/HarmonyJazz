@@ -57,3 +57,18 @@ describe('restaurar una copia dañada', () => {
     expect(p.data.settings).toEqual({ view: 'C' });
   });
 });
+
+describe('herramientas de práctica: datos guardados', () => {
+  it('el metrónomo recorta los números y descarta lo que no es válido', () => {
+    expect(sanitizeKey('metro', { tempo: 900, beats: 'x', sub: 5, sound: 'hat', accent: 'si', backbeat: true, play: 0 })).toEqual({ tempo: 320, sound: 'hat', backbeat: true, play: 1 });
+  });
+  it('las notas largas guardadas descartan las filas dañadas y recortan los valores', () => {
+    const rows = [{ day: '2026-11-17', midi: 60, secs: 3.2, spread: 4.1, offset: -3 }, { day: 'x', midi: 60, secs: 1, spread: 1, offset: 0 }, { day: '2026-11-18', midi: 'a', secs: 1, spread: 1, offset: 0 }, null, { day: '2026-11-18', midi: 61.4, secs: 2, spread: 400, offset: 0 }];
+    expect(sanitizeKey('longnotes', { rows })).toEqual({ rows: [rows[0], { day: '2026-11-18', midi: 61, secs: 2, spread: 100, offset: 0 }] });
+    expect(sanitizeKey('longnotes', [1])).toBeNull();
+  });
+  it('la afinación del La se limita a 415–466 Hz', () => {
+    expect((sanitizeKey('settings', { a4: 442 }) as { a4: number }).a4).toBe(442);
+    expect((sanitizeKey('settings', { a4: 9000 }) as { a4: number }).a4).toBe(466);
+  });
+});

@@ -4,6 +4,7 @@ import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
 import { Ramp, rampTempo } from './ramp';
+import { barPlan, type MetroOpts } from './metronomePlan';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, meterStyle, mulberry32, newCompState, Rng, Style } from './patterns';
 
 export interface Mix {
@@ -591,6 +592,7 @@ export class JazzEngine {
     this.inst?.bass.releaseAll?.();
     this.inst?.horn.releaseAll?.();
     this.inst?.lead.triggerRelease();
+    this.droneOn = false;
     this.keepAlive?.pause();
     if (this.playing) this.listeners.forEach((l) => l({ owner: this.lastOpts?.owner, chorus: -1, bar: -1, chordIndex: -1, beat: -1, countIn: false }));
     this.playing = false;
@@ -711,9 +713,63 @@ export class JazzEngine {
   }
 
   /** Reproduce una sola nota (concierto) de referencia. */
-  async playNote(m: number, dur = 0.8) {
+  async playNote(m: number, dur = 0.8, a4 = 440) {
     await this.init();
-    this.inst!.lead.triggerAttackRelease(midiToFreq(m), dur);
+    this.inst!.lead.triggerAttackRelease(a4 * Math.pow(2, (m - 69) / 12), dur);
+  }
+
+  /**
+   * Metrónomo independiente. Agenda de a un compás (así se puede cambiar el tempo o apagar un compás sin cortar nada)
+   * y avisa con `onBeat` en cada pulso, también en los compases en silencio. `getOpts` se lee en cada compás.
+   */
+  async playMetronome(getOpts: () => MetroOpts & { sound: 'click' | 'hat' }, onBeat: (b: { bar: number; beat: number; tempo: number; muted: boolean }) => void): Promise<boolean> {
+    const entry = this.gen;
+    await this.init();
+    if (entry !== this.gen) return false;
+    this.stop();
+    const gen = this.gen;
+    const inst = this.inst!;
+    const t = Tone.getTransport();
+    const draw = Tone.getDraw();
+    const bar = (n: number, at: number) => {
+      if (gen !== this.gen) return;
+      const o = getOpts();
+      const p = barPlan(o, n);
+      const beatSec = p.dur / Math.max(1, Math.round(o.beats));
+      for (let b = 0; b < Math.round(o.beats); b++) t.scheduleOnce((time) => draw.schedule(() => gen === this.gen && onBeat({ bar: n, beat: b, tempo: p.tempo, muted: p.muted }), time), at + b * beatSec);
+      for (const k of p.ticks) {
+        t.scheduleOnce((time) => {
+          if (o.sound === 'hat') inst.drumHit('chick', time, k.kind === 'strong' ? 1 : k.kind === 'beat' ? 0.8 : 0.45);
+          else inst.click.triggerAttackRelease(k.kind === 'strong' ? 'C6' : k.kind === 'beat' ? 'G5' : 'D5', 0.05, time, k.kind === 'sub' ? 0.5 : 1);
+        }, at + k.t);
+      }
+      const next = at + p.dur;
+      this.repeatId = t.scheduleOnce(() => bar(n + 1, next), Math.max(at, next - 0.5 * beatSec));
+    };
+    t.bpm.value = 60;
+    bar(0, 0);
+    t.start('+0.05');
+    this.playing = true;
+    return true;
+  }
+
+  private droneOn = false;
+  /** Nota sostenida de referencia (concierto, en semitonos; `a4` es la afinación del La). Si ya suena, cambia de nota. */
+  async startDrone(m: number, a4 = 440) {
+    await this.init();
+    const f = a4 * Math.pow(2, (m - 69) / 12);
+    const lead = this.inst!.lead;
+    if (this.droneOn) lead.setNote(f);
+    else lead.triggerAttack(f);
+    this.droneOn = true;
+  }
+  stopDrone() {
+    if (!this.droneOn) return;
+    this.droneOn = false;
+    this.inst?.lead.triggerRelease();
+  }
+  get droning() {
+    return this.droneOn;
   }
 
   private lineTimers: number[] = [];

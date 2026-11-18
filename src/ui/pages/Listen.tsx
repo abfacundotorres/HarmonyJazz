@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { engine } from '../../audio/engine';
 import { listen, MicListener, PitchFrame } from '../../pitch/mic';
-import { midiName } from '../../theory/notes';
-import { useReading } from '../hooks';
+import { byDay, type LongNote, trend } from '../../state/longnotes';
+import { freqToMidi, midiName } from '../../theory/notes';
+import { useReading, useSettings } from '../hooks';
+import { usePersistent } from '../../state/storage';
 
 /** Afinador + medidor de estabilidad para notas largas. */
 export function Listen() {
   const { view } = useReading();
+  const [settings, setSettings] = useSettings();
+  const a4 = settings.a4;
+  const a4Ref = useRef(a4);
+  a4Ref.current = a4;
+  const [saved, setSaved] = usePersistent<{ rows: LongNote[] }>('longnotes', { rows: [] });
+  const [droneNote, setDroneNote] = useState<number | null>(null);
   const [on, setOn] = useState(false);
   const [frame, setFrame] = useState<PitchFrame | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,11 +24,23 @@ export function Listen() {
   const holdRef = useRef(hold);
   holdRef.current = hold;
 
-  useEffect(() => () => mic.current?.stop(), []);
+  useEffect(
+    () => () => {
+      mic.current?.stop();
+      engine.stopDrone();
+    },
+    [],
+  );
+  // si cambia la afinación con el bordón sonando, se corrige en el momento
+  useEffect(() => {
+    if (droneNote !== null) void engine.startDrone(droneNote, a4);
+  }, [a4, droneNote]);
 
   const writtenOffset = view === 'Bb' ? 2 : 0;
 
-  const onFrame = (f: PitchFrame) => {
+  const onFrame = (raw: PitchFrame) => {
+    // el detector mide contra La = 440: se corrige a la afinación elegida
+    const f = raw.freq && raw.midi !== null ? { ...raw, midi: freqToMidi((raw.freq * 440) / a4Ref.current) } : raw;
     setFrame(f);
     const h = holdRef.current;
     if (f.midi === null) {
@@ -44,6 +64,9 @@ export function Listen() {
     const sd = Math.sqrt(cs.reduce((a, b) => a + (b - mean) ** 2, 0) / cs.length);
     const secs = (performance.now() - h.start) / 1000;
     setResults((r) => [{ note: midiName(h.note + writtenOffset), secs, spread: sd, offset: mean }, ...r].slice(0, 12));
+    const now = new Date();
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    setSaved((cur) => ({ rows: [...cur.rows, { day, midi: h.note, secs, spread: sd, offset: mean }].slice(-600) }));
   };
 
   const start = async () => {
@@ -95,10 +118,29 @@ export function Listen() {
         <div className="row">
           <span className="muted small">Nota de referencia:</span>
           {[58, 60, 62, 65, 67, 70].map((c) => (
-            <button key={c} onClick={() => engine.playNote(c, 1.6)}>
+            <button key={c} onClick={() => engine.playNote(c, 1.6, a4)}>
               {midiName(c + writtenOffset)}
             </button>
           ))}
+        </div>
+        <div className="row">
+          <span className="muted small">Bordón (nota sostenida):</span>
+          {[58, 60, 62, 65, 67, 70].map((c) => (
+            <button key={c} aria-pressed={droneNote === c} className={droneNote === c ? 'primary' : ''} onClick={() => {
+              if (droneNote === c) { engine.stopDrone(); setDroneNote(null); } else setDroneNote(c);
+            }}>
+              {midiName(c + writtenOffset)}
+            </button>
+          ))}
+          {droneNote !== null && <button onClick={() => { engine.stopDrone(); setDroneNote(null); }}>Parar bordón</button>}
+        </div>
+        <div className="row">
+          <label>Afinación del La
+            <select value={a4} onChange={(e) => setSettings({ a4: Number(e.target.value) })}>
+              <option value={440}>La = 440 Hz</option>
+              <option value={442}>La = 442 Hz</option>
+            </select>
+          </label>
         </div>
       </section>
 
@@ -127,6 +169,43 @@ export function Listen() {
           </table>
         )}
       </section>
+
+      <Evolution rows={saved.rows} onClear={() => setSaved({ rows: [] })} />
     </div>
+  );
+}
+
+/** Evolución de las notas largas guardadas: dispersión media por día (menos es más estable). */
+function Evolution({ rows, onClear }: { rows: LongNote[]; onClear: () => void }) {
+  const stats = byDay(rows);
+  const t = trend(stats);
+  const top = Math.max(10, ...stats.map((d) => d.spread));
+  return (
+    <section className="card">
+      <h3>Tu evolución</h3>
+      {stats.length === 0 ? (
+        <p className="muted small">Las notas largas que sostengas se guardan solas y acá vas a ver cómo cambia tu estabilidad día a día.</p>
+      ) : (
+        <>
+          <p className="muted small">
+            {t === null ? 'Con dos días de práctica ya se ve la tendencia.' : t < -0.5 ? `Mejoraste: la dispersión bajó ${Math.abs(t).toFixed(1)} cents.` : t > 0.5 ? `La dispersión subió ${t.toFixed(1)} cents: puede ser cansancio o un registro más difícil.` : 'Estás estable.'}
+          </p>
+          <table className="results">
+            <thead><tr><th>Día</th><th>Notas</th><th>Dispersión media</th><th><span className="sr-only">Gráfico</span></th></tr></thead>
+            <tbody>
+              {[...stats].reverse().map((d) => (
+                <tr key={d.day}>
+                  <td>{d.day.slice(8)}/{d.day.slice(5, 7)}</td>
+                  <td>{d.count}</td>
+                  <td className={d.spread < 5 ? 'good' : d.spread < 10 ? 'ok' : 'bad'}>{d.spread.toFixed(1)} c</td>
+                  <td aria-hidden="true"><span className="evo" style={{ width: `${Math.max(4, (d.spread / top) * 100)}%` }} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="row"><button onClick={() => window.confirm('¿Borrar el historial de notas largas?') && onClear()}>Borrar historial</button></div>
+        </>
+      )}
+    </section>
   );
 }
