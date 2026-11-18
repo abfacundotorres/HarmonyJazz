@@ -13,7 +13,8 @@ Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-alon
 - **Modo atril:** la grilla y el acorde actual en letra grande a pantalla completa, para el celular en el atril.
 - **Sin conexión:** se instala como app en Android y funciona sin señal; la pantalla se queda encendida mientras suena.
 - **Copia de seguridad:** guardá y restaurá tus temas, frases, progreso y pasajes.
-- **Afinador:** afinación, medición de estabilidad en notas largas y notas de referencia.
+- **Afinador:** afinación (La = 440 o 442), medición de estabilidad en notas largas, notas de referencia, bordón (nota sostenida) y evolución día a día de las notas largas, que se guardan solas.
+- **Metrónomo:** independiente del play-along; pulsos 1 a 12, subdivisión (corcheas, tresillos, semicorcheas), clic o hi-hat, sólo contratiempos, compases en silencio y subida de tempo.
 
 ## Desarrollo
 

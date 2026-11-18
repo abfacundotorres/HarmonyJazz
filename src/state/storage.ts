@@ -71,9 +71,11 @@ export interface Settings {
   chordStyle: 'ireal' | 'full';
   /** Tema visual ('auto' = claro u oscuro según el celular). */
   theme: ThemeId;
+  /** Afinación del La (Hz): 440 o 442, para el afinador y el bordón. */
+  a4: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto' };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440 };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

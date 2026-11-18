@@ -752,3 +752,14 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .monthbar p { margin: 0; }
 .focuspick { min-width: 0; }
 .focuspick select { width: 100%; max-width: 100%; }
+
+/* Metrónomo */
+.beats { display: flex; gap: 10px; justify-content: center; margin: 14px 0 6px; }
+.beats i { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface2); transition: background 0.05s; }
+.beats i.strong { border-color: var(--accent); }
+.beats i.now { background: var(--accent); }
+.beats i.now.muted { background: transparent; border-style: dashed; }
+.metro-page label { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.metro-page input[type='number'] { width: 5.5em; }
+.evo { display: inline-block; height: 10px; border-radius: 5px; background: var(--accent); min-width: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

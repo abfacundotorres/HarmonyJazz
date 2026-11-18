@@ -16,6 +16,7 @@ const PAGES = {
   escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
   mas: () => import('./pages/More').then((m) => ({ default: m.More })),
+  metronomo: () => import('./pages/Metronome').then((m) => ({ default: m.Metronome })),
   mes: () => import('./pages/Month').then((m) => ({ default: m.Month })),
 };
 const Progress = lazy(PAGES.progreso);
@@ -28,6 +29,7 @@ const Listen = lazy(PAGES.escucha);
 const Credits = lazy(PAGES.creditos);
 const More = lazy(PAGES.mas);
 const Month = lazy(PAGES.mes);
+const Metronome = lazy(PAGES.metronomo);
 
 
 
@@ -142,6 +144,7 @@ export function App() {
           {page === 'vocabulario' && <Vocab />}
           {page === 'transcribir' && <Transcribe />}
           {page === 'escucha' && <Listen />}
+          {page === 'metronomo' && <Metronome />}
           {page === 'creditos' && <Credits />}
           {page === 'mas' && <More />}
         </Suspense>

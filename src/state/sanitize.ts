@@ -28,6 +28,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('output', oneOf(raw.output, ['auto', 'phone', 'normal'] as const));
   set('chordStyle', oneOf(raw.chordStyle, ['ireal', 'full'] as const));
   set('theme', oneOf(raw.theme, THEME_IDS));
+  set('a4', num(raw.a4, 415, 466));
   return out;
 };
 
@@ -107,6 +108,33 @@ export const sanitizeAtril: Sanitizer = (raw) => {
 
 export const sanitizeEditor: Sanitizer = (raw) => (isObj(raw) ? (typeof raw.auto === 'boolean' ? { auto: raw.auto } : {}) : null);
 
+export const sanitizeMetro: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, unknown> = {};
+  const set = (k: string, v: unknown) => v !== undefined && (out[k] = v);
+  set('tempo', num(raw.tempo, 20, 320));
+  set('beats', num(raw.beats, 1, 12));
+  set('sub', [1, 2, 3, 4].includes(raw.sub as number) ? raw.sub : undefined);
+  set('sound', oneOf(raw.sound, ['click', 'hat'] as const));
+  for (const k of ['accent', 'backbeat', 'silenceOn', 'rampOn'] as const) if (typeof raw[k] === 'boolean') out[k] = raw[k];
+  for (const k of ['play', 'mute', 'step', 'every'] as const) set(k, num(raw[k], 1, 64));
+  set('max', num(raw.max, 20, 320));
+  return out;
+};
+
+/** Notas largas guardadas: una por fila, con el día, la nota (concierto), la dispersión y el desvío en cents. */
+export const sanitizeLongNotes: Sanitizer = (raw) => {
+  if (!isObj(raw) || !Array.isArray(raw.rows)) return null;
+  const out: { day: string; midi: number; secs: number; spread: number; offset: number }[] = [];
+  for (const r of raw.rows.slice(-600)) {
+    if (!isObj(r) || typeof r.day !== 'string' || !DAY.test(r.day)) continue;
+    const midi = num(r.midi, 24, 108), secs = num(r.secs, 0, 600), spread = num(r.spread, 0, 100), offset = num(r.offset, -100, 100);
+    if (midi === undefined || secs === undefined || spread === undefined || offset === undefined) continue;
+    out.push({ day: r.day, midi: Math.round(midi), secs, spread, offset });
+  }
+  return { rows: out };
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -117,6 +145,8 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   phrases: sanitizePhrases,
   atril: sanitizeAtril,
   editor: sanitizeEditor,
+  metro: sanitizeMetro,
+  longnotes: sanitizeLongNotes,
 };
 
 /**
