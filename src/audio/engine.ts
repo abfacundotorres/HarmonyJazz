@@ -5,6 +5,8 @@ import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
 import { Ramp, rampTempo } from './ramp';
 import { barPlan, type MetroOpts } from './metronomePlan';
+import { type HitKind, renderHit, type VoiceId, VARIANTS } from './metroVoices';
+import type { SwingBeat } from './pendulum';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, meterStyle, mulberry32, newCompState, Rng, Style } from './patterns';
 
 export interface Mix {
@@ -722,26 +724,69 @@ export class JazzEngine {
    * Metrónomo independiente. Agenda de a un compás (así se puede cambiar el tempo o apagar un compás sin cortar nada)
    * y avisa con `onBeat` en cada pulso, también en los compases en silencio. `getOpts` se lee en cada compás.
    */
-  async playMetronome(getOpts: () => MetroOpts & { sound: 'click' | 'hat' }, onBeat: (b: { bar: number; beat: number; tempo: number; muted: boolean }) => void): Promise<boolean> {
+  private metroBuffers = new Map<string, Tone.ToneAudioBuffer[]>();
+  private metroBus: Tone.Volume | null = null;
+  private metroN = 0;
+  /** Variantes de un golpe del metrónomo, generadas una sola vez por voz, golpe y frecuencia de muestreo. */
+  private metroHit(voice: VoiceId, kind: HitKind): Tone.ToneAudioBuffer[] {
+    const sr = Tone.getContext().sampleRate;
+    const key = `${voice}:${kind}:${sr}`;
+    let b = this.metroBuffers.get(key);
+    if (!b) {
+      b = renderHit(voice, kind, sr).map((x) => Tone.ToneAudioBuffer.fromArray(x));
+      this.metroBuffers.set(key, b);
+    }
+    return b;
+  }
+  private playMetroHit(voice: VoiceId, kind: HitKind, time: number) {
+    const inst = this.inst!;
+    if (!this.metroBus) this.metroBus = new Tone.Volume(-4).connect(inst.master);
+    const variants = this.metroHit(voice, kind);
+    // rotación de variantes: nunca dos golpes seguidos idénticos
+    const src = new Tone.ToneBufferSource(variants[this.metroN++ % VARIANTS]).connect(this.metroBus);
+    src.onended = () => src.dispose();
+    src.start(time);
+  }
+  /** Hora actual del reloj de audio menos la latencia de salida, es decir, lo que se está oyendo ahora (para animar). */
+  audibleNow(): number {
+    const raw = Tone.getContext().rawContext as AudioContext;
+    return Tone.now() - (raw.outputLatency || raw.baseLatency || 0);
+  }
+
+  /**
+   * Metrónomo independiente. Agenda de a un compás (así se puede cambiar el tempo o apagar un compás sin cortar nada)
+   * y avisa con `onBeat` en cada pulso, también en los compases en silencio. `onSwing` recibe cada pulso con su
+   * instante en el reloj de audio para animar el péndulo. `getOpts` se lee en cada compás.
+   */
+  async playMetronome(
+    getOpts: () => MetroOpts & { sound: VoiceId },
+    onBeat: (b: { bar: number; beat: number; tempo: number; muted: boolean }) => void,
+    onSwing?: (b: SwingBeat) => void,
+  ): Promise<boolean> {
     const entry = this.gen;
     await this.init();
     if (entry !== this.gen) return false;
     this.stop();
     const gen = this.gen;
-    const inst = this.inst!;
     const t = Tone.getTransport();
     const draw = Tone.getDraw();
+    let beatIndex = 0;
     const bar = (n: number, at: number) => {
       if (gen !== this.gen) return;
       const o = getOpts();
       const p = barPlan(o, n);
-      const beatSec = p.dur / Math.max(1, Math.round(o.beats));
-      for (let b = 0; b < Math.round(o.beats); b++) t.scheduleOnce((time) => draw.schedule(() => gen === this.gen && onBeat({ bar: n, beat: b, tempo: p.tempo, muted: p.muted }), time), at + b * beatSec);
-      for (const k of p.ticks) {
+      const beats = Math.max(1, Math.round(o.beats));
+      const beatSec = p.dur / beats;
+      for (let b = 0; b < beats; b++) {
+        const index = beatIndex++;
         t.scheduleOnce((time) => {
-          if (o.sound === 'hat') inst.drumHit('chick', time, k.kind === 'strong' ? 1 : k.kind === 'beat' ? 0.8 : 0.45);
-          else inst.click.triggerAttackRelease(k.kind === 'strong' ? 'C6' : k.kind === 'beat' ? 'G5' : 'D5', 0.05, time, k.kind === 'sub' ? 0.5 : 1);
-        }, at + k.t);
+          if (gen !== this.gen) return;
+          onSwing?.({ time, dur: beatSec, index });
+          draw.schedule(() => gen === this.gen && onBeat({ bar: n, beat: b, tempo: p.tempo, muted: p.muted }), time);
+        }, at + b * beatSec);
+      }
+      for (const k of p.ticks) {
+        t.scheduleOnce((time) => this.playMetroHit(o.sound, k.kind, time), at + k.t);
       }
       const next = at + p.dur;
       this.repeatId = t.scheduleOnce(() => bar(n + 1, next), Math.max(at, next - 0.5 * beatSec));

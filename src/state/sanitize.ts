@@ -115,7 +115,7 @@ export const sanitizeMetro: Sanitizer = (raw) => {
   set('tempo', num(raw.tempo, 20, 320));
   set('beats', num(raw.beats, 1, 12));
   set('sub', [1, 2, 3, 4].includes(raw.sub as number) ? raw.sub : undefined);
-  set('sound', oneOf(raw.sound, ['click', 'hat'] as const));
+  set('sound', oneOf(raw.sound, ['wood', 'click', 'hat', 'cowbell'] as const));
   for (const k of ['accent', 'backbeat', 'silenceOn', 'rampOn'] as const) if (typeof raw[k] === 'boolean') out[k] = raw[k];
   for (const k of ['play', 'mute', 'step', 'every'] as const) set(k, num(raw[k], 1, 64));
   set('max', num(raw.max, 20, 320));
