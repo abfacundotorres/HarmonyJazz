@@ -5,7 +5,7 @@ import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
 import { Ramp, rampTempo } from './ramp';
 import { barPlan, type MetroOpts } from './metronomePlan';
-import { type HitKind, renderHit, type VoiceId, VARIANTS } from './metroVoices';
+import { type HitKind, renderHit, type SoundParams, type VoiceId, VARIANTS } from './metroVoices';
 import type { SwingBeat } from './pendulum';
 import { bassLine, compLine, CompState, DrumVoice, drumLine, effectiveSwing, meterStyle, mulberry32, newCompState, Rng, Style } from './patterns';
 
@@ -728,20 +728,26 @@ export class JazzEngine {
   private metroBus: Tone.Volume | null = null;
   private metroN = 0;
   /** Variantes de un golpe del metrónomo, generadas una sola vez por voz, golpe y frecuencia de muestreo. */
-  private metroHit(voice: VoiceId, kind: HitKind): Tone.ToneAudioBuffer[] {
+  private metroHit(voice: VoiceId, kind: HitKind, custom?: SoundParams): Tone.ToneAudioBuffer[] {
     const sr = Tone.getContext().sampleRate;
-    const key = `${voice}:${kind}:${sr}`;
+    const key = `${voice}:${kind}:${sr}${voice === 'custom' ? JSON.stringify(custom) : ''}`;
     let b = this.metroBuffers.get(key);
     if (!b) {
-      b = renderHit(voice, kind, sr).map((x) => Tone.ToneAudioBuffer.fromArray(x));
+      if (this.metroBuffers.size > 60) this.metroBuffers.clear(); // al mover las perillas se generan muchos
+      b = renderHit(voice, kind, sr, custom).map((x) => Tone.ToneAudioBuffer.fromArray(x));
       this.metroBuffers.set(key, b);
     }
     return b;
   }
-  private playMetroHit(voice: VoiceId, kind: HitKind, time: number) {
+  /** Un solo golpe de prueba (para oír la voz o "Mi sonido" mientras se ajusta). */
+  async previewMetroHit(voice: VoiceId, kind: HitKind, custom?: SoundParams) {
+    await this.init();
+    this.playMetroHit(voice, kind, Tone.now() + 0.02, custom);
+  }
+  private playMetroHit(voice: VoiceId, kind: HitKind, time: number, custom?: SoundParams) {
     const inst = this.inst!;
     if (!this.metroBus) this.metroBus = new Tone.Volume(-4).connect(inst.master);
-    const variants = this.metroHit(voice, kind);
+    const variants = this.metroHit(voice, kind, custom);
     // rotación de variantes: nunca dos golpes seguidos idénticos
     const src = new Tone.ToneBufferSource(variants[this.metroN++ % VARIANTS]).connect(this.metroBus);
     src.onended = () => src.dispose();
@@ -759,7 +765,7 @@ export class JazzEngine {
    * instante en el reloj de audio para animar el péndulo. `getOpts` se lee en cada compás.
    */
   async playMetronome(
-    getOpts: () => MetroOpts & { sound: VoiceId },
+    getOpts: () => MetroOpts & { sound: VoiceId; custom?: SoundParams },
     onBeat: (b: { bar: number; beat: number; tempo: number; muted: boolean }) => void,
     onSwing?: (b: SwingBeat) => void,
   ): Promise<boolean> {
@@ -785,8 +791,9 @@ export class JazzEngine {
           draw.schedule(() => gen === this.gen && onBeat({ bar: n, beat: b, tempo: p.tempo, muted: p.muted }), time);
         }, at + b * beatSec);
       }
+      for (const kind of new Set(p.ticks.map((k) => k.kind))) this.metroHit(o.sound, kind, o.custom); // se generan antes de que suenen
       for (const k of p.ticks) {
-        t.scheduleOnce((time) => this.playMetroHit(o.sound, k.kind, time), at + k.t);
+        t.scheduleOnce((time) => this.playMetroHit(o.sound, k.kind, time, o.custom), at + k.t);
       }
       const next = at + p.dur;
       this.repeatId = t.scheduleOnce(() => bar(n + 1, next), Math.max(at, next - 0.5 * beatSec));

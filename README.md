@@ -14,7 +14,7 @@ Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-alon
 - **Sin conexión:** se instala como app en Android y funciona sin señal; la pantalla se queda encendida mientras suena.
 - **Copia de seguridad:** guardá y restaurá tus temas, frases, progreso y pasajes.
 - **Afinador:** afinación (La = 440 o 442), medición de estabilidad en notas largas, notas de referencia, bordón (nota sostenida) y evolución día a día de las notas largas, que se guardan solas.
-- **Metrónomo:** de péndulo (tipo Maelzel): la varilla va y viene con el reloj de audio, llega al tope justo en cada clic y la pesa se arrastra (o se mueve con el teclado) para cambiar el tempo, con el nombre italiano. Cuatro voces sintetizadas (madera, clic, hi-hat, cencerro); pulsos 1 a 12, subdivisión (corcheas, tresillos, semicorcheas), sólo contratiempos, compases en silencio y subida de tempo (en el panel plegable).
+- **Metrónomo:** de péndulo (tipo Maelzel): la varilla va y viene con el reloj de audio, llega al tope justo en cada clic y la pesa se arrastra (o se mueve con el teclado) para cambiar el tempo, con el nombre italiano. Cuatro voces sintetizadas (madera, clic, hi-hat, cencerro) y "Mi sonido": siete perillas (altura, madera, metal, ataque, siseo, duración, acento) con puntos de partida y botones para probar. Play/stop en el propio aparato; pulsos 1 a 12, subdivisión (corcheas, tresillos, semicorcheas), sólo contratiempos, compases en silencio y subida de tempo (en el panel plegable).
 
 ## Desarrollo
 
