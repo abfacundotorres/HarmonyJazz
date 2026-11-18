@@ -34,6 +34,17 @@ las genera el motor de audio por interpolación.
    "compartir igual" aplica a estas muestras y a las bibliotecas que se armen con ellas; no al código
    de la aplicación, que las usa como un recurso separado.
 
+4) Metrónomo mecánico (carpeta metronome/)
+   "Sound Classic Metronome 96.ogg"
+   Autora: Olga Ernst (trabajo propio), Wikimedia Commons
+   Licencia: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
+   https://creativecommons.org/licenses/by-sa/4.0/
+   Fuente: https://commons.wikimedia.org/wiki/File:Sound_Classic_Metronome_96.ogg
+   Cambios: se recortaron seis golpes (de 0,2 s cada uno), se les reconstruyó el pico que estaba recortado
+   por saturación, se igualó el nivel, se les puso un fundido de entrada y de salida y se guardaron
+   juntos en un único archivo WAV mono (ticks.wav). La app además puede cambiarles la altura y el nivel.
+   Estas muestras adaptadas se distribuyen bajo la misma licencia, CC BY-SA 4.0.
+
 --------------------------------------------------------------------------------
 MIT License - FluidR3 SoundFont
 

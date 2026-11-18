@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { cleanCustom, CUSTOM_PRESETS, CUSTOM_RANGES, DEFAULT_CUSTOM, HIT_LEVEL, type HitKind, renderCustom, renderHit, type SoundParams, VARIANTS, VOICES } from './metroVoices';
+import { afterEach } from 'vitest';
+import ticksDataUri from '../../public/samples/metronome/ticks.wav?inline';
+import { cleanCustom, CUSTOM_PRESETS, CUSTOM_RANGES, DEFAULT_CUSTOM, hasRealBase, HIT_LEVEL, type HitKind, REAL_COUNT, REAL_SEG_SECONDS, renderCustom, renderHit, resample, setRealBase, type SoundParams, splitReal, VARIANTS, VOICES } from './metroVoices';
 
 const SR = 44100;
 const KINDS: HitKind[] = ['strong', 'beat', 'sub'];
@@ -32,7 +34,7 @@ describe('voces del metrónomo', () => {
       it('es determinista y tiene variantes distintas', () => {
         const a = renderHit(v.id, 'beat', SR);
         const b = renderHit(v.id, 'beat', SR);
-        expect(a).toHaveLength(VARIANTS);
+        expect(a).toHaveLength(v.id === 'real' ? REAL_COUNT : VARIANTS);
         expect(Array.from(a[0])).toEqual(Array.from(b[0]));
         expect(Array.from(a[0])).not.toEqual(Array.from(a[1]));
       });
@@ -56,7 +58,7 @@ describe('Mi sonido (perillas)', () => {
   it('todos los puntos de partida y los extremos de cada perilla dan un golpe válido', () => {
     const cases: SoundParams[] = CUSTOM_PRESETS.map((x) => x.p);
     for (const k of Object.keys(CUSTOM_RANGES) as (keyof SoundParams)[]) for (const v of CUSTOM_RANGES[k]) cases.push({ ...DEFAULT_CUSTOM, [k]: v });
-    cases.push({ pitch: 200, wood: 0, metal: 0, attack: 0, hiss: 0, decay: 0.3, accent: 0 }); // casi nada: igual tiene que sonar algo
+    cases.push({ pitch: 200, wood: 0, metal: 0, attack: 0, hiss: 0, decay: 0.3, accent: 0, real: 0 }); // casi nada: igual tiene que sonar algo
     for (const p of cases) for (const kind of kinds) for (let v = 0; v < VARIANTS; v++) {
       const x = renderCustom(p, kind, 48000, v);
       expect(x.every(Number.isFinite)).toBe(true);
@@ -81,5 +83,105 @@ describe('Mi sonido (perillas)', () => {
     expect(cleanCustom({ pitch: 99999, wood: -4, decay: 'x', accent: 3 })).toEqual({ ...DEFAULT_CUSTOM, pitch: 4000, wood: 0, accent: 3 });
     expect(cleanCustom(null)).toEqual(DEFAULT_CUSTOM);
     expect(cleanCustom({ pitch: NaN }).pitch).toBe(CUSTOM_RANGES.pitch[0]);
+  });
+});
+
+/** Seis golpes sintéticos con la forma de los reales: un pico seco y una caída rápida. */
+const fakeBase = (sr = 44100) => {
+  const seg = Math.round(sr * REAL_SEG_SECONDS);
+  const all = new Float32Array(seg * REAL_COUNT);
+  for (let k = 0; k < REAL_COUNT; k++) for (let i = 0; i < seg; i++) all[k * seg + i] = Math.sin((2 * Math.PI * (1500 + 40 * k) * i) / sr) * Math.exp(-i / (0.006 * sr)) * (i < 4 ? i / 4 : 1);
+  return { ticks: splitReal(all, sr), sr };
+};
+
+describe('golpes grabados', () => {
+  afterEach(() => setRealBase(null));
+
+  it('sin la grabación cargada, la voz grabada suena como la madera (no falla)', () => {
+    expect(hasRealBase()).toBe(false);
+    const x = renderHit('real', 'beat', SR);
+    expect(x.length).toBeGreaterThan(0);
+    for (const v of x) expect(v.every(Number.isFinite)).toBe(true);
+  });
+
+  it('con la grabación: seis variantes válidas, con el pico del nivel y apagándose', () => {
+    setRealBase(fakeBase());
+    expect(hasRealBase()).toBe(true);
+    for (const kind of ['strong', 'beat', 'sub'] as HitKind[]) {
+      const vs = renderHit('real', kind, SR);
+      expect(vs).toHaveLength(REAL_COUNT);
+      for (const v of vs) {
+        expect(v.every(Number.isFinite)).toBe(true);
+        expect(peak(v)).toBeCloseTo(HIT_LEVEL[kind], 2);
+        expect(Math.abs(v[v.length - 1])).toBeLessThan(1e-3);
+      }
+      expect(Array.from(vs[0])).not.toEqual(Array.from(vs[1]));
+    }
+  });
+
+  it('funciona con otra frecuencia de muestreo (48 kHz) y el fuerte es más agudo que el pulso', () => {
+    setRealBase(fakeBase());
+    const strong = renderHit('real', 'strong', 48000)[0];
+    const beat = renderHit('real', 'beat', 48000)[0];
+    expect(strong.length).toBeLessThan(beat.length);
+    expect(zcr(strong)).toBeGreaterThan(zcr(beat));
+  });
+
+  it('resample: subir la altura acorta y baja la altura alarga, sin salirse de rango', () => {
+    const x = fakeBase().ticks[0];
+    expect(resample(x, 2, 44100, 44100).length).toBeCloseTo(x.length / 2, -1);
+    expect(resample(x, 0.5, 44100, 44100).length).toBeGreaterThan(x.length * 1.9);
+    expect(peak(resample(x, 1, 44100, 44100))).toBeLessThanOrEqual(peak(x) * 1.05);
+    // a la misma frecuencia y a ratio 1 es la misma señal
+    const same = resample(x, 1, 44100, 44100);
+    expect(Math.abs(same[100] - x[100])).toBeLessThan(1e-6);
+  });
+
+  it('Mi sonido con grabación: mezcla distinto que sin ella, es válido en los extremos y "Sólo la grabación" no lleva el pitido sintético', () => {
+    setRealBase(fakeBase());
+    const a = renderCustom(DEFAULT_CUSTOM, 'beat', SR, 0);
+    const b = renderCustom({ ...DEFAULT_CUSTOM, real: 1 }, 'beat', SR, 0);
+    expect(Array.from(a)).not.toEqual(Array.from(b));
+    for (const p of CUSTOM_PRESETS.map((x) => x.p)) for (const kind of ['strong', 'beat', 'sub'] as HitKind[]) {
+      const x = renderCustom(p, kind, SR, 1);
+      expect(x.every(Number.isFinite)).toBe(true);
+      expect(peak(x)).toBeCloseTo(HIT_LEVEL[kind], 2);
+    }
+    const only = renderCustom(CUSTOM_PRESETS.find((x) => x.name === 'Sólo la grabación')!.p, 'beat', SR, 0);
+    const real = renderHit('real', 'beat', SR)[0];
+    // la correlación con el golpe grabado solo es muy alta
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < Math.min(only.length, real.length); i++) {
+      dot += only[i] * real[i];
+      na += only[i] ** 2;
+      nb += real[i] ** 2;
+    }
+    expect(dot / Math.sqrt(na * nb)).toBeGreaterThan(0.9);
+  });
+
+  it('el archivo grabado trae seis golpes de 0,2 s en mono, con un pico al comienzo y la cola apagada', () => {
+    const bin = atob(ticksDataUri.slice(ticksDataUri.indexOf(',') + 1));
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const dv = new DataView(bytes.buffer);
+    const tag = (o: number) => String.fromCharCode(...bytes.slice(o, o + 4));
+    expect([tag(0), tag(8)]).toEqual(['RIFF', 'WAVE']);
+    expect(dv.getUint16(22, true)).toBe(1); // mono
+    expect(dv.getUint16(34, true)).toBe(16);
+    const sr = dv.getUint32(24, true);
+    const x = new Float32Array((bytes.length - 44) / 2);
+    for (let i = 0; i < x.length; i++) x[i] = dv.getInt16(44 + 2 * i, true) / 32768;
+    const segs = splitReal(x, sr);
+    expect(segs).toHaveLength(REAL_COUNT);
+    for (const s of segs) {
+      expect(s.length).toBe(Math.round(sr * REAL_SEG_SECONDS));
+      const head = rms(s, 0, Math.round(sr * 0.025));
+      const tail = rms(s, s.length - Math.round(sr * 0.02), s.length);
+      expect(head).toBeGreaterThan(0.05);
+      expect(tail).toBeLessThan(head * 0.01);
+      // el golpe empieza enseguida: el pico cae en el primer milisegundo y medio
+      let at = 0;
+      for (let i = 0; i < s.length; i++) if (Math.abs(s[i]) > Math.abs(s[at])) at = i;
+      expect(at / sr).toBeLessThan(0.0015);
+    }
   });
 });

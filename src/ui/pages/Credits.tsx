@@ -37,6 +37,10 @@ export function Credits() {
           <li>
             <b>Contrabajo y trompeta:</b> FluidR3 SoundFont, de Frank Wen. Licencia MIT.
           </li>
+          <li>
+            <b>Metrónomo mecánico:</b> "Sound Classic Metronome 96", de Olga Ernst (Wikimedia Commons).{' '}
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" {...ext}>CC BY-SA 4.0</a>. Se recortaron seis golpes, se les reconstruyó el pico recortado y se igualó el nivel; las muestras adaptadas conservan esa licencia.
+          </li>
         </ul>
       </section>
 

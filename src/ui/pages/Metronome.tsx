@@ -34,6 +34,7 @@ const KNOBS: [keyof SoundParams, string, string][] = [
   ['hiss', 'Siseo', '(hi-hat)'],
   ['decay', 'Duración', '(cuánto resuena)'],
   ['accent', 'Acento', '(el fuerte, más agudo)'],
+  ['real', 'Grabación', '(un tic de metrónomo real)'],
 ];
 
 const toOpts = (m: MetroState): MetroOpts & { sound: VoiceId; custom: SoundParams } => ({

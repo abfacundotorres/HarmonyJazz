@@ -69,7 +69,8 @@ test.describe('lecciones: cómo practicar cada ejercicio', () => {
     await guias.first().locator('summary').click();
     await expect(guias.first().getByText('El método, paso a paso')).toBeVisible();
     await expect(guias.first().getByText(/Un tempo de partida razonable: \d+ bpm/)).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    // la partitura de los ejercicios se redibuja al abrirlos: el ancho se comprueba una vez que se asentó
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });
 
