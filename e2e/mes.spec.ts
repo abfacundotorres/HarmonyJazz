@@ -13,11 +13,24 @@ test.describe('el mes con focos', () => {
     await expect(hoy(page).getByRole('link')).toHaveText(['Plan de hoy', 'Mi mes', 'Progreso']);
   });
 
+  test('hay focos nuevos para elegir (tríadas menores, mayores y menores, acordes de cuatro notas, células) y el plan de Hoy los trabaja', async ({ page }) => {
+    await page.goto('/#/mes');
+    for (const t of ['Tríadas menores', 'Tríadas mayores y menores', 'Acordes de cuatro notas (maj7, m7, 7, m7♭5)', 'Células 1-2-3-5 (mayor) y 1-♭3-4-5 (menor)', 'Ritmo, síncopa y tresillos', 'Arpegios, intervalos y saltos']) {
+      await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
+    }
+    await page.locator('#f-l-celulas-1235').check();
+    await page.locator('#f-t-ritmo-precision').check();
+    await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
+    await expect(page).toHaveURL(/#\/hoy$/);
+    await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Ritmo, síncopa y tresillos');
+    await expect(page.locator('article.block .bhead').nth(2)).toContainText('Lenguaje: Células 1-2-3-5');
+  });
+
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: cinco bloques que suman la hora', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();
     await page.getByLabel('Nota larga y articulación').check();
-    await page.getByLabel('Tríadas mayores').check();
+    await page.locator('#f-l-triadas-mayores').check();
     // el tema: sin temas propios se ofrece una forma incluida y se explica cómo cargar uno
     await expect(page.getByText(/cargá su cifrado en Play-along → Mis temas/)).toBeVisible();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();

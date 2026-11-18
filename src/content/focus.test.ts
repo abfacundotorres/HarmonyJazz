@@ -1,7 +1,10 @@
 import abcjs from 'abcjs';
 import { describe, expect, it } from 'vitest';
 import { CONCERT_KEYS } from '../theory/chart';
+import { chordTones, parseChord } from '../theory/chords';
+import { noteName } from '../theory/notes';
 import { FOCI, focusById, LANG_FOCI, REPERTOIRE_WEEKS, SESSIONS_PER_WEEK, TECH_FOCI, TRIAD_FACTS, triadDegrees, WEEKS, type FocusTask } from './focus';
+import { CELL_FACTS, degreesOver, MINOR_TRIAD_FACTS, SEVENTH_FACTS } from './focusShapes';
 import { LESSONS } from './lessons';
 import { abcOf } from './practice';
 import { PROGRESSIONS } from './progressions';
@@ -101,6 +104,39 @@ describe('catálogo de focos', () => {
     for (const f of TRIAD_FACTS) expect(mapa).toContain(f.chord);
     expect(mapa).toContain('F mayor (♭3-5-♭7)');
     expect(mapa).toContain('G mayor (5-7-9)');
+  });
+
+  it('hay más focos para elegir al empezar el mes: tríadas menores y mixtas, acordes de cuatro notas y células', () => {
+    for (const id of ['l-triadas-menores', 'l-triadas-mayor-menor', 'l-acordes-7', 'l-celulas-1235']) expect(focusById(id)?.area, id).toBe('lenguaje');
+    for (const id of ['t-ritmo-precision', 't-arpegios-saltos']) expect(focusById(id)?.area, id).toBe('tecnica');
+    expect(TECH_FOCI.length).toBeGreaterThanOrEqual(6);
+    expect(LANG_FOCI.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('las tríadas menores de la tabla caen en los grados que dice', () => {
+    for (const f of MINOR_TRIAD_FACTS) for (const t of f.triads) expect(degreesOver(f.chord, t.root, [0, 3, 7]), `${t.root} menor sobre ${f.chord}`).toBe(t.degrees);
+    const mapa = focusById('l-triadas-menores')!.weeks[1].tasks[0].steps.join(' ');
+    for (const f of MINOR_TRIAD_FACTS) for (const t of f.triads) expect(mapa).toContain(`${t.root} menor (${t.degrees})`);
+  });
+
+  it('las cuatro calidades de acorde de cuatro notas tienen las notas y la fórmula que dicen los textos', () => {
+    for (const f of SEVENTH_FACTS) {
+      const c = parseChord(f.chord);
+      expect(chordTones(c).map((n) => noteName(n, true)), f.chord).toEqual(f.notes);
+      expect(degreesOver(f.chord, 'C', f.semis), f.chord).toBe(f.formula);
+    }
+    const t = focusById('l-acordes-7')!.weeks[0].tasks[0].steps.join(' ');
+    for (const f of SEVENTH_FACTS) expect(t).toContain(f.notes.join(' '));
+  });
+
+  it('las células 1-2-3-5 y 1-♭3-4-5 caen sobre los acordes que dice la tabla', () => {
+    for (const f of CELL_FACTS) {
+      expect(degreesOver(f.chord, f.root, f.semis), `${f.cell} sobre ${f.chord}`).toBe(f.degrees);
+      const names = f.notes.split('-');
+      expect(names, f.chord).toHaveLength(4);
+    }
+    const mapa = focusById('l-celulas-1235')!.weeks[1].tasks[0].steps.join(' ');
+    for (const f of CELL_FACTS) expect(mapa).toContain(f.notes);
   });
 
   it('el repertorio nombra el tema elegido y cada semana tiene su meta', () => {
