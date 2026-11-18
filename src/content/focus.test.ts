@@ -6,6 +6,7 @@ import { noteName, parseNote, pc } from '../theory/notes';
 import { scaleNotes } from '../theory/scales';
 import { FOCI, focusById, LANG_FOCI, REPERTOIRE_WEEKS, SESSIONS_PER_WEEK, TECH_FOCI, TRIAD_FACTS, triadDegrees, WEEKS, type FocusTask } from './focus';
 import { CHORD_SCALE_FACTS, PAIR_FACTS, PENT_FACTS, QUARTAL_FACTS, SLIP_FACTS, TRITONE_FACTS } from './focusMore';
+import { BEBOP_FACTS, BRIDGE_FACTS, COLTRANE_FACTS, MINOR_FACTS, SYMMETRIC_FACTS, TURNAROUND_FACTS } from './focusMore2';
 import { CELL_FACTS, degreesOver, MINOR_TRIAD_FACTS, SEVENTH_FACTS } from './focusShapes';
 import { LESSONS } from './lessons';
 import { abcOf } from './practice';
@@ -183,6 +184,49 @@ describe('catálogo de focos', () => {
     const x = pcsOf(SLIP_FACTS.chord);
     const y = pcsOf(SLIP_FACTS.slip.replace('♭', 'b'));
     expect(x.filter((n) => y.includes(n))).toEqual([]);
+  });
+
+  it('hay otra tanda de focos: técnica (dinámica, digitación, boquilla, colores) y lenguaje (bebop, Coltrane, Rhythm changes, ii–V–i menor, simétricas, turnarounds, swing, grabaciones, vals y 6/8)', () => {
+    for (const id of ['t-dinamica-aire', 't-digitacion-velocidad', 't-boquilla-buzzing', 't-colores-jazz']) expect(focusById(id)?.area, id).toBe('tecnica');
+    for (const id of ['l-escalas-bebop', 'l-cambios-coltrane', 'l-rhythm-changes', 'l-ii-v-i-menor', 'l-escalas-simetricas', 'l-turnarounds', 'l-swing-articulacion', 'l-aprender-de-grabaciones', 'l-vals-seis-octavos']) expect(focusById(id)?.area, id).toBe('lenguaje');
+    expect(TECH_FOCI.length).toBeGreaterThanOrEqual(10);
+    expect(LANG_FOCI.length).toBeGreaterThanOrEqual(26);
+  });
+
+  const plain = (n: string) => n.replace('♭', 'b').replace('♯', '#');
+  const pcsOfScale = (root: string, scale: string) => scaleNotes(parseNote(root), scale).map(pc);
+  const pcsOfNames = (names: string[]) => names.map((n) => pc(parseNote(plain(n))));
+
+  it('las escalas bebop, simétricas y del ii–V–i menor tienen las notas que dicen las tablas', () => {
+    for (const f of BEBOP_FACTS) expect(pcsOfScale(f.root, f.scale), f.name).toEqual(pcsOfNames(f.notes));
+    for (const f of MINOR_FACTS.scales) expect(pcsOfScale(f.root, f.scale), f.name).toEqual(pcsOfNames(f.notes));
+    const { halfWhole, wholeTone } = SYMMETRIC_FACTS;
+    expect(pcsOfScale(halfWhole.root, halfWhole.scale), halfWhole.name).toEqual(pcsOfNames(halfWhole.notes));
+    expect(pcsOfScale(wholeTone.root, wholeTone.scale), wholeTone.name).toEqual(pcsOfNames(wholeTone.notes));
+  });
+
+  it('el arpegio disminuido y la tríada de ♭II caen en los grados que dicen las tablas', () => {
+    expect(degreesOver(SYMMETRIC_FACTS.dim7.chord, SYMMETRIC_FACTS.dim7.root, [0, 3, 6, 9]), 'dim7 sobre G7').toBe(SYMMETRIC_FACTS.dim7.degrees);
+    expect(degreesOver(MINOR_FACTS.bIITriad.chord, plain(MINOR_FACTS.bIITriad.root), [0, 4, 7]), 'D♭ sobre G7').toBe(MINOR_FACTS.bIITriad.degrees);
+  });
+
+  it('Coltrane: los centros están a una tercera mayor y cada dominante es la quinta de su centro', () => {
+    const cs = COLTRANE_FACTS.centers.map((n) => pc(parseNote(plain(n))));
+    for (let i = 1; i < cs.length; i++) expect((cs[i - 1] - cs[i] + 12) % 12, `${i}`).toBe(4);
+    for (const d of COLTRANE_FACTS.dominants) {
+      const root = pc(parseNote(plain(d.dominant.replace('7', ''))));
+      expect((root - pc(parseNote(plain(d.target))) + 12) % 12, d.dominant).toBe(7);
+    }
+  });
+
+  it('el puente de Rhythm changes y el turnaround encadenan por cuartas', () => {
+    const br = BRIDGE_FACTS.roots.map((n) => pc(parseNote(n)));
+    for (let i = 1; i < br.length; i++) expect((br[i] - br[i - 1] + 12) % 12, `puente ${i}`).toBe(5);
+    expect(BRIDGE_FACTS.chords.map((c) => c.replace('7', ''))).toEqual(BRIDGE_FACTS.roots);
+    const tr = TURNAROUND_FACTS.chords.map((c) => pc(chordTones(parseChord(c))[0]));
+    expect(tr).toEqual(TURNAROUND_FACTS.roots.map((n) => pc(parseNote(n))));
+    // vi → ii y ii → V suben una cuarta
+    expect([(tr[2] - tr[1] + 12) % 12, (tr[3] - tr[2] + 12) % 12]).toEqual([5, 5]);
   });
 
   it('el repertorio nombra el tema elegido y cada semana tiene su meta', () => {
