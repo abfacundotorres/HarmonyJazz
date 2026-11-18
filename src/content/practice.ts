@@ -23,6 +23,8 @@ export interface PracticeExercise {
   abc?: string | ((concertKey: string) => string);
   /** Lo que muestra el pentagrama, en una línea. */
   abcCaption?: string;
+  /** Ideas de lenguaje: frases cortas para tocar sobre un ii–V–I, en ABC (altura escrita, tonalidad del día). */
+  ideas?: { caption: string; count: number; abc: (concertKey: string) => string };
 }
 
 /** Un ítem del plan es una línea simple o un ejercicio con su explicación. */

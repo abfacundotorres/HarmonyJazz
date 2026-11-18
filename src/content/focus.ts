@@ -7,8 +7,9 @@
  * agregan lo que se busca esa semana. Los de lenguaje y el recorrido del repertorio son tareas nuevas; muchas llevan
  * a un ejercicio de Lecciones o al play-along.
  */
-import { analyzePc, parseChord, prettyDegree } from '../theory/chords';
-import { mod, parseNote, pc } from '../theory/notes';
+import { TRIAD_FACTS } from './focusFacts';
+import { MORE_LANG_FOCI } from './focusMore';
+import { SHAPE_LANG_FOCI } from './focusShapes';
 import * as P from './practice';
 import type { PracticeExercise } from './practice';
 
@@ -226,23 +227,102 @@ const TECH_HIGH: Focus = {
   ],
 };
 
+
+const TECH_RITMO: Focus = {
+  id: 't-ritmo-precision',
+  area: 'tecnica',
+  title: 'Ritmo, síncopa y tresillos',
+  summary: 'Que el pulso sea firme y que la lengua y los dedos caigan donde el ritmo lo pide, con swing.',
+  weeks: [
+    {
+      title: 'Ritmos con puntillo y síncopa',
+      goal: 'Ritmos que se salen del pulso parejo, sin apurar ni arrastrar.',
+      tasks: [
+        reuse(P.TECH_DOTTED, 'Esta semana: la corchea con puntillo dura de verdad.'),
+        reuse(P.TECH_SYNCOPATION, 'Esta semana: la nota larga de la síncopa no se hincha.'),
+        reuse(P.TONGUING_REPEATED, 'Esta semana: igualdad entre todas las notas de un grupo.'),
+      ],
+    },
+    {
+      title: 'Tresillos y acentos',
+      goal: 'Grupos de tres parejos y acentos que no cambian el tempo.',
+      tasks: [
+        reuse(P.TECH_TRIPLETS, 'Esta semana: tresillos parejos, sin acentuar el primero.'),
+        reuse(P.TECH_ACCENT_LONG, 'Esta semana: atacar con claridad y sostener entera la nota.'),
+        reuse(P.TECH_INTERVALS, 'Esta semana: cada intervalo en el tiempo, sin apurarlo.'),
+      ],
+    },
+    {
+      title: 'Cromática y terceras en tempo',
+      goal: 'Llevar el pulso firme a líneas más rápidas.',
+      tasks: [
+        reuse(P.TECH_CHROMATIC, 'Esta semana: el metrónomo en 2 y 4, siempre.'),
+        reuse(P.TECH_CHROM_LOOP, 'Esta semana: muy suave, en un solo aire.'),
+        reuse(P.TECH_THIRDS, 'Esta semana: a negra = 100 y sin tropezar.'),
+      ],
+    },
+    {
+      title: 'Con swing',
+      goal: 'Aplicar el pulso firme al fraseo de jazz.',
+      tasks: [
+        reuse(P.TECH_BLUES, 'Esta semana: con swing, no recto.'),
+        reuse(P.TECH_BEBOP, 'Esta semana: la nota de paso cae siempre en el contratiempo.'),
+        reuse(P.TECH_CLOSINGS, 'Esta semana: terminar cada frase con la nota final sostenida.'),
+      ],
+    },
+  ],
+};
+
+const TECH_ARPEGIOS: Focus = {
+  id: 't-arpegios-saltos',
+  area: 'tecnica',
+  title: 'Arpegios, intervalos y saltos',
+  summary: 'Moverse con precisión entre notas lejanas: tríadas, arpegios de 7ª y saltos ligados.',
+  weeks: [
+    {
+      title: 'Tríadas y arpegios de 7ª',
+      goal: 'Que las notas de los acordes salgan limpias desde cualquier nota.',
+      tasks: [
+        reuse(P.TECH_TRIADS, 'Esta semana: la tonalidad del día, en tres posiciones.'),
+        reuse(P.TECH_SEVENTHS, 'Esta semana: cada arpegio completo antes de pasar al siguiente.'),
+        reuse(P.TECH_DIM7, 'Esta semana: el arpegio disminuido en las cuatro posiciones.'),
+      ],
+    },
+    {
+      title: 'Saltos ligados',
+      goal: 'Cambiar de nota con el aire y sin golpe de lengua.',
+      tasks: [
+        reuse(P.INTERVAL_SLURS, 'Esta semana: octavas y saltos, con el aire constante.'),
+        reuse(P.TECH_VALVE_SLURS, 'Esta semana: la nota cambia sin golpe, dedos y aire a la vez.'),
+        reuse(P.LIP_SLURS_POSITIONS, 'Esta semana: pocas posiciones, bien hechas.'),
+      ],
+    },
+    {
+      title: 'Intervalos y precisión de ataque',
+      goal: 'Llegar a cada nota sin tantear.',
+      tasks: [
+        reuse(P.TECH_INTERVALS, 'Esta semana: cada intervalo afinado antes de tocarlo.'),
+        reuse(P.TECH_THIRDS, 'Esta semana: a negra = 100 y sin tropezar.'),
+        reuse(P.TECH_SEVENTHS, 'Esta semana: repasá todas las tonalidades de la semana 1 más rápido.'),
+      ],
+    },
+    {
+      title: 'Todo junto',
+      goal: 'Llevar la precisión a líneas con sentido musical.',
+      tasks: [
+        reuse(P.TECH_SOTTO_VOCE, 'Esta semana: la nota larga con sonido pleno y el arpegio casi susurrado.'),
+        reuse(P.TECH_CLOSINGS, 'Esta semana: terminar cada frase con la nota final sostenida.'),
+        reuse(P.TECH_MELODIC_MINOR, 'Esta semana: oír cómo cambia el color respecto de la mayor.'),
+      ],
+    },
+  ],
+};
+
 // ---------------------------------------------------------------------------------------------------------------
 // Lenguaje
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Qué tríadas mayores contiene cada acorde y qué grados son (se verifica con un test contra la teoría). */
-export const TRIAD_FACTS: { chord: string; triads: { root: string; degrees: string }[] }[] = [
-  { chord: 'Cmaj7', triads: [{ root: 'C', degrees: '1-3-5' }, { root: 'G', degrees: '5-7-9' }] },
-  { chord: 'Dm7', triads: [{ root: 'F', degrees: '♭3-5-♭7' }, { root: 'C', degrees: '♭7-9-11' }] },
-  { chord: 'G7', triads: [{ root: 'G', degrees: '1-3-5' }, { root: 'F', degrees: '♭7-9-11' }] },
-];
-
-/** Grados (como se muestran) de la tríada mayor de raíz `root` sobre el acorde `chord`. */
-export function triadDegrees(chord: string, root: string): string {
-  const c = parseChord(chord);
-  const r = pc(parseNote(root));
-  return [0, 4, 7].map((i) => prettyDegree(analyzePc(c, mod(r + i, 12)).degree)).join('-');
-}
+export { TRIAD_FACTS, triadDegrees } from './focusFacts';
 
 const triadList = TRIAD_FACTS.map((f) => `${f.chord}: ${f.triads.map((t) => `${t.root} mayor (${t.degrees})`).join(' y ')}`);
 
@@ -549,7 +629,7 @@ const LANG_APPROACH: Focus = {
   ],
 };
 
-export const FOCI: Focus[] = [TECH_LONG_ARTIC, TECH_FLEX, TECH_SCALES, TECH_HIGH, LANG_TRIADS, LANG_GUIDE, LANG_ARP, LANG_APPROACH];
+export const FOCI: Focus[] = [TECH_LONG_ARTIC, TECH_FLEX, TECH_SCALES, TECH_HIGH, TECH_RITMO, TECH_ARPEGIOS, LANG_TRIADS, ...SHAPE_LANG_FOCI, ...MORE_LANG_FOCI, LANG_GUIDE, LANG_ARP, LANG_APPROACH];
 export const TECH_FOCI = FOCI.filter((f) => f.area === 'tecnica');
 export const LANG_FOCI = FOCI.filter((f) => f.area === 'lenguaje');
 export const focusById = (id: string): Focus | undefined => FOCI.find((f) => f.id === id);
