@@ -19,6 +19,7 @@ test.describe('metrónomo', () => {
     await page.getByLabel('Pulsos por compás').press('Enter');
     await page.getByLabel('Subdivisión').selectOption('3');
     await expect(page.locator('.beats i')).toHaveCount(3);
+    await page.getByText('Para exigirte').click();
     await page.getByLabel(/Compases en silencio \(el pulso/).check();
     await page.getByLabel('Compases que suenan').fill('1');
     await page.getByLabel('Compases que suenan').press('Enter');
@@ -31,6 +32,45 @@ test.describe('metrónomo', () => {
     await page.reload();
     await expect(page.locator('.beats i')).toHaveCount(3);
     await expect(page.getByLabel('Subdivisión')).toHaveValue('3');
+  });
+
+  test('la pesa del péndulo cambia el tempo con el teclado y el nombre italiano acompaña', async ({ page }) => {
+    await page.goto('/#/metronomo');
+    const pesa = page.getByRole('slider', { name: /Pesa del metrónomo/ });
+    await page.getByLabel('Tempo', { exact: true }).fill('100');
+    await page.getByLabel('Tempo', { exact: true }).press('Enter');
+    await expect(pesa).toHaveAttribute('aria-valuenow', '100');
+    await expect(page.locator('.pend-tempo')).toContainText('Andante');
+    await pesa.focus();
+    await page.keyboard.press('PageUp');
+    await expect(pesa).toHaveAttribute('aria-valuenow', '110');
+    await page.keyboard.press('ArrowDown');
+    await expect(pesa).toHaveAttribute('aria-valuenow', '109');
+    await expect(page.getByLabel('Tempo', { exact: true })).toHaveValue('109');
+  });
+
+  test('arrastrar la pesa cambia el tempo y el péndulo se mueve al sonar', async ({ page }) => {
+    await page.goto('/#/metronomo');
+    const pesa = page.getByRole('slider', { name: /Pesa del metrónomo/ });
+    const before = Number(await pesa.getAttribute('aria-valuenow'));
+    const box = (await pesa.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 60, { steps: 6 });
+    await page.mouse.up();
+    expect(Number(await pesa.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
+    await page.getByLabel('Tempo', { exact: true }).fill('120');
+    await page.getByLabel('Tempo', { exact: true }).press('Enter');
+    await page.getByRole('button', { name: 'Empezar' }).click();
+    await expect(page.getByText(/Compás 1/)).toBeVisible({ timeout: 10_000 });
+    const rot = async () => (await page.locator('svg.pendulum g[transform^="rotate"]').getAttribute('transform')) ?? '';
+    const seen = new Set<string>();
+    for (let i = 0; i < 6; i++) {
+      seen.add(await rot());
+      await page.waitForTimeout(90);
+    }
+    expect(seen.size).toBeGreaterThan(2);
+    await page.getByRole('button', { name: 'Parar' }).click();
   });
 
   test('"Marcar el tempo" pide varios toques', async ({ page }) => {

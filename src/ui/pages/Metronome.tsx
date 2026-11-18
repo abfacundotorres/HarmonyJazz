@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { engine } from '../../audio/engine';
+import { isVoiceId, VOICES, type VoiceId } from '../../audio/metroVoices';
+import { tempoName, type SwingBeat } from '../../audio/pendulum';
 import { MAX_TEMPO, MIN_TEMPO, type MetroOpts } from '../../audio/metronomePlan';
 import { usePersistent } from '../../state/storage';
 import { tapTempo } from '../../transcribe/grid';
 import { NumberField } from '../components/NumberField';
+import { Pendulum } from '../components/Pendulum';
 
 interface MetroState {
   tempo: number;
   beats: number;
   sub: 1 | 2 | 3 | 4;
-  sound: 'click' | 'hat';
+  sound: VoiceId;
   accent: boolean;
   backbeat: boolean;
   silenceOn: boolean;
@@ -20,9 +23,9 @@ interface MetroState {
   every: number;
   max: number;
 }
-const DEFAULTS: MetroState = { tempo: 100, beats: 4, sub: 1, sound: 'click', accent: true, backbeat: false, silenceOn: false, play: 3, mute: 1, rampOn: false, step: 4, every: 4, max: 160 };
+const DEFAULTS: MetroState = { tempo: 100, beats: 4, sub: 1, sound: 'wood', accent: true, backbeat: false, silenceOn: false, play: 3, mute: 1, rampOn: false, step: 4, every: 4, max: 160 };
 
-const toOpts = (m: MetroState): MetroOpts & { sound: 'click' | 'hat' } => ({
+const toOpts = (m: MetroState): MetroOpts & { sound: VoiceId } => ({
   tempo: m.tempo, beats: m.beats, sub: m.sub, accent: m.accent, backbeat: m.backbeat, sound: m.sound,
   silence: m.silenceOn ? { play: m.play, mute: m.mute } : undefined,
   ramp: m.rampOn ? { step: m.step, every: m.every, max: Math.max(m.max, m.tempo) } : undefined,
@@ -35,6 +38,7 @@ export function Metronome() {
   const [pos, setPos] = useState<{ bar: number; beat: number; tempo: number; muted: boolean } | null>(null);
   const live = useRef(m);
   live.current = m;
+  const swing = useRef<SwingBeat[]>([]);
   const taps = useRef<number[]>([]);
   const [tapNote, setTapNote] = useState('');
 
@@ -47,7 +51,8 @@ export function Metronome() {
 
   const start = async () => {
     setOn(true);
-    const ok = await engine.playMetronome(() => toOpts(live.current), setPos);
+    swing.current = [];
+    const ok = await engine.playMetronome(() => toOpts(live.current), setPos, (b) => swing.current.push(b));
     if (!ok) setOn(false);
   };
 
@@ -64,6 +69,8 @@ export function Metronome() {
     <div className="page metro-page">
       <section className="card">
         <h2>Metrónomo</h2>
+        <Pendulum tempo={m.tempo} onTempo={(v) => set({ tempo: v })} running={on} beats={swing} now={() => engine.audibleNow()} />
+        <p className="pend-tempo"><b>{m.tempo}</b> <span>{tempoName(m.tempo)}</span></p>
         <div className="beats" role="img" aria-label={pos ? `Pulso ${pos.beat + 1} de ${m.beats}${pos.muted ? ', compás en silencio' : ''}` : 'Metrónomo detenido'}>
           {Array.from({ length: m.beats }, (_, i) => (
             <i key={i} className={`${pos?.beat === i ? 'now' : ''} ${i === 0 && m.accent ? 'strong' : ''} ${pos?.muted ? 'muted' : ''}`} />
@@ -91,9 +98,8 @@ export function Metronome() {
             </select>
           </label>
           <label>Sonido
-            <select value={m.sound} onChange={(e) => set({ sound: e.target.value as MetroState['sound'] })}>
-              <option value="click">Clic</option>
-              <option value="hat">Hi-hat</option>
+            <select value={m.sound} onChange={(e) => set({ sound: isVoiceId(e.target.value) ? e.target.value : 'wood' })}>
+              {VOICES.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
             </select>
           </label>
         </div>
@@ -103,8 +109,8 @@ export function Metronome() {
         </div>
       </section>
 
-      <section className="card">
-        <h3>Para exigirte</h3>
+      <details className="card metro-adv">
+        <summary><h3>Para exigirte</h3></summary>
         <label><input type="checkbox" checked={m.silenceOn} onChange={(e) => set({ silenceOn: e.target.checked })} /> Compases en silencio (el pulso lo llevás vos)</label>
         {m.silenceOn && (
           <div className="row">
@@ -121,7 +127,7 @@ export function Metronome() {
           </div>
         )}
         <p className="muted small">Los cambios se oyen en el compás siguiente, sin cortar el pulso.</p>
-      </section>
+      </details>
     </div>
   );
 }

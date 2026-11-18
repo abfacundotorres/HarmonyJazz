@@ -763,3 +763,12 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .metro-page input[type='number'] { width: 5.5em; }
 .evo { display: inline-block; height: 10px; border-radius: 5px; background: var(--accent); min-width: 4px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.pendulum { display: block; width: min(100%, 230px); margin: 0 auto; touch-action: pan-y; user-select: none; }
+.pend-weight { cursor: grab; touch-action: none; outline: none; }
+.pend-weight:focus-visible path { stroke: var(--accent); stroke-width: 4; }
+.pend-tempo { text-align: center; margin: 4px 0 0; font-size: 1.05rem; }
+.pend-tempo b { font-size: 2rem; font-variant-numeric: tabular-nums; }
+.pend-tempo span { color: var(--muted); font-style: italic; margin-left: 6px; }
+.metro-adv > summary { cursor: pointer; list-style-position: inside; }
+.metro-adv > summary h3 { display: inline; }
