@@ -53,6 +53,18 @@ test.describe('el mes con focos', () => {
     await expect(block.locator('details.exercise[open]')).toContainText('F-A-C y G-B-D');
   });
 
+  test('otra tanda de focos: técnica (dinámica, digitación, boquilla, colores) y lenguaje (bebop, Coltrane, Rhythm changes, ii–V–i menor, simétricas, turnarounds, swing, grabaciones, vals)', async ({ page }) => {
+    await page.goto('/#/mes');
+    for (const t of ['Dinámica y control del aire', 'Digitación y velocidad', 'Boquilla y buzzing', 'Escalas y colores del jazz', 'Escalas bebop', 'Cambios de Coltrane', 'Rhythm changes (el puente en cadena)', 'ii–V–i menor y dominante con tensiones', 'Escalas simétricas (disminuida y tonos enteros)', 'Turnarounds (I–vi–ii–V)', 'Swing y articulación jazzística', 'Aprender de grabaciones (transcribir)', 'Improvisar en 3/4 y 6/8']) {
+      await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
+    }
+    await page.locator('#f-t-dinamica-aire').check();
+    await page.locator('#f-l-escalas-bebop').check();
+    await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
+    await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Dinámica y control del aire');
+    await expect(page.locator('article.block .bhead').nth(2)).toContainText('Lenguaje: Escalas bebop');
+  });
+
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: cinco bloques que suman la hora', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();
