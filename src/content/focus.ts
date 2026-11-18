@@ -8,6 +8,7 @@
  * a un ejercicio de Lecciones o al play-along.
  */
 import { TRIAD_FACTS } from './focusFacts';
+import { MORE_LANG_FOCI } from './focusMore';
 import { SHAPE_LANG_FOCI } from './focusShapes';
 import * as P from './practice';
 import type { PracticeExercise } from './practice';
@@ -628,7 +629,7 @@ const LANG_APPROACH: Focus = {
   ],
 };
 
-export const FOCI: Focus[] = [TECH_LONG_ARTIC, TECH_FLEX, TECH_SCALES, TECH_HIGH, TECH_RITMO, TECH_ARPEGIOS, LANG_TRIADS, ...SHAPE_LANG_FOCI, LANG_GUIDE, LANG_ARP, LANG_APPROACH];
+export const FOCI: Focus[] = [TECH_LONG_ARTIC, TECH_FLEX, TECH_SCALES, TECH_HIGH, TECH_RITMO, TECH_ARPEGIOS, LANG_TRIADS, ...SHAPE_LANG_FOCI, ...MORE_LANG_FOCI, LANG_GUIDE, LANG_ARP, LANG_APPROACH];
 export const TECH_FOCI = FOCI.filter((f) => f.area === 'tecnica');
 export const LANG_FOCI = FOCI.filter((f) => f.area === 'lenguaje');
 export const focusById = (id: string): Focus | undefined => FOCI.find((f) => f.id === id);

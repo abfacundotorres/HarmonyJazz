@@ -2,8 +2,10 @@ import abcjs from 'abcjs';
 import { describe, expect, it } from 'vitest';
 import { CONCERT_KEYS } from '../theory/chart';
 import { chordTones, parseChord } from '../theory/chords';
-import { noteName } from '../theory/notes';
+import { noteName, parseNote, pc } from '../theory/notes';
+import { scaleNotes } from '../theory/scales';
 import { FOCI, focusById, LANG_FOCI, REPERTOIRE_WEEKS, SESSIONS_PER_WEEK, TECH_FOCI, TRIAD_FACTS, triadDegrees, WEEKS, type FocusTask } from './focus';
+import { CHORD_SCALE_FACTS, PAIR_FACTS, PENT_FACTS, QUARTAL_FACTS, SLIP_FACTS, TRITONE_FACTS } from './focusMore';
 import { CELL_FACTS, degreesOver, MINOR_TRIAD_FACTS, SEVENTH_FACTS } from './focusShapes';
 import { LESSONS } from './lessons';
 import { abcOf } from './practice';
@@ -137,6 +139,50 @@ describe('catálogo de focos', () => {
     }
     const mapa = focusById('l-celulas-1235')!.weeks[1].tasks[0].steps.join(' ');
     for (const f of CELL_FACTS) expect(mapa).toContain(f.notes);
+  });
+
+  it('hay más consignas de lenguaje: pares de tríadas, intervalos, pentatónicas, blues, sustitución tritonal, escala del acorde, motivos, side-slipping y desplazamiento', () => {
+    const ids = ['l-triad-pairs', 'l-intervalos', 'l-pentatonicas', 'l-blues', 'l-sustitucion-tritonal', 'l-escala-del-acorde', 'l-motivos', 'l-side-slipping', 'l-desplazamiento'];
+    for (const id of ids) expect(focusById(id)?.area, id).toBe('lenguaje');
+    expect(LANG_FOCI.length).toBeGreaterThanOrEqual(17);
+  });
+
+  it('los pares de tríadas no comparten notas y forman parte de la escala del acorde', () => {
+    for (const f of PAIR_FACTS) {
+      expect(degreesOver(f.chord, f.a.root, [0, 4, 7]), `${f.a.root} sobre ${f.chord}`).toBe(f.a.degrees);
+      expect(degreesOver(f.chord, f.b.root, [0, 4, 7]), `${f.b.root} sobre ${f.chord}`).toBe(f.b.degrees);
+      const pcs = (r: string) => [0, 4, 7].map((i) => (pc(parseNote(r)) + i) % 12);
+      expect(pcs(f.a.root).filter((x) => pcs(f.b.root).includes(x)), f.chord).toEqual([]);
+    }
+    const t = focusById('l-triad-pairs')!.weeks[0].tasks[1].steps.join(' ');
+    for (const f of PAIR_FACTS) expect(t).toContain(`${f.chord}: ${f.a.root} mayor y ${f.b.root} mayor (${f.scale})`);
+  });
+
+  it('las cuartas apiladas caen en los grados que dice la tabla', () => {
+    for (const f of QUARTAL_FACTS) expect(degreesOver(f.chord, f.chord[0], f.semis), f.chord).toBe(f.degrees);
+  });
+
+  it('las pentatónicas de la tabla caen en los grados que dice', () => {
+    for (const f of PENT_FACTS) expect(degreesOver(f.chord, f.root, f.semis), `${f.name} sobre ${f.chord}`).toBe(f.degrees);
+  });
+
+  it('las escalas de cada acorde tienen las notas que dice la tabla', () => {
+    for (const f of CHORD_SCALE_FACTS) {
+      // se comparan las alturas: la alterada se escribe con ♭9 y ♭5 (A♭, B♭, D♭), que el motor deletrea como ♯2 y ♯4
+      const want = f.notes.map((n) => pc(parseNote(n.replace('♭', 'b').replace('♯', '#'))));
+      expect(scaleNotes(parseNote(f.root), f.scale).map(pc), f.name).toEqual(want);
+    }
+  });
+
+  it('la sustitución tritonal comparte la 3ª y la 7ª, y el side-slipping no comparte ninguna nota', () => {
+    const pcsOf = (c: string) => chordTones(parseChord(c)).map(pc);
+    const a = pcsOf(TRITONE_FACTS.dominant);
+    const b = pcsOf(TRITONE_FACTS.sub.replace('♭', 'b'));
+    const common = a.filter((x) => b.includes(x)).sort((x, y) => x - y);
+    expect(common).toEqual(TRITONE_FACTS.shared.map((n) => pc(parseNote(n))).sort((x, y) => x - y));
+    const x = pcsOf(SLIP_FACTS.chord);
+    const y = pcsOf(SLIP_FACTS.slip.replace('♭', 'b'));
+    expect(x.filter((n) => y.includes(n))).toEqual([]);
   });
 
   it('el repertorio nombra el tema elegido y cada semana tiene su meta', () => {

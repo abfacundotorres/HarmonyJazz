@@ -14,10 +14,10 @@ import { ideaBars, SETS } from './ideas';
 import { abcFromBars, tonicOf } from './shapeAbc';
 import { EXAMPLES, exampleAbc } from './shapeExamples';
 
-const task = (id: string, short: string, goal: string, steps: string[], more: Partial<FocusTask> = {}): FocusTask => ({ id, short, goal, steps, ...more });
-const PA = { link: '#/playalong?p=ii-v-i&k={k}', linkLabel: 'Abrir el ii–V–I' };
-const REP = { link: '#/playalong?p={rep}', linkLabel: 'Abrir el tema' };
-const lesson = (id: string, short: string, goal: string, steps: string[], lessonId: string, ex: number): FocusTask =>
+export const task = (id: string, short: string, goal: string, steps: string[], more: Partial<FocusTask> = {}): FocusTask => ({ id, short, goal, steps, ...more });
+export const PA = { link: '#/playalong?p=ii-v-i&k={k}', linkLabel: 'Abrir el ii–V–I' };
+export const REP = { link: '#/playalong?p={rep}', linkLabel: 'Abrir el tema' };
+export const lesson = (id: string, short: string, goal: string, steps: string[], lessonId: string, ex: number): FocusTask =>
   task(id, short, goal, steps, { link: `#/lecciones/${lessonId}?k={k}&ex=${ex}`, linkLabel: 'Abrir el ejercicio' });
 
 /** Grados (como se muestran) de las notas a `semis` semitonos de `root`, vistas desde el acorde `chord`. */
@@ -56,7 +56,7 @@ export const CELL_FACTS: { cell: string; chord: string; root: string; semis: num
 const triadList = (facts: typeof MINOR_TRIAD_FACTS, q: string) => facts.map((f) => `${f.chord}: ${f.triads.map((t) => `${t.root} ${q} (${t.degrees})`).join(' y ')}`);
 
 /** Semana de aplicación al tema del mes (la misma idea para todos los focos). */
-const temaWeek = (p: string, que: string, queCorto: string): Focus['weeks'][number] => ({
+export const temaWeek = (p: string, que: string, queCorto: string): Focus['weeks'][number] => ({
   title: `${que} en el tema`,
   goal: `Usarlas de verdad en el tema del mes.`,
   tasks: [

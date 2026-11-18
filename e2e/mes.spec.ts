@@ -40,6 +40,19 @@ test.describe('el mes con focos', () => {
     await expect(ideas.locator('figcaption')).toContainText('10 ideas de tres compases sobre el ii–V–I');
   });
 
+  test('más consignas de lenguaje para elegir: pares de tríadas, intervalos, pentatónicas, blues, sustitución tritonal y más', async ({ page }) => {
+    await page.goto('/#/mes');
+    for (const t of ['Pares de tríadas', 'Intervalos: terceras, cuartas y saltos', 'Pentatónicas sobre acordes', 'Lenguaje de blues', 'Sustitución tritonal', 'La escala de cada acorde (modos)', 'Motivos y desarrollo', 'Side-slipping (tocar «afuera»)', 'Desplazamiento rítmico']) {
+      await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
+    }
+    await page.locator('#f-l-triad-pairs').check();
+    await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
+    await expect(page.locator('article.block .bhead').nth(2)).toContainText('Lenguaje: Pares de tríadas');
+    const block = await openBlock(page, 'Lenguaje: Pares de tríadas');
+    await block.locator('details.exercise summary').first().click();
+    await expect(block.locator('details.exercise[open]')).toContainText('F-A-C y G-B-D');
+  });
+
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: cinco bloques que suman la hora', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();
