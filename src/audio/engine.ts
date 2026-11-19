@@ -853,10 +853,29 @@ export class JazzEngine {
     const end = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
     this.lineTimers.push(window.setTimeout(() => onEnd?.(), end * 1000 + 300));
   }
+  /** Toca notas del entrenamiento del oído (concierto): la trompeta o el piano de la app, según `voice`. Se corta con stopLine(). */
+  async playEar(notes: { midi: number; start: number; dur: number; voice: 'horn' | 'piano' }[], onEnd?: () => void, onNote?: (i: number) => void) {
+    this.stopLine();
+    await this.init();
+    const inst = this.inst!;
+    notes.forEach((n, i) => {
+      this.lineTimers.push(
+        window.setTimeout(() => {
+          const f = midiToFreq(n.midi);
+          if (n.voice === 'horn') inst.horn.triggerAttackRelease(f, Math.max(0.06, n.dur * 0.92), undefined, 0.8);
+          else inst.piano.triggerAttackRelease(f, n.dur, undefined, 0.6);
+          onNote?.(i);
+        }, 60 + n.start * 1000),
+      );
+    });
+    const end = notes.reduce((m, n) => Math.max(m, n.start + n.dur), 0);
+    this.lineTimers.push(window.setTimeout(() => onEnd?.(), end * 1000 + 300));
+  }
   stopLine() {
     this.lineTimers.forEach((t) => window.clearTimeout(t));
     this.lineTimers = [];
     this.inst?.horn.releaseAll?.();
+    this.inst?.piano.releaseAll?.();
   }
 
   /**

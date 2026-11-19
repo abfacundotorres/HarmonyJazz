@@ -13,6 +13,7 @@ const PAGES = {
   escalas: () => import('./pages/Scales').then((m) => ({ default: m.Scales })),
   vocabulario: () => import('./pages/Vocab').then((m) => ({ default: m.Vocab })),
   transcribir: () => import('./pages/Transcribe').then((m) => ({ default: m.Transcribe })),
+  oido: () => import('./pages/Ear').then((m) => ({ default: m.Ear })),
   escucha: () => import('./pages/Listen').then((m) => ({ default: m.Listen })),
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
   mas: () => import('./pages/More').then((m) => ({ default: m.More })),
@@ -25,6 +26,7 @@ const Lessons = lazy(PAGES.lecciones);
 const Scales = lazy(PAGES.escalas);
 const Vocab = lazy(PAGES.vocabulario);
 const Transcribe = lazy(PAGES.transcribir);
+const Ear = lazy(PAGES.oido);
 const Listen = lazy(PAGES.escucha);
 const Credits = lazy(PAGES.creditos);
 const More = lazy(PAGES.mas);
@@ -143,6 +145,7 @@ export function App() {
           {page === 'escalas' && <Scales />}
           {page === 'vocabulario' && <Vocab />}
           {page === 'transcribir' && <Transcribe />}
+          {page === 'oido' && <Ear />}
           {page === 'escucha' && <Listen />}
           {page === 'metronomo' && <Metronome />}
           {page === 'creditos' && <Credits />}

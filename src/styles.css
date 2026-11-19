@@ -781,3 +781,10 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .metro-page .knob { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; margin: 8px 0; }
 .metro-page .knob input[type='range'] { grid-column: 1; width: 100%; }
 .metro-page .knob output { grid-column: 2; min-width: 4.5em; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Oído: respuesta correcta / equivocada */
+.ear .chips button.ok { border-color: var(--good, #2e8b57); color: var(--good, #2e8b57); }
+.ear .chips button.bad { border-color: var(--bad, #c0392b); color: var(--bad, #c0392b); }
+.ear .chips button { min-height: 44px; }
+.ear .seg { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
+.ear li.bad { color: var(--bad); }
