@@ -18,6 +18,7 @@ const PAGES = {
   creditos: () => import('./pages/Credits').then((m) => ({ default: m.Credits })),
   mas: () => import('./pages/More').then((m) => ({ default: m.More })),
   metronomo: () => import('./pages/Metronome').then((m) => ({ default: m.Metronome })),
+  curricula: () => import('./pages/Curricula').then((m) => ({ default: m.Curricula })),
   mes: () => import('./pages/Month').then((m) => ({ default: m.Month })),
 };
 const Progress = lazy(PAGES.progreso);
@@ -30,6 +31,7 @@ const Ear = lazy(PAGES.oido);
 const Listen = lazy(PAGES.escucha);
 const Credits = lazy(PAGES.creditos);
 const More = lazy(PAGES.mas);
+const Curricula = lazy(PAGES.curricula);
 const Month = lazy(PAGES.mes);
 const Metronome = lazy(PAGES.metronomo);
 
@@ -140,6 +142,7 @@ export function App() {
           {page === 'hoy' && <Today />}
           {page === 'progreso' && <Progress />}
           {page === 'mes' && <Month />}
+          {page === 'curricula' && <Curricula />}
           {page === 'playalong' && <PlayAlong />}
           {page === 'lecciones' && <Lessons />}
           {page === 'escalas' && <Scales />}

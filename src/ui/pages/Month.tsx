@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
-import { type Focus, LANG_FOCI, REPERTOIRE_WEEKS, TECH_FOCI, WEEKS } from '../../content/focus';
+import { missingBefore, nextFocus, stagesOf, stepOf } from '../../content/camino';
+import { siguiente } from '../../content/curricula';
+import { focusById, type Focus, LANG_FOCI, REPERTOIRE_WEEKS, TECH_FOCI, WEEKS } from '../../content/focus';
 import { monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
 import { PROGRESSIONS } from '../../content/progressions';
 import { dayNum } from '../../state/progress';
-import { useLog, useMonth, usePersistentLibrary } from '../hooks';
+import { usePersistent } from '../../state/storage';
+import { useCurricula, useLog, useMonth, usePersistentLibrary } from '../hooks';
 import { navigate } from '../hooks';
 
 /** Los temas propios guardados (sólo id y nombre, descartando lo que no tenga la forma esperada). */
@@ -13,7 +16,7 @@ const userTunes = (lib: { tunes?: unknown[] }) =>
     return x && typeof x.id === 'string' && typeof x.name === 'string' ? [{ id: x.id, name: x.name }] : [];
   });
 
-function FocusPicker({ legend, foci, value, onChange }: { legend: string; foci: Focus[]; value: string; onChange: (id: string) => void }) {
+function FocusPicker({ legend, foci, value, onChange, done, next }: { legend: string; foci: Focus[]; value: string; onChange: (id: string) => void; done: ReadonlySet<string>; next: string | null }) {
   return (
     <fieldset className="focuspick">
       <legend>{legend}</legend>
@@ -24,6 +27,7 @@ function FocusPicker({ legend, foci, value, onChange }: { legend: string; foci: 
             <label htmlFor={`f-${f.id}`}>
               <b>{f.title}</b>
               <small>{f.summary}</small>
+              <PathTag id={f.id} done={done} next={next} />
             </label>
           </div>
           <details>
@@ -33,6 +37,51 @@ function FocusPicker({ legend, foci, value, onChange }: { legend: string; foci: 
         </div>
       ))}
     </fieldset>
+  );
+}
+
+/** Etapa del foco en el camino y, si falta, qué conviene tener antes. */
+function PathTag({ id, done, next }: { id: string; done: ReadonlySet<string>; next: string | null }) {
+  const st = stepOf(id);
+  if (!st) return null;
+  const falta = missingBefore(id, done).map((a) => focusById(a)?.title ?? a);
+  return (
+    <small className={`pathtag ${falta.length ? 'warn' : ''}`}>
+      {id === next && <b>Sugerido · </b>}
+      {done.has(id) ? 'Ya trabajado' : `Etapa ${st.stage}`}
+      {falta.length > 0 && !done.has(id) ? ` · antes conviene: ${falta.join(', ')}` : ''}
+    </small>
+  );
+}
+
+function PathCard({ area, done, toggle, next, use }: { area: Focus['area']; done: ReadonlySet<string>; toggle: (id: string) => void; next: string | null; use: (id: string) => void }) {
+  return (
+    <div>
+      {stagesOf(area).map((g) => (
+        <section key={g.stage} aria-label={`Etapa ${g.stage}: ${g.title}`}>
+          <h4>Etapa {g.stage}: {g.title}</h4>
+          <ul className="pathlist">
+            {g.steps.map((st) => {
+              const f = focusById(st.id);
+              if (!f) return null;
+              const falta = missingBefore(st.id, done);
+              return (
+                <li key={st.id} className={st.id === next ? 'next' : ''}>
+                  <label>
+                    <input type="checkbox" checked={done.has(st.id)} onChange={() => toggle(st.id)} aria-label={`Ya trabajé: ${f.title}`} /> <b>{f.title}</b>
+                  </label>
+                  <small>
+                    {st.why}
+                    {falta.length > 0 && !done.has(st.id) ? ` Antes conviene: ${falta.map((a) => focusById(a)?.title ?? a).join(', ')}.` : ''}
+                  </small>
+                  {!done.has(st.id) && <button onClick={() => use(st.id)}>Elegir este</button>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }
 
@@ -61,9 +110,16 @@ export function Month() {
   const tunes = useMemo(() => userTunes(lib), [lib]);
   const today = useMemo(() => new Date(), []);
   const active = monthActive(mp, today, tunes);
+  const [prog, setProg] = useCurricula();
+  const sig = siguiente(prog);
+  const [camino, setCamino] = usePersistent<{ done: string[] }>('camino', { done: [] });
+  const done = useMemo(() => new Set(camino.done), [camino]);
+  const nextTech = nextFocus('tecnica', done);
+  const nextLang = nextFocus('lenguaje', done);
+  const toggleDone = (id: string) => setCamino((c) => ({ done: c.done.includes(id) ? c.done.filter((x) => x !== id) : [...c.done, id] }));
   const [editing, setEditing] = useState(!active);
-  const [tech, setTech] = useState(mp.tech || TECH_FOCI[0].id);
-  const [lang, setLang] = useState(mp.lang || LANG_FOCI[0].id);
+  const [tech, setTech] = useState(mp.tech || sig?.tech || nextTech || TECH_FOCI[0].id);
+  const [lang, setLang] = useState(mp.lang || sig?.lang || nextLang || LANG_FOCI[0].id);
   const [rep, setRep] = useState(repertoireName(mp.rep, tunes) !== null ? mp.rep : (tunes[0]?.id ?? 'ii-v-i'));
   const repName = repertoireName(rep, tunes) ?? '';
   const weeksRep = useMemo(() => REPERTOIRE_WEEKS(repName || 'el tema'), [repName]);
@@ -72,7 +128,13 @@ export function Month() {
   const lastMonth = !active && mp.month !== '' && mp.month !== monthOf(today);
 
   const start = (t = tech, l = lang, r = rep) => {
+    // un mes anterior con ocho sesiones o más cuenta como foco trabajado en el camino
+    if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && sessionNumber(log, mp.startDay, dayNum(today)) >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
+      setCamino((c) => ({ done: [...new Set([...c.done, mp.tech, mp.lang])] }));
+    }
     setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today) });
+    // si son los de la materia que toca en la currícula, queda en curso
+    if (sig && sig.tech === t && sig.lang === l) setProg((p) => ({ ...p, actual: sig.n }));
     setEditing(false);
     navigate('#/hoy');
   };
@@ -91,6 +153,7 @@ export function Month() {
           <p className="muted">Vas por la sesión {session}. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
           <div className="row">
             <a className="button primary" href="#/hoy">Ir al plan de hoy</a>
+            <a className="button" href="#/curricula">Currícula</a>
             <button onClick={() => setEditing(true)}>Cambiar los focos</button>
           </div>
         </section>
@@ -109,8 +172,32 @@ export function Month() {
               <button onClick={() => start(mp.tech, mp.lang, mp.rep)} disabled={repertoireName(mp.rep, tunes) === null}>Seguir con los mismos</button>
             </p>
           )}
-          <FocusPicker legend="Técnica" foci={TECH_FOCI} value={tech} onChange={setTech} />
-          <FocusPicker legend="Lenguaje" foci={LANG_FOCI} value={lang} onChange={setLang} />
+          {sig && (
+            <div className="notice" role="status">
+              <span>
+                <b>Currícula · mes {sig.n}: {sig.name}.</b> Técnica: {focusById(sig.tech)?.title} · Lenguaje: {focusById(sig.lang)?.title}. <a href="#/curricula">Ver la currícula</a>
+              </span>{' '}
+              <button onClick={() => { setTech(sig.tech); setLang(sig.lang); }}>Usar la materia</button>
+            </div>
+          )}
+          <div className="notice" role="status">
+            <span>
+              <b>Camino sugerido:</b> {nextTech ? `Técnica: ${focusById(nextTech)?.title}` : 'Técnica: recorrido completo'} · {nextLang ? `Lenguaje: ${focusById(nextLang)?.title}` : 'Lenguaje: recorrido completo'}.
+            </span>{' '}
+            <button onClick={() => { if (nextTech) setTech(nextTech); if (nextLang) setLang(nextLang); }} disabled={!nextTech && !nextLang}>Usar lo sugerido</button>
+          </div>
+          <details className="info">
+            <summary>Ver el camino completo</summary>
+            <p className="muted small">
+              Un orden con lógica de currículo: primero la base (sonido, tríadas), después acordes y guide tones, después vocabulario y al final lo que se apoya en todo eso. Tildá lo que ya trabajaste; es sólo una sugerencia y podés elegir cualquier foco.
+            </p>
+            <h3>Técnica</h3>
+            <PathCard area="tecnica" done={done} toggle={toggleDone} next={nextTech} use={setTech} />
+            <h3>Lenguaje</h3>
+            <PathCard area="lenguaje" done={done} toggle={toggleDone} next={nextLang} use={setLang} />
+          </details>
+          <FocusPicker legend="Técnica" foci={TECH_FOCI} value={tech} onChange={setTech} done={done} next={nextTech} />
+          <FocusPicker legend="Lenguaje" foci={LANG_FOCI} value={lang} onChange={setLang} done={done} next={nextLang} />
 
           <fieldset className="focuspick">
             <legend>Repertorio</legend>
