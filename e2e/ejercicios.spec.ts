@@ -1,9 +1,8 @@
-import { expect, openBlock, openExercises, test } from './helpers';
+import { diaTecnica, expect, openBlock, openExercises, test } from './helpers';
 
 // 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
-// día número % 18 = 0: técnica de escala en terceras (la rotación de técnica tiene 18 ejercicios)
-const diaTecnica = (indice: number) => new Date(1970, 0, 1 + 20790 + indice, 12, 0, 0);
+// ejercicio 0 de la rotación de técnica: escala en terceras (la rotación tiene 18 ejercicios)
 const DIA_TERCERAS = diaTecnica(0);
 
 test.describe('ejercicios de práctica con explicación completa', () => {

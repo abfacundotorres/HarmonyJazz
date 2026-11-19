@@ -118,40 +118,6 @@ export function keyMatrix(mastery: Mastery, rows: { id: string; ids: string[] }[
   });
 }
 
-// ---------- minutos ----------
-
-export interface Week {
-  /** Número de día del lunes de esa semana. */
-  start: number;
-  minutes: number;
-  days: number;
-}
-const monday = (day: number) => (day - ((dateOfDay(day).getUTCDay() + 6) % 7));
-
-/** Minutos y días practicados por semana (lunes a domingo), de la más vieja a la actual. */
-export function weeklyMinutes(log: Log, today: number, weeks = 12): Week[] {
-  const first = monday(today) - 7 * (weeks - 1);
-  const out: Week[] = Array.from({ length: weeks }, (_, i) => ({ start: first + 7 * i, minutes: 0, days: 0 }));
-  for (const [iso, v] of Object.entries(log)) {
-    const d = dayOfIso(iso);
-    if (d === null || d < first || d > today || !(v.minutes > 0 || v.done.length > 0)) continue;
-    const w = out[Math.floor((monday(d) - first) / 7)];
-    w.minutes += v.minutes;
-    w.days++;
-  }
-  return out;
-}
-
-/** Días con práctica en los últimos `n` días (hoy incluido). */
-export function practicedDays(log: Log, today: number, n = 28): number {
-  let c = 0;
-  for (const [iso, v] of Object.entries(log)) {
-    const d = dayOfIso(iso);
-    if (d !== null && d > today - n && d <= today && (v.done.length > 0 || v.minutes > 0)) c++;
-  }
-  return c;
-}
-
 /** Fecha corta de un número de día: "3 nov". */
 export function shortDate(day: number): string {
   const d = dateOfDay(day);

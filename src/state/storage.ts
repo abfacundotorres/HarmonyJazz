@@ -61,7 +61,6 @@ export interface Settings {
   view: View;
   register: Register;
   swing: number;
-  minutes: number;
   focusLesson: string;
   /** Volumen general en dB respecto del nivel base (−14…+2). */
   volume: number;
@@ -75,7 +74,7 @@ export interface Settings {
   a4: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, minutes: 60, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440 };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440 };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {
@@ -97,17 +96,3 @@ export type PracticeLog = Record<string, DayLog>;
 
 /** Mejor tempo logrado por ejercicio y tonalidad. clave: "lesson:idx" → { C: 140, F: 120 } */
 export type Mastery = Record<string, Record<string, number>>;
-
-export function streak(log: PracticeLog, today: Date): number {
-  let s = 0;
-  const d = new Date(today);
-  // si hoy todavía no practicó, la racha cuenta desde ayer
-  const key = (x: Date) =>
-    `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
-  if (!log[key(d)]?.done.length) d.setDate(d.getDate() - 1);
-  while (log[key(d)]?.done.length) {
-    s++;
-    d.setDate(d.getDate() - 1);
-  }
-  return s;
-}

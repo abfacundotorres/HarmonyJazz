@@ -64,25 +64,22 @@ test.describe('navegación en cinco grupos', () => {
 });
 
 test.describe('pantallas más cortas', () => {
-  test('Hoy: sólo el primer bloque sin hacer está abierto; marcar uno lo deja tildado sin abrir el siguiente', async ({ page }) => {
+  test('Hoy: tres bloques, el primero abierto, sin casilleros ni temporizador', async ({ page }) => {
     await page.goto('/#/hoy');
     const heads = page.locator('article.block .bhead');
-    await expect(heads).toHaveCount(7);
+    await expect(heads).toHaveCount(3);
     await expect(heads.nth(0)).toHaveAttribute('aria-expanded', 'true');
-    for (let i = 1; i < 7; i++) await expect(heads.nth(i)).toHaveAttribute('aria-expanded', 'false');
-    // se tilda desde el encabezado, sin abrir el bloque
-    await page.getByLabel(/^Hecho: Técnica/).check();
     await expect(heads.nth(1)).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('article.block.done')).toHaveCount(1);
-    // al abrir un bloque se ve su detalle y su temporizador
-    const b = await openBlock(page, 'Armonía aplicada');
-    await expect(b.getByRole('button', { name: /Iniciar el temporizador/ })).toBeVisible();
-    await expect(b.getByRole('link', { name: /Ir a la lección/ })).toBeVisible();
-    // alto de la pantalla: con todo plegado cabe en menos de dos pantallas de celular
+    await expect(heads.nth(2)).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('article.block input[type=checkbox]')).toHaveCount(0);
+    // al abrir un bloque se ve su detalle y su enlace, sin temporizador
+    const b = await openBlock(page, 'Tema de la semana');
+    await expect(b.getByRole('link', { name: /Abrir play-along/ })).toBeVisible();
+    await expect(b.getByRole('button', { name: /temporizador/ })).toHaveCount(0);
+    // con todo plegado cabe en una pantalla y media de celular
     await heads.nth(0).click();
-    await heads.nth(2).click().catch(() => undefined);
-    const alto = await page.evaluate(() => document.documentElement.scrollHeight);
-    expect(alto).toBeLessThan(2200);
+    await heads.nth(2).click();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(1500);
   });
 
   test('Lecciones: secciones y ejercicios plegados, los ejercicios arman la partitura recién al abrirlos', async ({ page }) => {

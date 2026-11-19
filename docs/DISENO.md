@@ -74,7 +74,7 @@ Es una aproximación: no capta notas fantasma, glissandos ni notas más rápidas
 
 ### Plan diario
 
-Seis bloques proporcionales a la duración elegida (30–120 min): calentamiento y sonido, técnica en la tonalidad del día, armonía aplicada (lección foco), vocabulario (frase del día), tema de la semana e improvisación libre / transcripción. La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. Hay temporizador por bloque, racha e historial de 28 días.
+Tres bloques, sin minutos ni temporizador ni casilleros (poco, pero a fondo): calentamiento y sonido, un solo foco del día y el tema de la semana. Con mes elegido el foco alterna técnica y lenguaje; sin mes rota entre técnica en la tonalidad del día, escala del día, armonía aplicada (lección foco) y vocabulario (frase). La tonalidad del día recorre el ciclo de cuartas y el tema rota cada semana. No hay racha ni historial de minutos.
 
 ### Vocabulario: tus frases, cargadas a mano
 

@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { PhraseLibrary } from '../../content/phrases';
-import { dayNum, dueItems, KEY_ORDER, keyBalance, keyMatrix, practicedDays, shortDate, weakestKeys, weeklyMinutes } from '../../state/progress';
-import { streak, usePersistent } from '../../state/storage';
+import { dayNum, dueItems, KEY_ORDER, keyBalance, keyMatrix, weakestKeys } from '../../state/progress';
+import { usePersistent } from '../../state/storage';
 import { ReviewList } from '../components/ReviewList';
-import { useLog, useMastery, useReading, useSeen } from '../hooks';
+import { useMastery, useReading, useSeen } from '../hooks';
 import { lessonRows, phraseNames, scaleRows, showable } from '../progressItems';
 
 /** Columnas de barras: se dibujan con CSS y llevan su tabla equivalente (un gráfico no es la única forma de ver el dato). */
@@ -93,54 +93,23 @@ export function Progress() {
   const { keyLabel } = useReading();
   const [mastery] = useMastery();
   const [seen] = useSeen();
-  const [log] = useLog();
   const [pl] = usePersistent<PhraseLibrary>('phrases', { phrases: [] });
   const today = useMemo(() => dayNum(), []);
   const phrases = useMemo(() => phraseNames(pl.phrases), [pl]);
 
-  const weeks = useMemo(() => weeklyMinutes(log, today, 12), [log, today]);
-  const thisWeek = weeks[weeks.length - 1];
-  const lastWeek = weeks[weeks.length - 2];
-  const days28 = practicedDays(log, today, 28);
-  const total = useMemo(() => Object.values(log).reduce((a, d) => a + (d.minutes || 0), 0), [log]);
   const due = useMemo(() => showable(dueItems(mastery, seen, today, 300), phrases), [mastery, seen, today, phrases]);
   const balance = useMemo(() => keyBalance(mastery), [mastery]);
   const weak = weakestKeys(balance);
   const marks = Object.values(balance).reduce((a, b) => a + b, 0);
   const lessons = useMemo(() => lessonRows(), []);
   const scales = useMemo(() => scaleRows(), []);
-  const maxWeek = Math.max(60, ...weeks.map((w) => w.minutes));
   const maxKey = Math.max(4, ...Object.values(balance));
 
   return (
     <div className="page progress">
       <section className="card">
         <h2>Tu progreso</h2>
-        <div className="stats">
-          <div><span className="lbl">Racha</span><b className="big">{streak(log, new Date())}</b><span className="muted small">días seguidos</span></div>
-          <div><span className="lbl">Esta semana</span><b className="big">{thisWeek.minutes}</b><span className="muted small">min en {thisWeek.days} {thisWeek.days === 1 ? 'día' : 'días'}</span></div>
-          <div><span className="lbl">Semana pasada</span><b className="big">{lastWeek.minutes}</b><span className="muted small">min en {lastWeek.days} {lastWeek.days === 1 ? 'día' : 'días'}</span></div>
-          <div><span className="lbl">Últimos 28 días</span><b className="big">{days28}</b><span className="muted small">días practicados</span></div>
-        </div>
-        <p className="muted small">
-          {total > 0 ? `En total registraste ${Math.floor(total / 60)} h ${total % 60} min de práctica en Hoy.` : 'Todavía no hay práctica registrada: tildá los bloques de Hoy al terminarlos y acá se arma tu historia.'}
-        </p>
-      </section>
-
-      <section className="card">
-        <h3>Minutos por semana</h3>
-        <Chart
-          label={`Minutos practicados por semana, las últimas 12 semanas. Esta semana ${thisWeek.minutes} minutos.`}
-          max={maxWeek}
-          unit="min"
-          bars={weeks.map((w, i) => ({
-            label: shortDate(w.start),
-            value: w.minutes,
-            title: `Semana del ${shortDate(w.start)}: ${w.minutes} min en ${w.days} ${w.days === 1 ? 'día' : 'días'}`,
-            hi: i === weeks.length - 1,
-            show: i === 0 || i === 4 || i === 8 || i === weeks.length - 1,
-          }))}
-        />
+        <p className="muted">Lo que marcás con «Salió limpio» en Lecciones, Escalas y Vocabulario: qué repasar y qué tonalidades trabajaste menos.</p>
       </section>
 
       <section className="card" id="repaso">

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { sanitizeMonth } from '../state/sanitize';
 import { dayOfIso } from '../state/progress';
 import { REPERTOIRE_WEEKS } from './focus';
-import { buildMonthPlan, EMPTY_MONTH, monthActive, monthName, monthOf, pickFor, repertoireName, sessionNumber } from './monthPlan';
+import { buildMonthPlan, EMPTY_MONTH, focusPick, monthActive, monthName, monthOf, pickFor, repertoireName, sessionNumber } from './monthPlan';
 
 const MP = { month: '2026-12', tech: 't-largas-artic', lang: 'l-triadas-mayores', rep: 'ii-v-i', startDay: dayOfIso('2026-12-01')! };
 const TUNES = [{ id: 'u:abcd', name: 'Autumn Leaves' }];
@@ -47,47 +47,54 @@ describe('plan del mes', () => {
     expect(repertoireName('zzz', TUNES)).toBeNull();
   });
 
-  it('la hora se reparte entre calentamiento, técnica, lenguaje, repertorio y libre, y suma lo elegido', () => {
-    for (const total of [30, 45, 60, 90, 120]) {
-      const plan = buildMonthPlan(new Date(2026, 11, 10), total, MP, 1, 'Autumn Leaves');
-      expect(plan.blocks.map((b) => b.id)).toEqual(['warm', 'tech', 'lang', 'rep', 'free']);
-      expect(plan.blocks.reduce((a, b) => a + b.minutes, 0), `${total} min`).toBe(total);
-      expect(plan.blocks.every((b) => b.minutes >= 3)).toBe(true);
-    }
-    const hora = buildMonthPlan(new Date(2026, 11, 10), 60, MP, 1, 'Autumn Leaves');
-    expect(hora.blocks.map((b) => b.minutes)).toEqual([10, 15, 15, 15, 5]);
+  it('son tres bloques sin minutos: calentamiento, el foco del día y el repertorio', () => {
+    const d = new Date(2026, 11, 10);
+    expect(buildMonthPlan(d, MP, 1, 'Autumn Leaves').blocks.map((b) => b.id)).toEqual(['warm', 'tech', 'rep']);
+    expect(buildMonthPlan(d, MP, 2, 'Autumn Leaves').blocks.map((b) => b.id)).toEqual(['warm', 'lang', 'rep']);
+    expect(buildMonthPlan(d, MP, 1, 'X').blocks.every((b) => !('minutes' in b))).toBe(true);
+  });
+
+  it('técnica y lenguaje se alternan y cada foco avanza una tarea por vez: tres por semana, doce en el mes', () => {
+    const f = [1, 2, 3, 4, 5, 6, 7, 8, 13, 24, 25, 26].map(focusPick);
+    expect(f.map((x) => [x.area, x.pick.week, x.pick.index])).toEqual([
+      ['tech', 0, 0], ['lang', 0, 0], ['tech', 0, 1], ['lang', 0, 1], ['tech', 0, 2], ['lang', 0, 2], ['tech', 1, 0], ['lang', 1, 0],
+      ['tech', 2, 0], ['lang', 3, 2], ['tech', 3, 0], ['lang', 3, 0],
+    ]);
+    expect(focusPick(0)).toMatchObject({ area: 'tech', pick: { week: 0, index: 0 } });
+    // en un mes (24 sesiones) cada foco pasa por sus doce tareas distintas
+    const tareas = (area: string) => new Set(Array.from({ length: 24 }, (_, i) => focusPick(i + 1)).filter((x) => x.area === area).map((x) => `${x.pick.week}:${x.pick.index}`));
+    expect(tareas('tech').size).toBe(12);
+    expect(tareas('lang').size).toBe(12);
   });
 
   it('cada área trabaja su foco: título, semana y la tarea que corresponde a la sesión', () => {
     const d = new Date(2026, 11, 10);
-    const s1 = buildMonthPlan(d, 60, MP, 1, 'Autumn Leaves');
+    const s1 = buildMonthPlan(d, MP, 1, 'Autumn Leaves');
     expect(s1.month).toEqual({ week: 0, session: 1 });
-    const [, tech, lang, rep] = s1.blocks;
+    const [, tech, rep] = s1.blocks;
     expect(tech.title).toBe('Técnica: Nota larga y articulación');
-    expect(lang.title).toBe('Lenguaje: Tríadas mayores');
+    expect(buildMonthPlan(d, MP, 2, 'Autumn Leaves').blocks[1].title).toBe('Lenguaje: Tríadas mayores');
     expect(rep.title).toBe('Repertorio: Autumn Leaves');
     expect((tech.detail[0] as string)).toMatch(/^Semana 1 de 4 · Sonido y ataque\./);
     expect(typeof tech.detail[1]).toBe('object'); // la tarea (con su explicación)
     expect(tech.detail).toHaveLength(2);
-    // la segunda vez de la semana avisa que hay que exigirse un poco más
-    const s4 = buildMonthPlan(d, 60, MP, 4, 'Autumn Leaves');
-    expect(s4.blocks[1].detail).toHaveLength(3);
-    expect(s4.blocks[1].detail[1]).toMatch(/Segunda vez esta semana/);
-    // la sesión 2 cambia de tarea y la 7 cambia de semana
-    const t = (n: number) => (buildMonthPlan(d, 60, MP, n, 'X').blocks[1].detail.at(-1) as { id: string }).id;
-    expect(new Set([t(1), t(2), t(3)]).size).toBe(3);
-    expect(t(4)).toBe(t(1));
+    // el repertorio se repite dos veces por semana y la segunda avisa que hay que exigirse un poco más
+    const s4 = buildMonthPlan(d, MP, 4, 'Autumn Leaves');
+    expect(s4.blocks[2].detail).toHaveLength(3);
+    expect(s4.blocks[2].detail[1]).toMatch(/Segunda vez esta semana/);
+    // las sesiones impares recorren las tres tareas de técnica de la semana y la 7 cambia de semana
+    const t = (n: number) => (buildMonthPlan(d, MP, n, 'X').blocks[1].detail.at(-1) as { id: string }).id;
+    expect(new Set([t(1), t(3), t(5)]).size).toBe(3);
     expect(t(7)).not.toBe(t(1));
-    expect(buildMonthPlan(d, 60, MP, 7, 'X').month!.week).toBe(1);
+    expect(buildMonthPlan(d, MP, 7, 'X').month!.week).toBe(1);
   });
 
   it('los enlaces salen con la tonalidad del día y el tema elegido', () => {
     const d = new Date(2026, 11, 10);
-    const plan = buildMonthPlan(d, 60, { ...MP, rep: 'u:abcd' }, 1, 'Autumn Leaves');
-    const rep = plan.blocks[3];
+    const plan = buildMonthPlan(d, { ...MP, rep: 'u:abcd' }, 1, 'Autumn Leaves');
+    const rep = plan.blocks[2];
     expect(rep.link).toBe('#/playalong?p=u%3Aabcd');
-    expect(plan.blocks[4].link).toBe('#/playalong?p=u%3Aabcd');
-    const lang = buildMonthPlan(d, 60, MP, 8, 'X').blocks[2]; // semana 2: tríadas dentro de cada acorde
+    const lang = buildMonthPlan(d, MP, 8, 'X').blocks[1]; // semana 2: tríadas dentro de cada acorde
     expect(lang.link).toBe(`#/playalong?p=ii-v-i&k=${plan.key}`);
     expect(plan.blocks.every((b) => !b.link || !/[{}]/.test(b.link))).toBe(true);
     // el nombre del tema se usa en los textos del repertorio

@@ -30,15 +30,13 @@ const seed = () => {
   );
 };
 
-test('Progreso: resumen, minutos por semana, repaso ordenado, balance y matrices', async ({ page }) => {
+test('Progreso: repaso ordenado, balance y matrices, sin racha ni minutos', async ({ page }) => {
   await page.addInitScript(seed);
   await page.goto('/#/progreso');
   await expect(page.getByRole('heading', { name: 'Tu progreso' })).toBeVisible();
-  // resumen: racha de 3 días, 5 días practicados, 135 min esta semana o la anterior según el día de hoy
-  await expect(page.locator('.stats')).toContainText('días seguidos');
-  await expect(page.locator('.stats')).toContainText('5');
-  await expect(page.getByText(/En total registraste 3 h 40 min/)).toBeVisible();
-  // gráfico de 12 barras y su tabla equivalente
+  // nada de racha ni de minutos practicados
+  await expect(page.getByText(/Racha|Minutos por semana|min de práctica/)).toHaveCount(0);
+  // gráfico del balance por tonalidad: 12 barras y su tabla equivalente
   await expect(page.locator('.chart .plot').first().locator('i')).toHaveCount(12);
   await page.locator('details', { hasText: 'Ver como tabla' }).first().locator('summary').click();
   await expect(page.locator('details[open] table tr')).toHaveCount(12);

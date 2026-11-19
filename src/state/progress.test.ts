@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeSeen } from './sanitize';
-import { bumpSeen, dayNum, dayOfIso, dueItems, intervalDays, keyBalance, keyMatrix, parseItem, practicedDays, weakestKeys, weeklyMinutes } from './progress';
+import { bumpSeen, dayNum, dayOfIso, dueItems, intervalDays, keyBalance, keyMatrix, parseItem, weakestKeys } from './progress';
 
 const D = (iso: string) => dayOfIso(iso)!;
 
@@ -80,35 +80,7 @@ describe('tonalidades', () => {
   });
 });
 
-describe('minutos por semana', () => {
-  // 2026-11-18 es miércoles: su semana empieza el lunes 2026-11-16
-  const today = D('2026-11-18');
-  const log = {
-    '2026-11-16': { done: ['warm'], minutes: 30 },
-    '2026-11-18': { done: ['warm', 'tech'], minutes: 45 },
-    '2026-11-15': { done: ['warm'], minutes: 60 }, // domingo: semana anterior
-    '2026-11-02': { done: ['warm'], minutes: 20 },
-    '2026-11-17': { done: [], minutes: 0 }, // sin práctica: no cuenta como día
-    '2025-01-01': { done: ['warm'], minutes: 99 }, // fuera de las 12 semanas
-    'basura': { done: [], minutes: 50 },
-  };
-  it('agrupa de lunes a domingo, de la más vieja a la actual', () => {
-    const w = weeklyMinutes(log, today, 12);
-    expect(w).toHaveLength(12);
-    expect(w[11]).toMatchObject({ start: D('2026-11-16'), minutes: 75, days: 2 });
-    expect(w[10]).toMatchObject({ start: D('2026-11-09'), minutes: 60, days: 1 });
-    expect(w[9].start).toBe(D('2026-11-02'));
-    expect(w[9].minutes).toBe(20);
-    expect(w.reduce((a, x) => a + x.minutes, 0)).toBe(155);
-  });
-  it('un domingo cuenta en la semana que termina ese día', () => {
-    const w = weeklyMinutes({ '2026-11-22': { done: ['x'], minutes: 10 } }, D('2026-11-22'), 2);
-    expect(w[1]).toMatchObject({ start: D('2026-11-16'), minutes: 10 });
-  });
-  it('cuenta los días practicados en una ventana', () => {
-    expect(practicedDays(log, today, 28)).toBe(4);
-    expect(practicedDays(log, today, 3)).toBe(2);
-  });
+describe('fechas', () => {
   it('dayNum coincide con el de las fechas de texto', () => {
     expect(dayNum(new Date(2026, 10, 18, 23, 59))).toBe(D('2026-11-18'));
     expect(dayOfIso('2026-13-40')).toBeNull();

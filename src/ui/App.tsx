@@ -152,13 +152,6 @@ export function App() {
           {page === 'mas' && <More />}
         </Suspense>
       </main>
-      <footer className="credits">
-        Piano: Salamander Grand Piano V3 (Alexander Holm,{' '}
-        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>) · Batería: Salamander Drumkit (Alexander Holm,{' '}
-        <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>) · Contrabajo y trompeta: FluidR3 (Frank Wen, MIT) · Metrónomo mecánico (Olga Ernst,{' '}
-        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>) ·{' '}
-        <a href="#/creditos">Créditos y licencias</a>
-      </footer>
     </div>
   );
 }

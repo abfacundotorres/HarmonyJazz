@@ -88,7 +88,7 @@ export function Month() {
             <li><span className="lbl">Lenguaje</span><b>{LANG_FOCI.find((f) => f.id === mp.lang)?.title}</b></li>
             <li><span className="lbl">Repertorio</span><b>{repertoireName(mp.rep, tunes)}</b></li>
           </ul>
-          <p className="muted">Vas por la sesión {session}. Cada semana trae 3 tareas por área que se repiten dos veces; después de 24 sesiones se repite la última semana para consolidar.</p>
+          <p className="muted">Vas por la sesión {session}. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
           <div className="row">
             <a className="button primary" href="#/hoy">Ir al plan de hoy</a>
             <button onClick={() => setEditing(true)}>Cambiar los focos</button>
@@ -101,7 +101,7 @@ export function Month() {
           <h2>{active ? 'Cambiar los focos' : 'Elegí los focos de este mes'}</h2>
           <p className="muted">
             En vez de rotar todo cada día, elegís pocas cosas y las trabajás a fondo: cada una es un recorrido de {WEEKS} semanas con tareas chicas
-            que se alternan. El plan de Hoy reparte tu hora entre el calentamiento, un foco de técnica, uno de lenguaje y el tema.
+            que se alternan. Cada día Hoy trae el calentamiento, un solo foco (técnica o lenguaje, alternando) y el tema, sin apuros: lo que haga falta para hacerlo bien.
           </p>
           {lastMonth && (
             <p className="notice" role="status">

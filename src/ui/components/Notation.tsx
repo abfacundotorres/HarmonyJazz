@@ -30,7 +30,7 @@ export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { 
 
   useEffect(() => {
     if (!ref.current || width <= 0) return;
-    const inner = Math.max(240, width - 12);
+    const inner = Math.max(240, width - 18);
     abcjs.renderAbc(ref.current, abc, {
       add_classes: true,
       visualTranspose: transpose,

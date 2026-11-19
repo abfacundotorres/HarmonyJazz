@@ -104,7 +104,15 @@ export async function openAudio(page: Page, wav: Buffer, name = 'prueba.wav') {
   await page.waitForTimeout(600);
 }
 
-/** Abre un bloque del plan de Hoy (empiezan plegados salvo el primero sin hacer) y devuelve su tarjeta. */
+/**
+ * Un mediodía en que el plan de rotación trae el ejercicio de técnica número `indice` (de los 18): la técnica toca cuando
+ * el número de día es múltiplo de 3 (foco del día entre técnica, escala y armonía) y su ejercicio es floor(n / 4) % 18.
+ */
+export const diaTecnica = (indice: number) => {
+  for (let n = 20790; ; n++) if (n % 3 === 0 && Math.floor(n / 4) % 18 === indice) return new Date(1970, 0, 1 + n, 12, 0, 0);
+};
+
+/** Abre un bloque del plan de Hoy (empieza abierto sólo el primero) y devuelve su tarjeta. */
 export async function openBlock(page: Page, title: string) {
   const block = page.locator('article.block', { hasText: title }).first();
   const head = block.locator('.bhead');
