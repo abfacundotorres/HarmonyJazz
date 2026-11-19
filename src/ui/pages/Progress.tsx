@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { PhraseLibrary } from '../../content/phrases';
 import { dayNum, dueItems, KEY_ORDER, keyBalance, keyMatrix, weakestKeys } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
+import { EarReview, useEarReview } from '../components/EarReview';
 import { ReviewList } from '../components/ReviewList';
 import { useMastery, useReading, useSeen } from '../hooks';
 import { lessonRows, phraseNames, scaleRows, showable } from '../progressItems';
@@ -97,6 +98,7 @@ export function Progress() {
   const today = useMemo(() => dayNum(), []);
   const phrases = useMemo(() => phraseNames(pl.phrases), [pl]);
 
+  const ear = useEarReview();
   const due = useMemo(() => showable(dueItems(mastery, seen, today, 300), phrases), [mastery, seen, today, phrases]);
   const balance = useMemo(() => keyBalance(mastery), [mastery]);
   const weak = weakestKeys(balance);
@@ -109,7 +111,7 @@ export function Progress() {
     <div className="page progress">
       <section className="card">
         <h2>Tu progreso</h2>
-        <p className="muted">Lo que marcás con «Salió limpio» en Lecciones, Escalas y Vocabulario: qué repasar y qué tonalidades trabajaste menos.</p>
+        <p className="muted">Lo que marcás con «Salió limpio» en Lecciones, Escalas y Vocabulario y lo que fallás en Oído: qué repasar y qué tonalidades trabajaste menos.</p>
       </section>
 
       <section className="card" id="repaso">
@@ -125,6 +127,7 @@ export function Progress() {
             {due.length > 12 && <p className="muted small">Y {due.length - 12} más.</p>}
           </>
         )}
+        {ear.due && <EarReview review={ear.review} />}
       </section>
 
       <section className="card">

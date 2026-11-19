@@ -67,3 +67,31 @@ test.describe('entrenamiento del oído', () => {
     }
   });
 });
+
+test.describe('el oído en el repaso', () => {
+  const stats = JSON.stringify({ 'i:asc:6': { n: 6, ok: 2, d: 1 }, 'i:asc:5': { n: 4, ok: 1, d: 1 } });
+
+  test('lo flojo aparece en Hoy y en Progreso, con enlace a Oído', async ({ page }) => {
+    await page.addInitScript((s) => localStorage.setItem('harmonyjazz:ear', s), stats);
+    await page.goto('/#/hoy');
+    const repaso = page.locator('#repaso');
+    await expect(repaso).toContainText('Oído');
+    await expect(repaso).toContainText('Te cuestan: 4ª justa (25 %), Tritono (33 %)');
+    await repaso.getByRole('link', { name: /Oído/ }).click();
+    await expect(page).toHaveURL(/#\/oido$/);
+    await page.goto('/#/progreso');
+    await expect(page.locator('#repaso')).toContainText('4ª justa (25 %), Tritono (33 %)');
+  });
+
+  test('sin datos de oído no aparece, y con todo firme avisa sólo si hace días que no se practica', async ({ page }) => {
+    await page.goto('/#/hoy');
+    await expect(page.locator('#repaso')).toHaveCount(0);
+    await page.addInitScript(() => {
+      const hoy = Math.floor(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) / 86400000);
+      localStorage.setItem('harmonyjazz:ear', JSON.stringify({ 'i:asc:7': { n: 10, ok: 10, d: hoy - 5 } }));
+    });
+    await page.goto('/#/progreso');
+    await page.reload();
+    await expect(page.locator('#repaso')).toContainText('Hace 5 días que no practicás el oído');
+  });
+});

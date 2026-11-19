@@ -3,7 +3,7 @@ import { chordTones, parseChord } from '../theory/chords';
 import { CYCLE_OF_FOURTHS } from '../theory/chart';
 import { noteName } from '../theory/notes';
 import {
-  ALL_ITEMS, CHORD_SETS, chordId, chordQuestion, guideToneQuestion, intervalId, intervalQuestion, INTERVAL_SEMIS, pickItem, QUALITY_DEFS, record, weight,
+  ALL_ITEMS, CHORD_SETS, earDue, earReview, chordId, chordQuestion, guideToneQuestion, intervalId, intervalQuestion, INTERVAL_SEMIS, pickItem, QUALITY_DEFS, record, weight,
 } from './core';
 
 const seeded = (s: number) => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -124,5 +124,31 @@ describe('estadísticas y elección', () => {
     const ids = ALL_ITEMS.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.length).toBe(3 * 12 + 2 * 8 + 2);
+  });
+});
+
+describe('repaso del oído', () => {
+  it('sin datos no hay nada para repasar', () => {
+    const r = earReview({}, 100);
+    expect(r).toEqual({ weak: [], idle: null });
+    expect(earDue(r)).toBe(false);
+  });
+  it('lo flojo (3+ respuestas y menos de 70 %) sale primero lo peor; lo firme o con pocos datos no', () => {
+    const stats = {
+      [intervalId('asc', 6)]: { n: 6, ok: 2, d: 99 },
+      [intervalId('asc', 5)]: { n: 4, ok: 2, d: 99 },
+      [intervalId('asc', 7)]: { n: 10, ok: 9, d: 99 },
+      [intervalId('asc', 1)]: { n: 2, ok: 0, d: 99 },
+    };
+    const r = earReview(stats, 100);
+    expect(r.weak.map((w) => [w.label, w.group])).toEqual([['Tritono', 'Intervalos · Ascendente'], ['4ª justa', 'Intervalos · Ascendente']]);
+    expect(r.idle).toBe(1);
+    expect(earDue(r)).toBe(true);
+  });
+  it('si todo está firme avisa sólo cuando pasan tres días sin practicar', () => {
+    const stats = { [intervalId('asc', 7)]: { n: 10, ok: 10, d: 90 } };
+    expect(earDue(earReview(stats, 91))).toBe(false);
+    expect(earDue(earReview(stats, 93))).toBe(true);
+    expect(earReview(stats, 93).idle).toBe(3);
   });
 });
