@@ -164,6 +164,65 @@ export const PROGRESSIONS: Progression[] = [
     notes: 'Forma de ejercicio (no es un tema): tónica menor, iv menor, ii–V–i y un paso breve por la relativa mayor. Corcheas rectas: el fraseo cambia por completo.',
   },
   {
+    id: 'aaba-subdominante',
+    name: 'AABA con puente en la subdominante (32 compases)',
+    category: 'Formas',
+    key: 'C',
+    mode: 'major',
+    chart:
+      'Cmaj7 A7b9 | Dm7 G7 | Em7 A7b9 | Dm7 G7 | Cmaj7 C7 | Fmaj7 Fm7 | Em7 A7b9 | Dm7 G7 | ' +
+      'Cmaj7 A7b9 | Dm7 G7 | Em7 A7b9 | Dm7 G7 | Cmaj7 C7 | Fmaj7 Fm7 | Em7 A7b9 | Dm7 G7 | ' +
+      'Gm7 | C7 | Fmaj7 | Fmaj7 | Dm7b5 | G7b9 | Cmaj7 Am7 | Dm7 G7 | ' +
+      'Cmaj7 A7b9 | Dm7 G7 | Em7 A7b9 | Dm7 G7 | Cmaj7 C7 | Fmaj7 Fm7 | Cmaj7 Am7 | Dm7 G7',
+    tempo: 140,
+    notes: 'Forma de ejercicio (no es un tema): AABA de 32 compases con el puente en la subdominante y el circular I–vi–ii–V. Es la estructura de muchos standards: aprendé a oír dónde empieza cada sección.',
+  },
+  {
+    id: 'menor-aaba',
+    name: 'Menor AABA con puente a la relativa mayor (32 compases)',
+    category: 'Formas',
+    key: 'D',
+    mode: 'minor',
+    chart:
+      'Dm7 | Dm7 | Gm7 | Gm7 | Em7b5 | A7b9 | Dm7 Bbmaj7 | Em7b5 A7b9 | ' +
+      'Dm7 | Dm7 | Gm7 | Gm7 | Em7b5 | A7b9 | Dm7 Bbmaj7 | Em7b5 A7b9 | ' +
+      'Fmaj7 | Fmaj7 | Bbmaj7 | Bbmaj7 | Em7b5 | A7b9 | Dm7 | Dm7 | ' +
+      'Dm7 | Dm7 | Gm7 | Gm7 | Em7b5 | A7b9 | Dm7 Bbmaj7 | Em7b5 A7b9',
+    tempo: 130,
+    notes: 'Forma de ejercicio (no es un tema): AABA en menor con un puente que pasa por la relativa mayor. Practicá cambiar de color entre el menor y el mayor sin perder los guide tones.',
+  },
+  {
+    id: 'bossa-mayor',
+    name: 'Corcheas rectas en F (16 compases)',
+    category: 'Formas',
+    key: 'F',
+    mode: 'major',
+    style: 'bossa',
+    chart: 'Fmaj7 | Gm7 C7 | Fmaj7 | Dm7 | Gm7 | C7 | Fmaj7 | Bbmaj7 | Gm7 | C7 | Am7 D7 | Gm7 | C7 | Fmaj7 Dm7 | Gm7 C7 | Fmaj7',
+    tempo: 130,
+    notes: 'Forma de ejercicio (no es un tema): mayor con ii–V cortos, en estilo bossa. Las corcheas son rectas: dejá el swing y pensá el fraseo más cantado y con menos acentos de contratiempo.',
+  },
+  {
+    id: 'blues-bb-rapido',
+    name: 'Blues rápido en B♭ (12 compases)',
+    category: 'Blues',
+    key: 'Bb',
+    mode: 'major',
+    chart: 'Bb7 | Eb7 | Bb7 | Bb7 | Eb7 | Eb7 | Bb7 | G7 | Cm7 | F7 | Bb7 G7 | Cm7 F7',
+    tempo: 220,
+    notes: 'El blues de jam session a tempo rápido: pocas notas por acorde y mucha claridad. Ideal para el swing y la articulación a velocidad.',
+  },
+  {
+    id: 'ii-v-semitonos',
+    name: 'Cadena de ii–V descendente por semitono (8 compases)',
+    category: 'Formas',
+    key: 'C',
+    mode: 'major',
+    chart: 'Dm7 G7 | Dbm7 Gb7 | Cm7 F7 | Bm7 E7 | Bbm7 Eb7 | Am7 D7 | Abm7 Db7 | Gmaj7',
+    tempo: 110,
+    notes: 'Forma de ejercicio (no es un tema): ocho ii–V que bajan un semitono cada compás y desembocan en el I. Es el motor de los blues con cambios y de muchas modulaciones: guide tones por semitono.',
+  },
+  {
     id: 'ballad',
     name: 'Balada en E♭ (forma de 8 compases)',
     category: 'Formas',

@@ -3,7 +3,8 @@
  * diaria repartida entre ellos. Cada día toca una tarea de cada foco según cuántas sesiones se llevan practicadas.
  */
 import { dayOfIso, type Log } from '../state/progress';
-import { FOCI, focusById, type FocusTask, type FocusWeek, REPERTOIRE_WEEKS, SESSIONS_PER_WEEK, WEEKS } from './focus';
+import { FOCI, focusById, type FocusTask, type FocusWeek, SESSIONS_PER_WEEK, WEEKS } from './focus';
+import { repertoireWeeks } from './standards';
 import { type DailyPlan, isoDate, keyOfDay, type PlanBlock, WARMUPS } from './plan';
 import { PROGRESSIONS } from './progressions';
 
@@ -16,6 +17,8 @@ export interface MonthPlan {
   rep: string;
   /** Número de día en que se empezó (las sesiones se cuentan desde ahí). */
   startDay: number;
+  /** Semestre de la currícula (1 a 6) si el mes sale de ella: el recorrido del tema se exige según el semestre. */
+  nivel?: number;
 }
 
 export const EMPTY_MONTH: MonthPlan = { month: '', tech: '', lang: '', rep: '', startDay: 0 };
@@ -90,7 +93,7 @@ export function buildMonthPlan(d: Date, mp: MonthPlan, session: number, repName:
   const key = keyOfDay(d);
   const { area, pick } = focusPick(session);
   const focus = focusById(area === 'tech' ? mp.tech : mp.lang)!;
-  const rep = REPERTOIRE_WEEKS(repName);
+  const rep = repertoireWeeks(repName, mp.nivel);
   const repPick = pickFor(session);
   const warm = WARMUPS[(session - 1) % WARMUPS.length];
   const blocks: PlanBlock[] = [
