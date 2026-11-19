@@ -25,7 +25,7 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
     await hoy(page).getByRole('link', { name: 'Mi mes' }).click();
     await expect(page).toHaveURL(/#\/mes$/);
-    await expect(hoy(page).getByRole('link')).toHaveText(['Plan de hoy', 'Mi mes', 'Currícula', 'Progreso']);
+    await expect(hoy(page).getByRole('link')).toHaveText(['Plan', 'Mi mes', 'Currícula', 'Progreso']);
   });
 
   test('hay focos nuevos para elegir (tríadas menores, mayores y menores, acordes de cuatro notas, células) y el plan de Hoy los trabaja', async ({ page }) => {
