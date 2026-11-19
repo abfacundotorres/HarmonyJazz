@@ -4,7 +4,7 @@
  */
 import { dayOfIso, type Log } from '../state/progress';
 import { FOCI, focusById, type FocusTask, type FocusWeek, REPERTOIRE_WEEKS, SESSIONS_PER_WEEK, WEEKS } from './focus';
-import { type DailyPlan, fitMinutes, isoDate, keyOfDay, type PlanBlock, WARMUPS } from './plan';
+import { type DailyPlan, isoDate, keyOfDay, type PlanBlock, WARMUPS } from './plan';
 import { PROGRESSIONS } from './progressions';
 
 export interface MonthPlan {
@@ -34,7 +34,7 @@ export function monthActive(mp: MonthPlan, d: Date, tunes: { id: string; name: s
   return mp.month === monthOf(d) && !!focusById(mp.tech) && !!focusById(mp.lang) && repertoireName(mp.rep, tunes) !== null;
 }
 
-/** Sesión del plan en que se está hoy (1 = la primera): los días desde el comienzo en que se tildó algo, más hoy. */
+/** Sesión del plan en que se está hoy (1 = la primera): los días desde el comienzo en que se abrió Hoy, más hoy. */
 export function sessionNumber(log: Log, startDay: number, today: number): number {
   let n = 1;
   for (const [iso, v] of Object.entries(log)) {
@@ -59,50 +59,45 @@ export function pickFor(session: number): Pick {
 
 const resolveLink = (link: string | undefined, key: string, rep: string) => link?.replaceAll('{k}', key).replaceAll('{rep}', encodeURIComponent(rep));
 
-/** Reparto de la hora: calentamiento, técnica, lenguaje, repertorio y libre. */
-const SHARE = { warm: 0.17, tech: 0.25, lang: 0.25, rep: 0.25, free: 0.08 };
-const mins = (total: number, x: number) => Math.max(3, Math.round((total * x) / 5) * 5 || 3);
+/**
+ * Qué foco toca en una sesión: técnica en las sesiones impares y lenguaje en las pares. Cada foco avanza una tarea por
+ * vez que le toca (tres por semana, doce en el mes); pasadas las 24 sesiones se repite la última semana.
+ */
+export function focusPick(session: number): { area: 'tech' | 'lang'; pick: Pick } {
+  const s = Math.max(1, session) - 1;
+  const k = Math.floor(s / 2);
+  return { area: s % 2 === 0 ? 'tech' : 'lang', pick: { week: Math.min(WEEKS - 1, Math.floor(k / 3)), index: k % 3, pass: 1 } };
+}
 
 const SECOND = 'Segunda vez esta semana: repetí la tarea y subí un poco la exigencia (4 bpm más, o un semitono más de registro) sin perder la limpieza.';
 
-function areaBlock(id: string, label: string, title: string, week: FocusWeek, pick: Pick, minutes: number, key: string, rep: string): PlanBlock {
+function areaBlock(id: string, label: string, title: string, week: FocusWeek, pick: Pick, key: string, rep: string): PlanBlock {
   const task: FocusTask = week.tasks[pick.index];
   return {
     id,
     title: `${label}: ${title}`,
-    minutes,
     detail: [`Semana ${pick.week + 1} de ${WEEKS} · ${week.title}. ${week.goal}`, ...(pick.pass === 2 ? [SECOND] : []), task],
     link: resolveLink(task.link, key, rep),
     linkLabel: task.linkLabel,
   };
 }
 
-/** El plan de un día con el foco del mes. `repName` es el nombre del tema de repertorio. */
-export function buildMonthPlan(d: Date, totalMinutes: number, mp: MonthPlan, session: number, repName: string): DailyPlan {
-  const tech = focusById(mp.tech)!;
-  const lang = focusById(mp.lang)!;
-  const pick = pickFor(session);
+/**
+ * El plan de un día con el foco del mes: tres bloques. Calentamiento, el foco del día (técnica o lenguaje, alternando) y
+ * el tema de repertorio. `repName` es el nombre del tema.
+ */
+export function buildMonthPlan(d: Date, mp: MonthPlan, session: number, repName: string): DailyPlan {
   const key = keyOfDay(d);
+  const { area, pick } = focusPick(session);
+  const focus = focusById(area === 'tech' ? mp.tech : mp.lang)!;
   const rep = REPERTOIRE_WEEKS(repName);
+  const repPick = pickFor(session);
   const warm = WARMUPS[(session - 1) % WARMUPS.length];
   const blocks: PlanBlock[] = [
-    { id: 'warm', title: 'Calentamiento y sonido', minutes: mins(totalMinutes, SHARE.warm), detail: warm, link: '#/escucha', linkLabel: 'Abrir afinador' },
-    areaBlock('tech', 'Técnica', tech.title, tech.weeks[pick.week], pick, mins(totalMinutes, SHARE.tech), key, mp.rep),
-    areaBlock('lang', 'Lenguaje', lang.title, lang.weeks[pick.week], pick, mins(totalMinutes, SHARE.lang), key, mp.rep),
-    areaBlock('rep', 'Repertorio', repName, rep[pick.week], pick, mins(totalMinutes, SHARE.rep), key, mp.rep),
-    {
-      id: 'free',
-      title: 'Libre y grabación',
-      minutes: mins(totalMinutes, SHARE.free),
-      detail: [
-        'Tocá lo que quieras sobre el tema del mes con el play-along, sin una regla. Si podés, grabalo.',
-        'Anotá en una línea qué avanzó hoy y qué vas a repetir mañana.',
-      ],
-      link: `#/playalong?p=${encodeURIComponent(mp.rep)}`,
-      linkLabel: 'Abrir el tema',
-    },
+    { id: 'warm', title: 'Calentamiento y sonido', detail: warm, link: '#/escucha', linkLabel: 'Abrir afinador' },
+    areaBlock(area, area === 'tech' ? 'Técnica' : 'Lenguaje', focus.title, focus.weeks[pick.week], pick, key, mp.rep),
+    areaBlock('rep', 'Repertorio', repName, rep[repPick.week], repPick, key, mp.rep),
   ];
-  fitMinutes(blocks, totalMinutes, (b) => totalMinutes * SHARE[b.id as keyof typeof SHARE]);
   return { date: isoDate(d), key, blocks, month: { week: pick.week, session } };
 }
 

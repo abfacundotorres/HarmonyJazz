@@ -23,7 +23,6 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('view', oneOf(raw.view, ['Bb', 'C'] as const));
   set('register', oneOf(raw.register, ['grave', 'medio', 'agudo'] as const));
   set('swing', num(raw.swing, 0.5, 0.72));
-  set('minutes', num(raw.minutes, 15, 240));
   set('focusLesson', str(raw.focusLesson, 40));
   set('volume', num(raw.volume, -14, 2));
   set('output', oneOf(raw.output, ['auto', 'phone', 'normal'] as const));

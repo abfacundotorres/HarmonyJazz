@@ -11,7 +11,7 @@ class Mem {
 
 const seed = () => {
   const s = new Mem();
-  s.setItem('harmonyjazz:settings', JSON.stringify({ view: 'Bb', minutes: 45 }));
+  s.setItem('harmonyjazz:settings', JSON.stringify({ view: 'Bb', swing: 0.6 }));
   s.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:1', name: 'A' }, { id: 'u:2', name: 'B' }] }));
   s.setItem('harmonyjazz:phrases', JSON.stringify({ phrases: [{ id: 'p:1' }] }));
   s.setItem('harmonyjazz:mastery', JSON.stringify({ 'lesson:1': { C: 120 } }));
@@ -37,7 +37,7 @@ describe('copia de seguridad', () => {
     const nuevo = new Mem();
     expect(applyLocal(nuevo, parsed.data)).toBe(4);
     expect(JSON.parse(nuevo.getItem('harmonyjazz:library')!).tunes).toHaveLength(2);
-    expect(JSON.parse(nuevo.getItem('harmonyjazz:settings')!).minutes).toBe(45);
+    expect(JSON.parse(nuevo.getItem('harmonyjazz:settings')!).swing).toBe(0.6);
     expect(nuevo.getItem('hj:acceso')).toBeNull();
   });
 

@@ -2,7 +2,7 @@
 
 Webapp para aprender jazz en trompeta: armonía aplicada, vocabulario, play-along generado y análisis de lo que tocás por micrófono. Todo escrito para trompeta en Si♭ (o en concierto).
 
-- **Hoy:** plan diario con tonalidad del día, temporizador por bloque, racha e historial.
+- **Hoy:** plan diario corto, con tonalidad del día y un solo foco por sesión, sin minutos ni casilleros.
 - **Play-along:** progresiones de práctica (formas y ejercicios, no temas) con estilos swing, en 2, balada y bossa: ii–V–I en las 12 tonalidades, blues, rhythm changes, forma modal, cadenas de ii–V, cambios de Coltrane… o la tuya, en cualquier tonalidad, con acorde actual, guide tones y escala.
 - **Lecciones:** 12 lecciones de nivel avanzado con ejercicios generados en las 12 tonalidades y registro de tempos.
 - **Grabá tu solo:** en el play-along, la app transcribe lo que tocás, lo escribe según cada acorde y lo analiza (llegadas a guide tones, tiempo fuerte, contratiempo, espacio, registro).

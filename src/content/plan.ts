@@ -10,7 +10,6 @@ import { PROGRESSIONS } from './progressions';
 export interface PlanBlock {
   id: string;
   title: string;
-  minutes: number;
   detail: PlanItem[];
   /** Ruta de la app a la que lleva el bloque. */
   link?: string;
@@ -52,87 +51,69 @@ export const WARMUPS: PlanItem[][] = [
 
 const TECHNIQUE: PlanItem[] = P.TECHNIQUE_EXERCISES;
 
-export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string, phrases: Lick[] = [], scale?: Suggestion): DailyPlan {
+/**
+ * Plan de rotación (cuando no hay foco del mes): tres bloques, sin reparto de minutos. Calentamiento, un solo foco del
+ * día (rota entre técnica, escala, armonía y vocabulario) y el tema de la semana.
+ */
+export function buildPlan(d: Date, focusLessonId?: string, phrases: Lick[] = [], scale?: Suggestion): DailyPlan {
   const n = dayNumber(d);
   const key = keyOfDay(d);
   const tune = tuneOfWeek(d);
-  const lesson = LESSONS.find((l) => l.id === focusLessonId) ?? LESSONS[Math.floor(n / 3) % LESSONS.length];
-  const lick = phrases.length ? phrases[n % phrases.length] : null;
+  const lesson = LESSONS.find((l) => l.id === focusLessonId) ?? LESSONS[Math.floor(n / 12) % LESSONS.length];
+  const lick = phrases.length ? phrases[Math.floor(n / 4) % phrases.length] : null;
   const warm = WARMUPS[n % WARMUPS.length];
 
-  // reparto proporcional
-  const w = { warm: 0.15, tech: 0.1, scale: 0.1, lesson: 0.2, lick: 0.13, tune: 0.22, free: 0.1 };
-  const m = (x: number) => Math.max(3, Math.round((totalMinutes * x) / 5) * 5 || 3);
+  const tech: PlanBlock = {
+    id: 'tech',
+    title: 'Técnica en la tonalidad del día',
+    detail: [TECHNIQUE[Math.floor(n / 4) % TECHNIQUE.length], 'Metrónomo sólo en 2 y 4 desde el principio: el swing se practica también en la técnica.'],
+    link: `#/playalong?p=ii-v-i&k=${key}&m=1`,
+    linkLabel: 'Metrónomo en 2 y 4',
+  };
+  const scaleBlock: PlanBlock | null = scale
+    ? {
+        id: 'scale',
+        title: `Escala del día: ${SCALES[scale.scale].name}`,
+        detail: [
+          `Hoy: ${PATTERNS.find((p) => p.id === scale.pattern)!.title.toLowerCase()}, en la tonalidad que sigue en tu ciclo. Es la combinación de escala, patrón y tonalidad que menos trabajaste.`,
+          'Cuando salga limpia a tempo, marcala en la pantalla de Escalas: la app guarda tu mejor tempo y te propone la próxima.',
+        ],
+        link: `#/escalas?e=${scale.scale}&p=${scale.pattern}&k=${scale.key}`,
+        linkLabel: 'Estudiar la escala',
+      }
+    : null;
+  const lessonBlock: PlanBlock = {
+    id: 'lesson',
+    title: `Armonía aplicada: ${lesson.title}`,
+    detail: [
+      lesson.summary,
+      'Hacé el primer ejercicio en la tonalidad del día y marcá la tonalidad como dominada cuando salga limpio a tempo.',
+    ],
+    link: `#/lecciones/${lesson.id}?k=${key}&ex=0`,
+    linkLabel: 'Ir a la lección',
+  };
+  const lickBlock: PlanBlock | null = lick
+    ? {
+        id: 'lick',
+        title: `Vocabulario: ${lick.name}`,
+        detail: [
+          lick.idea || 'Una de tus frases del día.',
+          'Aprendela en la tonalidad del día, después recorré el ciclo de cuartas. Tocala cambiando la rítmica y el final.',
+        ],
+        link: `#/vocabulario/${lick.id}?k=${key}`,
+        linkLabel: 'Abrir la frase',
+      }
+    : null;
+  // un solo foco por día, rotando
+  const focuses = [tech, scaleBlock, lessonBlock, lickBlock].filter((b): b is PlanBlock => b !== null);
+  const focus = focuses[n % focuses.length];
 
   const blocks: PlanBlock[] = [
-    {
-      id: 'warm',
-      title: 'Calentamiento y sonido',
-      minutes: m(w.warm),
-      detail: warm,
-      link: '#/escucha',
-      linkLabel: 'Abrir afinador',
-    },
-    {
-      id: 'tech',
-      title: 'Técnica en la tonalidad del día',
-      minutes: m(w.tech),
-      detail: [TECHNIQUE[n % TECHNIQUE.length], 'Metrónomo sólo en 2 y 4 desde el principio: el swing se practica también en la técnica.'],
-      link: `#/playalong?p=ii-v-i&k=${key}&m=1`,
-      linkLabel: 'Metrónomo en 2 y 4',
-    },
-    ...(scale
-      ? [
-          {
-            id: 'scale',
-            title: `Escala del día: ${SCALES[scale.scale].name}`,
-            minutes: m(w.scale),
-            detail: [
-              `Hoy: ${PATTERNS.find((p) => p.id === scale.pattern)!.title.toLowerCase()}, en la tonalidad que sigue en tu ciclo. Es la combinación de escala, patrón y tonalidad que menos trabajaste.`,
-              'Cuando salga limpia a tempo, marcala en la pantalla de Escalas: la app guarda tu mejor tempo y te propone la próxima.',
-            ],
-            link: `#/escalas?e=${scale.scale}&p=${scale.pattern}&k=${scale.key}`,
-            linkLabel: 'Estudiar la escala',
-          },
-        ]
-      : []),
-    {
-      id: 'lesson',
-      title: `Armonía aplicada: ${lesson.title}`,
-      minutes: m(w.lesson),
-      detail: [
-        lesson.summary,
-        'Hacé el primer ejercicio en la tonalidad del día y marcá la tonalidad como dominada cuando salga limpio a tempo.',
-      ],
-      link: `#/lecciones/${lesson.id}?k=${key}&ex=0`,
-      linkLabel: 'Ir a la lección',
-    },
-    lick
-      ? {
-          id: 'lick',
-          title: `Vocabulario: ${lick.name}`,
-          minutes: m(w.lick),
-          detail: [
-            lick.idea || 'Una de tus frases del día.',
-            'Aprendela en la tonalidad del día, después recorré el ciclo de cuartas. Tocala cambiando la rítmica y el final.',
-          ],
-          link: `#/vocabulario/${lick.id}?k=${key}`,
-          linkLabel: 'Abrir la frase',
-        }
-      : {
-          id: 'lick',
-          title: 'Vocabulario: cargá una frase',
-          minutes: m(w.lick),
-          detail: [
-            'Elegí una frase de un solo que te guste (de un disco o de un libro tuyo), cargala en la sección Vocabulario y aprendela en la tonalidad del día.',
-          ],
-          link: '#/vocabulario',
-          linkLabel: 'Ir a Vocabulario',
-        },
+    { id: 'warm', title: 'Calentamiento y sonido', detail: warm, link: '#/escucha', linkLabel: 'Abrir afinador' },
+    focus,
     {
       id: 'tune',
       title: `Tema de la semana: ${tune.name}`,
-      minutes: m(w.tune),
       detail: [
         '1 chorus de guide tones, 1 de arpegios, después improvisá con el reto de guide tones activado.',
         tune.listen?.length ? `Escuchá: ${tune.listen.join('; ')}.` : tune.notes,
@@ -140,33 +121,6 @@ export function buildPlan(d: Date, totalMinutes: number, focusLessonId?: string,
       link: `#/playalong?p=${tune.id}`,
       linkLabel: 'Abrir play-along',
     },
-    {
-      id: 'free',
-      title: 'Improvisación libre y grabación',
-      minutes: m(w.free),
-      detail: [
-        'Grabá un par de choruses sobre el tema de la semana. Escuchá sin el instrumento en la mano: ¿se escuchan los cambios? ¿hay espacio?',
-        'Transcripción: 4 compases de un solo de referencia, primero cantados, después en la trompeta.',
-      ],
-    },
   ];
-  fitMinutes(blocks, totalMinutes, (b) => totalMinutes * w[b.id as keyof typeof w]);
   return { date: isoDate(d), key, blocks };
-}
-
-/**
- * Ajusta los minutos de los bloques para que sumen exactamente la duración elegida: el redondeo de a 5 puede dejar el
- * total lejos de lo pedido, así que se le saca al bloque que más se pasó de su parte (o se le da al que más le falta),
- * de a 5 minutos si se puede y si no de a uno, sin bajar de 3.
- */
-export function fitMinutes(blocks: PlanBlock[], totalMinutes: number, share: (b: PlanBlock) => number) {
-  for (let diff = totalMinutes - blocks.reduce((sum, b) => sum + b.minutes, 0), guard = 0; diff !== 0 && guard < 60; guard++) {
-    const sign = Math.sign(diff);
-    const by5 = Math.abs(diff) >= 5 ? blocks.filter((b) => sign > 0 || b.minutes >= 10) : [];
-    const step = by5.length ? 5 : 1;
-    const pool = by5.length ? by5 : blocks.filter((b) => sign > 0 || b.minutes > 3);
-    if (!pool.length) break;
-    pool.reduce((a, b) => (sign * (share(b) - b.minutes) > sign * (share(a) - a.minutes) ? b : a)).minutes += sign * step;
-    diff -= sign * step;
-  }
 }

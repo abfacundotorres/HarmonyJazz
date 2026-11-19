@@ -2,7 +2,7 @@ import { expect, testLoose as test } from './helpers';
 
 /** Datos guardados dañados (copia ajena, otra versión, edición a mano) no deben dejar la app en blanco. */
 const BAD: Record<string, string[]> = {
-  settings: ['null', '5', '"x"', '{"minutes":"a","view":7,"register":null,"volume":"x"}', '{"volume":null,"swing":"x"}'],
+  settings: ['null', '5', '"x"', '{"swing":"a","view":7,"register":null,"volume":"x"}', '{"volume":null,"swing":"x"}'],
   log: ['{"2026-11-12":5}', '[]', '{"2026-11-12":{"done":5}}'],
   mastery: ['"x"', '{"a":{"b":"c"}}', '{"a":5}'],
   library: ['{"tunes":5}', '{"tunes":[null,1,{"name":3}]}', 'null'],
@@ -40,15 +40,15 @@ test('si una pantalla falla, se muestra un recuadro de recuperación en lugar de
   await page.goto('/#/hoy');
   await page.evaluate(() => localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'lesson:x': { C: 130 } })));
   await page.reload();
-  const sel = page.getByLabel('Duración de la sesión');
-  await expect(sel).toBeVisible();
+  const vista = page.getByRole('button', { name: 'Concierto' });
+  await expect(vista).toBeVisible();
   // se provoca un error de dibujado: una función que usa la pantalla empieza a fallar
   await page.evaluate(() => {
     Date.prototype.getFullYear = function () {
       throw new Error('falla de prueba');
     };
   });
-  await sel.selectOption('30');
+  await vista.click();
   await expect(page.getByText('Algo falló en esta pantalla')).toBeVisible();
   await expect(page.getByText('falla de prueba')).toBeVisible();
   // la copia de rescate conserva los datos
@@ -71,11 +71,11 @@ test('si el almacenamiento está lleno, se avisa que lo último no quedó guarda
     };
   });
   await page.goto('/#/hoy');
-  const sel = page.getByLabel('Duración de la sesión');
-  await sel.selectOption('90');
+  const vista = (n: string) => page.getByRole('button', { name: n, exact: true });
+  await vista('Concierto').click();
   await expect(page.locator('.updatebar.warn')).toHaveCount(0);
   await page.evaluate(() => ((window as unknown as { __lleno: boolean }).__lleno = true));
-  await sel.selectOption('45');
+  await vista('Si♭').click();
   await expect(page.locator('.updatebar.warn')).toContainText('No se pudo guardar');
   await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible();
 });
