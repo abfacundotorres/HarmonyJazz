@@ -65,7 +65,8 @@ test.describe('lecciones: cómo practicar cada ejercicio', () => {
     await openExercises(page);
     const guias = page.locator('details.study:not(.fold)', { hasText: 'Cómo practicar este ejercicio' });
     await expect(guias.first()).toBeVisible();
-    expect(await guias.count()).toBeGreaterThanOrEqual(5);
+    // las guías se dibujan de a una: se espera a que estén todas en lugar de contarlas apenas aparece la primera
+    await expect.poll(() => guias.count()).toBeGreaterThanOrEqual(5);
     await guias.first().locator('summary').click();
     await expect(guias.first().getByText('El método, paso a paso')).toBeVisible();
     await expect(guias.first().getByText(/Un tempo de partida razonable: \d+ bpm/)).toBeVisible();

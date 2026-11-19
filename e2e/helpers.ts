@@ -116,6 +116,16 @@ export async function openBlock(page: Page, title: string) {
 export async function openExercises(page: Page) {
   const heads = page.locator('details.fold[id^="ex-"] > summary');
   await heads.first().waitFor();
+  // los ejercicios aparecen de a poco: se espera a que la cantidad se asiente antes de abrirlos (contarlos apenas aparece el primero dejaba alguno sin abrir)
+  let prev = -1;
+  await expect
+    .poll(async () => {
+      const c = await heads.count();
+      const stable = c === prev;
+      prev = c;
+      return stable;
+    }, { intervals: [250] })
+    .toBe(true);
   const n = await heads.count();
   for (let i = 0; i < n; i++) await heads.nth(i).click();
 }
