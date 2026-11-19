@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { expect, test } from './helpers';
 
 const axeSrc = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
-const THEMES = ['vintage', 'club', 'partitura', 'bn-azul', 'bn-naranja', 'bn-rojo'];
+const THEMES = ['vintage', 'club', 'partitura', 'bn-azul', 'bn-naranja', 'bn-rojo', 'oled', 'verde-estudio', 'noche-azul', 'alto-contraste'];
 const ROUTES = ['#/hoy', '#/mas', '#/playalong', '#/lecciones/guide-tones', '#/escalas'];
 
 test('el tema se elige en Más, se aplica al instante y se recuerda al recargar', async ({ page }) => {
@@ -71,3 +71,23 @@ for (const theme of THEMES.filter((t) => !['vintage', 'club'].includes(t))) {
     }
   });
 }
+
+test('los temas nuevos se eligen en Más: negro puro, estudio verde, noche azul y alto contraste', async ({ page }) => {
+  await page.goto('/#/mas');
+  const html = page.locator('html');
+  const casos: [string, string, string][] = [
+    ['Negro puro', 'oled', 'rgb(0, 0, 0)'],
+    ['Estudio verde', 'verde-estudio', 'rgb(15, 29, 23)'],
+    ['Noche azul', 'noche-azul', 'rgb(16, 24, 38)'],
+    ['Alto contraste', 'alto-contraste', 'rgb(255, 255, 255)'],
+  ];
+  for (const [nombre, id, fondo] of casos) {
+    await page.getByRole('radio', { name: new RegExp(`^${nombre}`) }).click();
+    await expect(html).toHaveAttribute('data-theme', id);
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), id).toBe(fondo);
+  }
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff');
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'alto-contraste');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

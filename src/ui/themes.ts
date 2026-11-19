@@ -5,7 +5,7 @@
  * interfaz necesita saber (el nombre, y los colores para dibujar la vista previa) y lo que los tests comprueban:
  * que ambos coincidan y que cada paleta cumpla el contraste mínimo (4,5:1) para texto.
  */
-export type ThemeId = 'auto' | 'vintage' | 'club' | 'partitura' | 'bn-azul' | 'bn-naranja' | 'bn-rojo';
+export type ThemeId = 'auto' | 'vintage' | 'club' | 'partitura' | 'bn-azul' | 'bn-naranja' | 'bn-rojo' | 'oled' | 'verde-estudio' | 'noche-azul' | 'alto-contraste';
 
 export interface Palette {
   bg: string;
@@ -34,7 +34,7 @@ const DM = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const BARLOW = "'Barlow Condensed', 'DM Serif Display', Georgia, serif";
 const BASKERVILLE = "'Libre Baskerville', Georgia, 'Times New Roman', serif";
 
-/** Los siete temas, sin "automático" (que elige entre Vintage y Club según el celular). */
+/** Los once temas, sin "automático" (que elige entre Vintage y Club según el celular). */
 export const THEMES: Theme[] = [
   {
     id: 'vintage',
@@ -89,6 +89,42 @@ export const THEMES: Theme[] = [
     font: BARLOW,
     fontName: 'Barlow Condensed',
     palette: { bg: '#0e0e0e', surface: '#1b1b1b', surface2: '#262626', line: '#4d4d4d', text: '#f3ecd9', muted: '#b3ab98', accent: '#ff4a3a', accentInk: '#140400' },
+  },
+  {
+    id: 'oled',
+    label: 'Negro puro',
+    desc: 'Negro total con latón: en pantallas OLED apaga los píxeles del fondo y ahorra batería. Para tocar de noche.',
+    scheme: 'dark',
+    font: DM,
+    fontName: 'DM Serif Display',
+    palette: { bg: '#000000', surface: '#0d0d0d', surface2: '#181818', line: '#3a3a3a', text: '#f2efe9', muted: '#aaa59b', accent: '#e0a64a', accentInk: '#1b1308' },
+  },
+  {
+    id: 'verde-estudio',
+    label: 'Estudio verde',
+    desc: 'Verde oscuro de mesa de estudio con dorado: descansa la vista en sesiones largas.',
+    scheme: 'dark',
+    font: DM,
+    fontName: 'DM Serif Display',
+    palette: { bg: '#0f1d17', surface: '#16291f', surface2: '#1d3528', line: '#3a5c49', text: '#eaf1e6', muted: '#9fb8a6', accent: '#e8b84a', accentInk: '#1a1404' },
+  },
+  {
+    id: 'noche-azul',
+    label: 'Noche azul',
+    desc: 'Azul de medianoche con verde agua: oscuro y frío, distinto del marrón de Club de noche.',
+    scheme: 'dark',
+    font: DM,
+    fontName: 'DM Serif Display',
+    palette: { bg: '#101826', surface: '#172237', surface2: '#1f2d47', line: '#3a4f75', text: '#e8edf7', muted: '#9fb0cc', accent: '#7fd0c0', accentInk: '#04201b' },
+  },
+  {
+    id: 'alto-contraste',
+    label: 'Alto contraste',
+    desc: 'Blanco y negro con azul fuerte y bordes marcados: para leer a pleno sol o con poca vista.',
+    scheme: 'light',
+    font: BASKERVILLE,
+    fontName: 'Libre Baskerville',
+    palette: { bg: '#ffffff', surface: '#ffffff', surface2: '#efefef', line: '#6b6b6b', text: '#000000', muted: '#3a3a3a', accent: '#0b3d91', accentInk: '#ffffff' },
   },
 ];
 

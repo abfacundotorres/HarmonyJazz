@@ -145,6 +145,66 @@
   color-scheme: dark;
 }
 
+/* Negro puro, Estudio verde y Noche azul: oscuros, con la tipografía y las formas de siempre */
+:root[data-theme='oled'] {
+  --bg: #000000;
+  --surface: #0d0d0d;
+  --surface-2: #181818;
+  --line: #3a3a3a;
+  --text: #f2efe9;
+  --muted: #aaa59b;
+  --accent: #e0a64a;
+  --accent-ink: #1b1308;
+  --grain: none;
+  color-scheme: dark;
+}
+:root[data-theme='verde-estudio'] {
+  --bg: #0f1d17;
+  --surface: #16291f;
+  --surface-2: #1d3528;
+  --line: #3a5c49;
+  --text: #eaf1e6;
+  --muted: #9fb8a6;
+  --accent: #e8b84a;
+  --accent-ink: #1a1404;
+  --grain: none;
+  color-scheme: dark;
+}
+:root[data-theme='noche-azul'] {
+  --bg: #101826;
+  --surface: #172237;
+  --surface-2: #1f2d47;
+  --line: #3a4f75;
+  --text: #e8edf7;
+  --muted: #9fb0cc;
+  --accent: #7fd0c0;
+  --accent-ink: #04201b;
+  --grain: none;
+  color-scheme: dark;
+}
+/* Alto contraste: blanco y negro, azul fuerte, bordes marcados, sin texturas */
+:root[data-theme='alto-contraste'] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #efefef;
+  --line: #6b6b6b;
+  --text: #000000;
+  --muted: #3a3a3a;
+  --accent: #0b3d91;
+  --accent-ink: #ffffff;
+  --tension: #0b3d91;
+  --good: #14653a;
+  --ok: #7a5a00;
+  --bad: #a3180f;
+  --paper: #ffffff;
+  --grain: none;
+  --serif: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  --radius: 6px;
+  --card-shadow: none;
+  --top-border: 2px solid var(--text);
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
