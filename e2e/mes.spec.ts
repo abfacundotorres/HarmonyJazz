@@ -87,7 +87,7 @@ test.describe('el mes con focos', () => {
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: tres bloques, un solo foco por día', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();
-    await page.getByLabel('Nota larga y articulación').check();
+    await page.locator('#f-t-largas-artic').check();
     await page.locator('#f-l-triadas-mayores').check();
     // el tema: sin temas propios se ofrece una forma incluida y se explica cómo cargar uno
     await expect(page.getByText(/cargá su cifrado en Play-along → Mis temas/)).toBeVisible();
@@ -172,14 +172,14 @@ test.describe('el mes con focos', () => {
     await expect(page.getByRole('heading', { name: /^Tu mes:/ })).toBeVisible();
     await expect(page.getByText(/Vas por la sesión 1/)).toBeVisible();
     await page.getByRole('button', { name: 'Cambiar los focos' }).click();
-    await page.getByLabel('Flexibilidad y ligaduras').check();
+    await page.locator('#f-t-flexibilidad').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Flexibilidad y ligaduras');
   });
 
   test('los recorridos se pueden leer antes de elegir', async ({ page }) => {
     await page.goto('/#/mes');
-    const card = page.locator('.focuscard', { hasText: 'Nota larga y articulación' });
+    const card = page.locator('.focuscard', { has: page.locator('#f-t-largas-artic') });
     await card.locator('summary').click();
     await expect(card.locator('.outline > li')).toHaveCount(4);
     await expect(card).toContainText('Semana 3: Articulación');

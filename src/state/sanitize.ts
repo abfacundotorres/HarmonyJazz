@@ -162,6 +162,13 @@ export const sanitizeEarSet: Sanitizer = (raw) => {
   return out;
 };
 
+/** Focos del mes ya trabajados (para el camino sugerido). */
+export const sanitizeCamino: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const done = Array.isArray(raw.done) ? [...new Set(raw.done.filter((d): d is string => typeof d === 'string' && d.length <= 40))].slice(0, 100) : [];
+  return { done };
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -176,6 +183,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   longnotes: sanitizeLongNotes,
   ear: sanitizeEar,
   earset: sanitizeEarSet,
+  camino: sanitizeCamino,
 };
 
 /**

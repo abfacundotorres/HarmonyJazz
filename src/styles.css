@@ -788,3 +788,12 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .ear .chips button { min-height: 44px; }
 .ear .seg { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 .ear li.bad { color: var(--bad); }
+
+/* Camino sugerido */
+.pathtag { display: block; color: var(--muted); }
+.pathtag.warn { color: var(--text); font-style: italic; }
+.pathlist { list-style: none; padding: 0; margin: 0 0 8px; }
+.pathlist li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pathlist li.next { border-left: 3px solid var(--accent); padding-left: 8px; }
+.pathlist li small { color: var(--muted); }
+.pathlist li button { align-self: flex-start; min-height: 44px; }
