@@ -75,11 +75,35 @@ const offline = (): Plugin => {
         .slice(0, 10);
       // la hora de compilación (10 cifras) hace que ordenar los nombres sea ordenar por antigüedad
       const stamp = String(Math.floor(Date.now() / 1000));
+      const entry = Object.values(bundle).find((b) => b.type === 'chunk' && b.isEntry)?.fileName ?? '';
       const source = `/* generado por vite.config.ts: no editar */
 const CACHE = 'harmonyjazz-${stamp}-${version}';
 const FILES = ${JSON.stringify(files)};
+const ENTRY = ${JSON.stringify(entry)};
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new URL(f, self.location).href))).then(() => self.skipWaiting()));
+  // 'reload' salta el caché HTTP del navegador (GitHub Pages guarda los archivos 10 minutos): si no, entre dos
+  // publicaciones seguidas el service worker podía guardar un index.html viejo junto a código nuevo, o al revés, y la
+  // app quedaba en blanco hasta la publicación siguiente.
+  e.waitUntil(
+    caches
+      .open(CACHE)
+      .then(async (c) => {
+        await Promise.all(
+          FILES.map(async (f) => {
+            const u = new URL(f, self.location).href;
+            const r = await fetch(u, { cache: 'reload' });
+            if (!r.ok) throw new Error('No se pudo bajar ' + f);
+            await c.put(u, r);
+          }),
+        );
+        // la pantalla principal guardada tiene que apuntar al código de esta versión; si no, no se instala
+        for (const f of ['./', 'index.html']) {
+          const m = await c.match(new URL(f, self.location).href);
+          if (!m || !(await m.text()).includes(ENTRY)) throw new Error('index.html no es de esta versión');
+        }
+      })
+      .then(() => self.skipWaiting()),
+  );
 });
 self.addEventListener('activate', (e) => {
   // se conserva la versión anterior: una pestaña abierta antes de la actualización todavía puede pedir sus archivos
