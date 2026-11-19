@@ -69,4 +69,10 @@ describe('herramientas de práctica: datos guardados', () => {
     expect((sanitizeKey('settings', { a4: 442 }) as { a4: number }).a4).toBe(442);
     expect((sanitizeKey('settings', { a4: 9000 }) as { a4: number }).a4).toBe(466);
   });
+
+  it('la currícula conserva sólo materias, criterios y la materia en curso válidos', () => {
+    expect(sanitizeKey('curricula', { aprobadas: [1, 'x', 99, 2.5, 1, 7], actual: 3, checks: { '2': [0, 4, 'q', 50], zz: [1], '99': [0] } })).toEqual({ aprobadas: [1, 7], actual: 3, checks: { '2': [0, 4] } });
+    expect(sanitizeKey('curricula', { aprobadas: 'no', actual: 'z' })).toEqual({ aprobadas: [], actual: null, checks: {} });
+    expect(sanitizeKey('curricula', [])).toBeNull();
+  });
 });

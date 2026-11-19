@@ -169,6 +169,16 @@ export const sanitizeCamino: Sanitizer = (raw) => {
   return { done };
 };
 
+/** Currícula: materias aprobadas, la que está en curso y los criterios de cierre tildados. */
+export const sanitizeCurricula: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const ints = (v: unknown, lo: number, hi: number) => (Array.isArray(v) ? [...new Set(v.filter((x): x is number => typeof x === 'number' && Number.isInteger(x) && x >= lo && x <= hi))] : []);
+  const checks: Record<string, number[]> = {};
+  if (isObj(raw.checks)) for (const [k, v] of Object.entries(raw.checks).slice(0, 36)) if (/^\d{1,2}$/.test(k) && Number(k) >= 1 && Number(k) <= 36) checks[k] = ints(v, 0, 11);
+  const actual = typeof raw.actual === 'number' && Number.isInteger(raw.actual) && raw.actual >= 1 && raw.actual <= 36 ? raw.actual : null;
+  return { aprobadas: ints(raw.aprobadas, 1, 36), actual, checks };
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -184,6 +194,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   ear: sanitizeEar,
   earset: sanitizeEarSet,
   camino: sanitizeCamino,
+  curricula: sanitizeCurricula,
 };
 
 /**

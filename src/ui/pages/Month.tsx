@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { missingBefore, nextFocus, stagesOf, stepOf } from '../../content/camino';
+import { siguiente } from '../../content/curricula';
 import { focusById, type Focus, LANG_FOCI, REPERTOIRE_WEEKS, TECH_FOCI, WEEKS } from '../../content/focus';
 import { monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
 import { PROGRESSIONS } from '../../content/progressions';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
-import { useLog, useMonth, usePersistentLibrary } from '../hooks';
+import { useCurricula, useLog, useMonth, usePersistentLibrary } from '../hooks';
 import { navigate } from '../hooks';
 
 /** Los temas propios guardados (sólo id y nombre, descartando lo que no tenga la forma esperada). */
@@ -109,14 +110,16 @@ export function Month() {
   const tunes = useMemo(() => userTunes(lib), [lib]);
   const today = useMemo(() => new Date(), []);
   const active = monthActive(mp, today, tunes);
+  const [prog, setProg] = useCurricula();
+  const sig = siguiente(prog);
   const [camino, setCamino] = usePersistent<{ done: string[] }>('camino', { done: [] });
   const done = useMemo(() => new Set(camino.done), [camino]);
   const nextTech = nextFocus('tecnica', done);
   const nextLang = nextFocus('lenguaje', done);
   const toggleDone = (id: string) => setCamino((c) => ({ done: c.done.includes(id) ? c.done.filter((x) => x !== id) : [...c.done, id] }));
   const [editing, setEditing] = useState(!active);
-  const [tech, setTech] = useState(mp.tech || nextTech || TECH_FOCI[0].id);
-  const [lang, setLang] = useState(mp.lang || nextLang || LANG_FOCI[0].id);
+  const [tech, setTech] = useState(mp.tech || sig?.tech || nextTech || TECH_FOCI[0].id);
+  const [lang, setLang] = useState(mp.lang || sig?.lang || nextLang || LANG_FOCI[0].id);
   const [rep, setRep] = useState(repertoireName(mp.rep, tunes) !== null ? mp.rep : (tunes[0]?.id ?? 'ii-v-i'));
   const repName = repertoireName(rep, tunes) ?? '';
   const weeksRep = useMemo(() => REPERTOIRE_WEEKS(repName || 'el tema'), [repName]);
@@ -130,6 +133,8 @@ export function Month() {
       setCamino((c) => ({ done: [...new Set([...c.done, mp.tech, mp.lang])] }));
     }
     setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today) });
+    // si son los de la materia que toca en la currícula, queda en curso
+    if (sig && sig.tech === t && sig.lang === l) setProg((p) => ({ ...p, actual: sig.n }));
     setEditing(false);
     navigate('#/hoy');
   };
@@ -148,6 +153,7 @@ export function Month() {
           <p className="muted">Vas por la sesión {session}. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
           <div className="row">
             <a className="button primary" href="#/hoy">Ir al plan de hoy</a>
+            <a className="button" href="#/curricula">Currícula</a>
             <button onClick={() => setEditing(true)}>Cambiar los focos</button>
           </div>
         </section>
@@ -165,6 +171,14 @@ export function Month() {
               <span>Empezó un mes nuevo. ¿Seguís con los mismos focos ({TECH_FOCI.concat(LANG_FOCI).find((f) => f.id === mp.tech)?.title}, {LANG_FOCI.find((f) => f.id === mp.lang)?.title})?</span>{' '}
               <button onClick={() => start(mp.tech, mp.lang, mp.rep)} disabled={repertoireName(mp.rep, tunes) === null}>Seguir con los mismos</button>
             </p>
+          )}
+          {sig && (
+            <div className="notice" role="status">
+              <span>
+                <b>Currícula · mes {sig.n}: {sig.name}.</b> Técnica: {focusById(sig.tech)?.title} · Lenguaje: {focusById(sig.lang)?.title}. <a href="#/curricula">Ver la currícula</a>
+              </span>{' '}
+              <button onClick={() => { setTech(sig.tech); setLang(sig.lang); }}>Usar la materia</button>
+            </div>
           )}
           <div className="notice" role="status">
             <span>
