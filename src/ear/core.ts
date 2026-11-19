@@ -212,3 +212,25 @@ export const ALL_ITEMS: { id: string; group: string; label: string }[] = [
   { id: gtId('3'), group: 'Guide tones', label: 'Reconocer la 3ª' },
   { id: gtId('7'), group: 'Guide tones', label: 'Reconocer la 7ª' },
 ];
+
+// ---------- repaso del oído ----------
+
+export interface EarReview {
+  /** Los ítems que más cuestan (3+ respuestas y menos de 70 % de aciertos), del peor al mejor. */
+  weak: { id: string; group: string; label: string; rate: number; n: number }[];
+  /** Días desde la última vez que se practicó el oído (null si nunca). */
+  idle: number | null;
+}
+
+/** Qué repasar del oído: lo que se falla seguido y cuánto hace que no se practica. */
+export function earReview(stats: EarStats, today: number): EarReview {
+  const weak = ALL_ITEMS.flatMap((it) => {
+    const s = stats[it.id];
+    return s && s.n >= 3 && s.ok / s.n < 0.7 ? [{ ...it, rate: s.ok / s.n, n: s.n }] : [];
+  }).sort((a, b) => a.rate - b.rate || b.n - a.n);
+  const last = Math.max(-1, ...Object.values(stats).map((s) => s.d));
+  return { weak, idle: last < 0 ? null : Math.max(0, today - last) };
+}
+
+/** ¿Hay algo del oído para mostrar en el repaso? Lo flojo, o tres días o más sin practicar (habiendo practicado antes). */
+export const earDue = (r: EarReview) => r.weak.length > 0 || (r.idle !== null && r.idle >= 3);

@@ -7,6 +7,7 @@ import { collectLocal, daysSinceBackup, hasData, summarize } from '../../state/b
 import { dayNum, dueItems } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
+import { EarReview, useEarReview } from '../components/EarReview';
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
 import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings } from '../hooks';
@@ -63,6 +64,7 @@ export function Today() {
     () => (monthOn ? buildMonthPlan(today, mp, session, repertoireName(mp.rep, tunes)!) : buildPlan(today, settings.focusLesson, pl.phrases ?? [], scale)),
     [monthOn, today, settings.focusLesson, pl, scale, mp, session, tunes],
   );
+  const ear = useEarReview();
   const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
 
   // sin casilleros: un día cuenta como sesión del mes si se abrió Hoy ese día
@@ -98,10 +100,11 @@ export function Today() {
         )}
       </section>
 
-      {review.length > 0 && (
+      {(review.length > 0 || ear.due) && (
         <section className="card" id="repaso">
           <h2 className="h3like">Para repasar</h2>
-          <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} />
+          {review.length > 0 && <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} />}
+          {ear.due && <EarReview review={ear.review} />}
           <p>
             <a className="button" href="#/progreso">{review.length > 3 ? `Ver los ${review.length} pendientes →` : 'Ver mi progreso →'}</a>
           </p>
