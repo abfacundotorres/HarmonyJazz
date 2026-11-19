@@ -151,6 +151,18 @@ export const sanitizeEar: Sanitizer = (raw) => {
   return out;
 };
 
+/** Ajustes de la pantalla Oído (qué ejercicio y con qué opciones). */
+export const sanitizeEarSet: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, unknown> = {};
+  const set = (k: string, v: unknown) => v !== undefined && (out[k] = v);
+  set('kind', oneOf(raw.kind, ['int', 'chord', 'gt'] as const));
+  set('intMode', oneOf(raw.intMode, ['asc', 'desc', 'harm', 'mix'] as const));
+  set('chSet', oneOf(raw.chSet, ['triads', 'sevenths'] as const));
+  set('chMode', oneOf(raw.chMode, ['arp', 'block', 'mix'] as const));
+  return out;
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -164,6 +176,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   metro: sanitizeMetro,
   longnotes: sanitizeLongNotes,
   ear: sanitizeEar,
+  earset: sanitizeEarSet,
 };
 
 /**

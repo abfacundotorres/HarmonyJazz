@@ -787,3 +787,4 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .ear .chips button.bad { border-color: var(--bad, #c0392b); color: var(--bad, #c0392b); }
 .ear .chips button { min-height: 44px; }
 .ear .seg { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
+.ear li.bad { color: var(--bad); }

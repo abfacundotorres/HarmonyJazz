@@ -21,15 +21,15 @@ const pct = (s: EarStats[string] | undefined) => {
   return r === null ? '—' : `${Math.round(r * 100)} % (${s!.ok}/${s!.n})`;
 };
 
+const weak = (s: EarStats[string] | undefined) => !!s && s.n >= 3 && s.ok / s.n < 0.6;
+
 /** Entrenamiento del oído con la trompeta y el piano de la app. Los aciertos se guardan y lo que se falla vuelve a salir más seguido. */
 export function Ear() {
   const [settings] = useSettings();
   const iv = settings.view === 'Bb' ? BB_TRUMPET : INTERVAL.P1;
   const [stats, setStats] = usePersistent<EarStats>('ear', {});
-  const [kind, setKind] = useState<Kind>('int');
-  const [intMode, setIntMode] = useState<IntMode>('asc');
-  const [chSet, setChSet] = useState<ChordSet>('sevenths');
-  const [chMode, setChMode] = useState<ChMode>('arp');
+  const [opts, setOpts] = usePersistent<{ kind: Kind; intMode: IntMode; chSet: ChordSet; chMode: ChMode }>('earset', { kind: 'int', intMode: 'asc', chSet: 'sevenths', chMode: 'arp' });
+  const { kind, intMode, chSet, chMode } = opts;
   const [q, setQ] = useState<Question | null>(null);
   const [gt, setGt] = useState<GtQuestion | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function Ear() {
     setPicked(null);
     setGtPicks([null, null, null]);
     if (k === 'gt') {
-      const g = guideToneQuestion(CYCLE_OF_FOURTHS[Math.floor(rng.current() * 12)], rng.current);
+      const g = guideToneQuestion(CYCLE_OF_FOURTHS[Math.floor(rng.current() * 12)], rng.current, stats);
       setGt(g);
       setQ(null);
       play(g.events);
@@ -98,7 +98,7 @@ export function Ear() {
   const switchKind = (k: Kind) => {
     engine.stopLine();
     setPlaying(false);
-    setKind(k);
+    setOpts({ kind: k });
     setQ(null);
     setGt(null);
     setPicked(null);
@@ -107,6 +107,8 @@ export function Ear() {
   const rows = useMemo(() => {
     const groups = new Map<string, { id: string; label: string }[]>();
     for (const it of ALL_ITEMS) if (stats[it.id]?.n) groups.set(it.group, [...(groups.get(it.group) ?? []), it]);
+    // lo más flojo primero
+    for (const [g, list] of groups) groups.set(g, [...list].sort((a, b) => (rate(stats[a.id]) ?? 1) - (rate(stats[b.id]) ?? 1)));
     return [...groups.entries()];
   }, [stats]);
 
@@ -130,7 +132,7 @@ export function Ear() {
         {kind === 'int' && (
           <div className="seg" role="group" aria-label="Tipo de intervalo" style={{ marginTop: 8 }}>
             {([...(['asc', 'desc', 'harm'] as const).map((m) => [m, MODE_LABEL[m]] as const), ['mix', 'Mezcla'] as const]).map(([m, label]) => (
-              <button key={m} className={m === intMode ? 'on' : ''} aria-pressed={m === intMode} onClick={() => { setIntMode(m); setQ(null); setPicked(null); }}>{label}</button>
+              <button key={m} className={m === intMode ? 'on' : ''} aria-pressed={m === intMode} onClick={() => { setOpts({ intMode: m }); setQ(null); setPicked(null); }}>{label}</button>
             ))}
           </div>
         )}
@@ -138,12 +140,12 @@ export function Ear() {
           <>
             <div className="seg" role="group" aria-label="Acordes" style={{ marginTop: 8 }}>
               {([['triads', 'Tríadas'], ['sevenths', 'Cuatro notas']] as const).map(([s, label]) => (
-                <button key={s} className={s === chSet ? 'on' : ''} aria-pressed={s === chSet} onClick={() => { setChSet(s); setQ(null); setPicked(null); }}>{label}</button>
+                <button key={s} className={s === chSet ? 'on' : ''} aria-pressed={s === chSet} onClick={() => { setOpts({ chSet: s }); setQ(null); setPicked(null); }}>{label}</button>
               ))}
             </div>
             <div className="seg" role="group" aria-label="Cómo suena" style={{ marginTop: 8 }}>
               {([...(['arp', 'block'] as const).map((m) => [m, CHORD_MODE_LABEL[m]] as const), ['mix', 'Mezcla'] as const]).map(([m, label]) => (
-                <button key={m} className={m === chMode ? 'on' : ''} aria-pressed={m === chMode} onClick={() => { setChMode(m); setQ(null); setPicked(null); }}>{label}</button>
+                <button key={m} className={m === chMode ? 'on' : ''} aria-pressed={m === chMode} onClick={() => { setOpts({ chMode: m }); setQ(null); setPicked(null); }}>{label}</button>
               ))}
             </div>
           </>
@@ -180,6 +182,12 @@ export function Ear() {
             <p role="status" aria-live="polite">
               {picked === null ? '' : picked === question.answer ? 'Bien.' : `Era: ${question.options.find((o) => o.id === question.answer)!.label}.`}
             </p>
+            {picked !== null && picked !== question.answer && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={() => play(question.optionEvents[question.answer])} disabled={playing}>▶ Oír la correcta</button>
+                <button onClick={() => play(question.optionEvents[picked])} disabled={playing}>▶ Oír la tuya ({question.options.find((o) => o.id === picked)!.label})</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -205,6 +213,9 @@ export function Ear() {
                 </div>
               );
             })}
+            {gtDone && (
+              <button onClick={() => play(gt.events.filter((e) => e.voice === 'horn'))} disabled={playing}>▶ Sólo la línea de la trompeta</button>
+            )}
             <p role="status" aria-live="polite">
               {gtDone ? `${gtPicks.filter((p, i) => p === gt.slots[i].played).length} de 3. Línea: ${gt.slots.map((s) => show(s.names[s.played])).join(' → ')}.` : ''}
             </p>
@@ -227,7 +238,7 @@ export function Ear() {
               <summary>{group}</summary>
               <ul>
                 {items.map((it) => (
-                  <li key={it.id}>{it.label}: {pct(stats[it.id])}</li>
+                  <li key={it.id} className={weak(stats[it.id]) ? 'bad' : ''}>{it.label}: {pct(stats[it.id])}{weak(stats[it.id]) ? ' · para repasar' : ''}</li>
                 ))}
               </ul>
             </details>

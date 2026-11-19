@@ -66,9 +66,18 @@ export interface Question {
   events: EarEvent[];
   options: { id: string; label: string }[];
   answer: string;
+  /** Cómo sonaría cada opción con la misma nota de partida, para comparar la respuesta con la correcta. */
+  optionEvents: Record<string, EarEvent[]>;
 }
 
 const between = (rng: Rng, lo: number, hi: number) => lo + Math.floor(rng() * (hi - lo + 1));
+
+const intervalEvents = (mode: IntervalMode, a: number, semis: number): EarEvent[] => {
+  const b = mode === 'desc' ? a - semis : a + semis;
+  return mode === 'harm'
+    ? [{ midi: a, start: 0, dur: 2, voice: 'piano' }, { midi: b, start: 0, dur: 2, voice: 'piano' }]
+    : [{ midi: a, start: 0, dur: 0.9, voice: 'horn' }, { midi: b, start: 1, dur: 1.2, voice: 'horn' }];
+};
 
 /** Pregunta de intervalo. La nota de base queda entre Sol3 y Sol4 (concierto) y la otra dentro del registro de la trompeta. */
 export function intervalQuestion(mode: IntervalMode, semis: number, rng: Rng): Question {
@@ -77,17 +86,13 @@ export function intervalQuestion(mode: IntervalMode, semis: number, rng: Rng): Q
   let a = between(rng, 55, 67);
   if (mode === 'desc') a = Math.max(a, low + semis);
   if (mode !== 'desc') a = Math.min(a, high - semis);
-  const b = mode === 'desc' ? a - semis : a + semis;
-  const events: EarEvent[] =
-    mode === 'harm'
-      ? [{ midi: a, start: 0, dur: 2, voice: 'piano' }, { midi: b, start: 0, dur: 2, voice: 'piano' }]
-      : [{ midi: a, start: 0, dur: 0.9, voice: 'horn' }, { midi: b, start: 1, dur: 1.2, voice: 'horn' }];
   return {
     id: intervalId(mode, semis),
     prompt: '¿Qué intervalo es?',
-    events,
-    options: INTERVAL_SEMIS.map((s) => ({ id: String(s), label: INTERVAL_NAMES[s] })),
+    events: intervalEvents(mode, a, semis),
+    options: INTERVAL_SEMIS.map((x) => ({ id: String(x), label: INTERVAL_NAMES[x] })),
     answer: String(semis),
+    optionEvents: Object.fromEntries(INTERVAL_SEMIS.map((x) => [String(x), intervalEvents(mode, a, x)])),
   };
 }
 
@@ -118,20 +123,22 @@ export type ChordMode = 'arp' | 'block';
 export const CHORD_MODE_LABEL: Record<ChordMode, string> = { arp: 'Arpegiado', block: 'En bloque' };
 export const chordId = (mode: ChordMode, q: string) => `c:${mode}:${q}`;
 
+const chordEvents = (mode: ChordMode, root: number, q: string): EarEvent[] => {
+  const notes = QUALITY_DEFS[q].tones.map((t) => root + t);
+  return mode === 'arp'
+    ? notes.map((m, i) => ({ midi: m, start: i * 0.55, dur: 0.7, voice: 'horn' as Voice }))
+    : notes.map((m) => ({ midi: m, start: 0, dur: 2.2, voice: 'piano' as Voice }));
+};
+
 export function chordQuestion(set: ChordSet, mode: ChordMode, q: string, rng: Rng): Question {
-  const def = QUALITY_DEFS[q];
   const root = between(rng, 48, 58);
-  const notes = def.tones.map((t) => root + t);
-  const events: EarEvent[] =
-    mode === 'arp'
-      ? [...notes.map((m, i) => ({ midi: m, start: i * 0.55, dur: 0.7, voice: 'horn' as Voice }))]
-      : notes.map((m) => ({ midi: m, start: 0, dur: 2.2, voice: 'piano' as Voice }));
   return {
     id: chordId(mode, q),
     prompt: '¿Qué calidad de acorde es?',
-    events,
+    events: chordEvents(mode, root, q),
     options: CHORD_SETS[set].map((k) => ({ id: k, label: QUALITY_DEFS[k].label })),
     answer: q,
+    optionEvents: Object.fromEntries(CHORD_SETS[set].map((k) => [k, chordEvents(mode, root, k)])),
   };
 }
 
@@ -158,7 +165,10 @@ const II_V_I = [
 ] as const;
 
 /** ii–V–I mayor: el piano toca fundamental y quinta (sin 3ª ni 7ª) y la trompeta una línea de guide tones con la conducción más cercana. */
-export function guideToneQuestion(key: string, rng: Rng): GtQuestion {
+export function guideToneQuestion(key: string, rng: Rng, stats: EarStats = {}): GtQuestion {
+  // la 3ª y la 7ª salen según lo que se falla de cada una
+  const w3 = weight(stats[gtId('3')]);
+  const w7 = weight(stats[gtId('7')]);
   const tonic = parseNote(key);
   let prev = 64;
   const slots: GtSlot[] = [];
@@ -168,8 +178,8 @@ export function guideToneQuestion(key: string, rng: Rng): GtQuestion {
     const chord: Chord = parseChord(`${spell(root)}${c.suffix}`);
     const t = chordTones(chord); // 1, 3, 5, 7
     const names: Record<GtDegree, Note> = { '1': t[0], '3': t[1], '5': t[2], '7': t[3] };
-    // el primer acorde puede empezar en la 3ª o la 7ª; los demás eligen al azar
-    const played: '3' | '7' = rng() < 0.5 ? '3' : '7';
+    // cada acorde toca la 3ª o la 7ª, con más chance la que peor sale
+    const played: '3' | '7' = rng() < w3 / (w3 + w7) ? '3' : '7';
     // la aparición más cercana a la nota anterior dentro del registro de la trompeta
     const pcN = midi(placeNear(names[played], 60, 'near')) % 12;
     let m = -1;

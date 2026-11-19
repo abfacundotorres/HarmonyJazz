@@ -51,4 +51,19 @@ test.describe('entrenamiento del oído', () => {
     await expect(page.getByText(/de 3\. Línea: .+ → .+ → /)).toBeVisible();
     await expect.poll(async () => Object.values(await guardado(page)).reduce((a: number, v: any) => a + v.n, 0)).toBe(3);
   });
+
+  test('recuerda el ejercicio elegido y, al errar, permite oír la correcta y la propia', async ({ page }) => {
+    await page.goto('/#/oido');
+    await page.getByRole('group', { name: 'Tipo de intervalo' }).getByRole('button', { name: 'Armónico' }).click();
+    await page.reload();
+    await expect(page.getByRole('group', { name: 'Tipo de intervalo' }).getByRole('button', { name: 'Armónico' })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Empezar' }).click();
+    const opciones = page.getByRole('group', { name: 'Opciones' }).getByRole('button');
+    await opciones.first().click();
+    // si no acertó (11 de 12 veces), ofrece comparar
+    if (await page.getByText(/^Era:/).count()) {
+      await expect(page.getByRole('button', { name: '▶ Oír la correcta' })).toBeVisible();
+      await expect(page.getByRole('button', { name: /▶ Oír la tuya \(2ª menor\)/ })).toBeVisible();
+    }
+  });
 });

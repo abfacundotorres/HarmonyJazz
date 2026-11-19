@@ -33,6 +33,19 @@ describe('intervalos', () => {
   });
 });
 
+describe('comparar con lo que se contestó', () => {
+  it('cada opción trae su sonido con la misma nota de partida', () => {
+    const q = intervalQuestion('asc', 7, seeded(7));
+    expect(Object.keys(q.optionEvents).sort()).toEqual(q.options.map((o) => o.id).sort());
+    expect(q.optionEvents[q.answer]).toEqual(q.events);
+    for (const o of q.options) expect(q.optionEvents[o.id][0].midi).toBe(q.events[0].midi);
+    for (const s of INTERVAL_SEMIS) expect(q.optionEvents[String(s)][1].midi - q.events[0].midi).toBe(s);
+    const c = chordQuestion('sevenths', 'block', 'dom7', seeded(8));
+    expect(c.optionEvents.dom7).toEqual(c.events);
+    expect(c.optionEvents.m7.map((e) => e.midi - c.events[0].midi)).toEqual(QUALITY_DEFS.m7.tones);
+  });
+});
+
 describe('calidades de acorde', () => {
   it('las notas son las del acorde y la respuesta está entre las opciones', () => {
     const rng = seeded(3);
@@ -74,6 +87,17 @@ describe('dictado de guide tones', () => {
         const slotPcs = q.slots.map((s) => new Set([s.names['3'], s.names['7']].map((n) => ((('CDEFGAB'.indexOf(noteName(n)[0]) >= 0 ? [0, 2, 4, 5, 7, 9, 11]['CDEFGAB'.indexOf(noteName(n)[0])] : 0) + n.acc) % 12 + 12) % 12)));
         q.events.filter((e) => e.voice === 'piano').forEach((e, i) => expect(slotPcs[Math.floor(i / 2)].has(e.midi % 12)).toBe(false));
       }
+  });
+  it('toca más la 7ª si es la que se falla, y las dos si no hay datos', () => {
+    const count = (stats: Parameters<typeof guideToneQuestion>[2]) => {
+      const rng = seeded(9);
+      let sevens = 0;
+      for (let i = 0; i < 300; i++) sevens += guideToneQuestion('C', rng, stats).slots.filter((x) => x.played === '7').length;
+      return sevens / 900;
+    };
+    expect(count(undefined)).toBeGreaterThan(0.4);
+    expect(count(undefined)).toBeLessThan(0.6);
+    expect(count({ 'g:7': { n: 20, ok: 3, d: 1 }, 'g:3': { n: 20, ok: 20, d: 1 } })).toBeGreaterThan(0.75);
   });
   it('los acordes son ii7, V7 y Imaj7 de la tonalidad', () => {
     expect(guideToneQuestion('F', seeded(5)).slots.map((s) => s.chord)).toEqual(['Gm7', 'C7', 'Fmaj7']);
