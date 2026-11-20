@@ -3,7 +3,7 @@ import { engine as tone } from '../../../audio/engine';
 import { buildMelody, mergeMelody } from '../../../content/melody';
 import { savePhraseDraft } from '../../../content/phraseDraft';
 import { saveMeta, SavedLoop, TrackMeta } from '../../../transcribe/audioStore';
-import { type Comparison, compareTranscriptions, type Diff, quantizeDetected, type QNote, userNotes } from '../../../transcribe/compare';
+import { aplicarElecciones, type Comparison, compareTranscriptions, type Diff, type Eleccion, lineaDe, quantizeDetected, type QNote, userNotes } from '../../../transcribe/compare';
 import { createEngine, PlayerEngine } from '../../../transcribe/engine';
 import { Filters, NO_FILTERS, TRUMPET_FILTERS } from '../../../transcribe/filters';
 import { Grid, loopOfBars, Marker, MAX_BPM, MIN_BPM, snapRegion, snapTime, tapTempo, viewForRegion } from '../../../transcribe/grid';
@@ -483,9 +483,11 @@ function Loaded({
     bar: number;
     beat: number;
     error: string;
+    /** Con cuál se queda cada diferencia (por defecto, con la propia). */
+    pick: Record<number, Eleccion>;
     result: { c: Comparison; user: QNote[]; det: QNote[]; bpm: number; t0: number; offset: number; bl: number; pulse: number; hasTune: boolean } | null;
   }
-  const [cmp, setCmp] = useState<CmpState>({ open: false, reading: 'Bb', line: '', tuneId: '', bar: 1, beat: 1, error: '', result: null });
+  const [cmp, setCmp] = useState<CmpState>({ open: false, reading: 'Bb', line: '', tuneId: '', bar: 1, beat: 1, error: '', pick: {}, result: null });
   const cmpTune = userTunes.find((t) => t.id === cmp.tuneId) ?? null;
   const cmpChart = (() => {
     try {
@@ -522,8 +524,18 @@ function Loaded({
     const pu = cmpChart ? pulseLen(cmpChart) : 2;
     const offset = cmpChart ? (cmp.bar - 1) * blc + (cmp.beat - 1) * pu : 0;
     const chordAt = cmpChart ? (e: number) => cmpChart.chords.find((c) => offset + e >= c.start && offset + e < c.start + c.dur)?.chord ?? null : undefined;
-    const c = compareTranscriptions(mine, detected, { chordAt, bb: cmp.reading === 'Bb' });
-    setCmp((v) => ({ ...v, error: '', result: { c, user: mine, det: detected, bpm, t0, offset, bl: blc, pulse: pu, hasTune: !!cmpChart } }));
+    // tiempo fuerte: el primer pulso del compás (y el tercero en 4/4)
+    const strong = cmpChart ? (e: number) => { const p = (offset + e) % blc; return p % pu === 0 && (p === 0 || (blc / pu === 4 && p === 2 * pu)); } : undefined;
+    const c = compareTranscriptions(mine, detected, { chordAt, strong, bb: cmp.reading === 'Bb' });
+    setCmp((v) => ({ ...v, error: '', pick: {}, result: { c, user: mine, det: detected, bpm, t0, offset, bl: blc, pulse: pu, hasTune: !!cmpChart } }));
+  };
+  const aceptarSugerencias = () => setCmp((v) => (v.result ? { ...v, pick: Object.fromEntries(v.result.c.diffs.filter((d) => d.quien === 'el detector').map((d) => [d.id, 'detectada' as Eleccion])) } : v));
+  const aplicar = () => {
+    if (!cmp.result) return;
+    const nuevas = aplicarElecciones(cmp.result.c, cmp.pick);
+    const hubo = Object.values(cmp.pick).filter((x) => x === 'detectada').length;
+    setCmp((v) => ({ ...v, line: lineaDe(nuevas, v.reading), result: null, pick: {}, error: '' }));
+    setMsg(hubo ? `Apliqué ${hubo} cambio${hubo === 1 ? '' : 's'} a tu transcripción: está en el cuadro de notas. Podés escucharla, volver a comparar, o copiarla a Vocabulario o a la melodía de un tema.` : 'No elegiste ningún cambio: tu transcripción quedó igual.');
   };
   const where = (d: Diff) => {
     const r = cmp.result!;
@@ -985,6 +997,13 @@ function Loaded({
                   {cmp.result.c.diffs.length > 0 ? ` y hay ${cmp.result.c.diffs.length} diferencia${cmp.result.c.diffs.length === 1 ? '' : 's'}.` : ': no encontré diferencias.'}
                 </p>
                 {cmp.result.c.global && <p className="notice" role="status">{cmp.result.c.global.texto}</p>}
+                {cmp.result.c.consejos.length > 0 && (
+                  <ul className="consejos" aria-label="Consejos">
+                    {cmp.result.c.consejos.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                )}
                 <div className="row">
                   <button onClick={() => playNotes(cmp.result!.user, cmp.result!.bpm)}>▶ Escuchar mi versión</button>
                   <button onClick={() => playNotes(cmp.result!.det, cmp.result!.bpm)}>▶ Escuchar la detectada</button>
@@ -996,6 +1015,10 @@ function Loaded({
                       <b>{KIND[d.kind]}</b> · <span className="muted">{where(d)}</span>
                       <p>{d.porQue}</p>
                       <p className="small"><b>Quién probablemente tiene razón:</b> {d.quien}.</p>
+                      <div className="seg" role="group" aria-label={`Con cuál me quedo en la diferencia ${d.id + 1}`}>
+                        <button className={cmp.pick[d.id] !== 'detectada' ? 'on' : ''} aria-pressed={cmp.pick[d.id] !== 'detectada'} onClick={() => setCmp((v) => ({ ...v, pick: { ...v.pick, [d.id]: 'mia' } }))}>Me quedo con la mía</button>
+                        <button className={cmp.pick[d.id] === 'detectada' ? 'on' : ''} aria-pressed={cmp.pick[d.id] === 'detectada'} onClick={() => setCmp((v) => ({ ...v, pick: { ...v.pick, [d.id]: 'detectada' } }))}>Uso la detectada</button>
+                      </div>
                       <div className="row">
                         {d.user && <button onClick={() => playNotes([{ ...d.user!, start: 0 }], cmp.result!.bpm)}>▶ Mi nota</button>}
                         {d.det && <button onClick={() => playNotes([{ ...d.det!, start: 0 }], cmp.result!.bpm)}>▶ La detectada</button>}
@@ -1006,6 +1029,12 @@ function Loaded({
                     </li>
                   ))}
                 </ol>
+                {cmp.result.c.diffs.length > 0 && (
+                  <div className="row">
+                    <button onClick={aceptarSugerencias}>Aceptar lo que sugiere la app</button>
+                    <button className="primary" onClick={aplicar}>Aplicar mis elecciones a mi transcripción</button>
+                  </div>
+                )}
               </div>
             )}
           </fieldset>

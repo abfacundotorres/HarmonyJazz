@@ -869,3 +869,5 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .diffs { list-style: none; padding: 0; margin: 8px 0; }
 .diffs li { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .diffs li p { margin: .3em 0; }
+.consejos { margin: 8px 0; padding-left: 1.2em; }
+.consejos li { margin: .3em 0; }
