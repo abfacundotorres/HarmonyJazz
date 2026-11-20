@@ -197,3 +197,25 @@ describe('temas en 3/4 y 6/8', () => {
     expect(validateTune({ name: 'Mal', key: 'C', chart: '@6/8 Dm7 G7 C7 | Cmaj7', tempo: 140 })).toMatch(/entran hasta 2/);
   });
 });
+
+describe('melodía de un tema propio', () => {
+  const base = { name: 'Mi tema', key: 'C', chart: 'Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120 };
+  it('se conserva normalizada, llega a la progresión y sobrevive a exportar e importar', () => {
+    const t = validateTune({ ...base, melody: 'D4 F4 A4 C5 | B4:2 G4:2' }) as { melody: string };
+    expect(t.melody).toBe('D4 F4 A4 C5 B4:2 G4:2');
+    expect(tuneToProgression(t as never).melody).toBe('D4 F4 A4 C5 B4:2 G4:2');
+    const again = parseImport(JSON.stringify({ tunes: [t] }));
+    expect(again.errors).toEqual([]);
+    expect(again.tunes[0].melody).toBe(t.melody);
+  });
+  it('una melodía dañada o más larga que el tema se descarta sin tirar el tema', () => {
+    for (const melody of ['H9 X', 'D4:8 D4:8 D4:8 D4:8 D4:8', 'r:4', 5, null]) {
+      const t = validateTune({ ...base, melody }) as { name: string; melody?: string };
+      expect(t.name).toBe('Mi tema');
+      expect(t.melody).toBeUndefined();
+    }
+  });
+  it('un tema sin melodía no trae el campo', () => {
+    expect('melody' in (validateTune(base) as object)).toBe(false);
+  });
+});
