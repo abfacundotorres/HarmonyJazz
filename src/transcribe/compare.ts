@@ -26,6 +26,8 @@ export type Kind = 'altura' | 'falta' | 'sobra' | 'ritmo' | 'duracion';
 export type Quien = 'tu versión' | 'el detector' | 'no se puede saber';
 
 export interface Diff {
+  /** Posición en la lista de diferencias (para elegir con cuál quedarse). */
+  id: number;
   kind: Kind;
   /** Posición en corcheas desde el comienzo del pasaje. */
   at: number;
@@ -47,11 +49,17 @@ export interface Comparison {
   /** Cuántas notas pitcheadas tenía cada versión. */
   nUser: number;
   nDet: number;
+  /** Tu transcripción ya con la corrección global (si la hubo): la base sobre la que se aplican las elecciones. */
+  base: QNote[];
+  /** Consejos según el patrón de diferencias (qué ajustar en la detección, o en tu escritura). */
+  consejos: string[];
 }
 
 export interface CompareOptions {
   /** Acorde que suena en una posición (corcheas desde el comienzo del pasaje), si se eligió un tema. */
   chordAt?: (eighth: number) => Chord | null;
+  /** ¿Esa posición cae en tiempo fuerte? (sólo con un tema elegido): una nota del acorde en tiempo fuerte pesa más. */
+  strong?: (eighth: number) => boolean;
   /** Leer en Si♭: las notas se nombran como se escriben y se aclara cuál suena (un tono más grave). */
   bb?: boolean;
 }
@@ -122,6 +130,11 @@ function explicarAltura(u: QNote, d: QNote, at: number, next: QNote | undefined,
   const chord = opt.chordAt?.(at) ?? null;
   const ru = rol(chord, u.midi);
   const rd = rol(chord, d.midi);
+  // una nota del acorde en tiempo fuerte pesa más: es donde la armonía se apoya
+  const fuerte = !!opt.strong?.(at);
+  const su = (ru?.score ?? 0) + (fuerte && ru?.score === 3 ? 1 : 0);
+  const sd = (rd?.score ?? 0) + (fuerte && rd?.score === 3 ? 1 : 0);
+  const apoyo = fuerte && ru && rd && (ru.score === 3) !== (rd.score === 3) ? ` Además cae en tiempo fuerte, donde se apoya una nota del acorde: ${ru.score === 3 ? 'la tuya lo es' : 'la detectada lo es'}.` : '';
   const cab = `Vos pusiste ${nombre(u.midi, bb)} y la app detectó ${nombre(d.midi, bb)}`;
   const ctx = chord && ru && rd ? ` Sobre ${chordSymbol(chord, true)}: la tuya es ${ru.texto}; la detectada es ${rd.texto}.` : '';
 
@@ -147,12 +160,12 @@ function explicarAltura(u: QNote, d: QNote, at: number, next: QNote | undefined,
   if (abs === 1) {
     let quien: Quien = 'no se puede saber';
     let porQue = `${cab}: un semitono de diferencia.${ctx}`;
-    if (ru && rd && ru.score > rd.score) {
+    if (ru && rd && su > sd) {
       quien = 'tu versión';
-      porQue += ' La tuya encaja mejor con la armonía; la detectada pudo correrse un semitono (afinación del disco o vibrato).';
-    } else if (ru && rd && rd.score > ru.score) {
+      porQue += ` La tuya encaja mejor con la armonía; la detectada pudo correrse un semitono (afinación del disco o vibrato).${apoyo}`;
+    } else if (ru && rd && sd > su) {
       quien = 'el detector';
-      porQue += ' La detectada encaja mejor con la armonía: revisá si no escribiste un semitono de más o de menos.';
+      porQue += ` La detectada encaja mejor con la armonía: revisá si no escribiste un semitono de más o de menos.${apoyo}`;
     } else if (next && Math.abs(next.midi - u.midi) === 1) {
       quien = 'tu versión';
       porQue += ' La tuya resuelve por semitono a la nota siguiente: puede ser una aproximación cromática, un recurso típico del bebop.';
@@ -187,12 +200,12 @@ function explicarAltura(u: QNote, d: QNote, at: number, next: QNote | undefined,
     }
   }
   if (quien === 'no se puede saber') {
-    if (ru && rd && ru.score > rd.score) {
+    if (ru && rd && su > sd) {
       quien = 'tu versión';
-      porQue += ' La tuya encaja mejor con la armonía.';
-    } else if (ru && rd && rd.score > ru.score) {
+      porQue += ` La tuya encaja mejor con la armonía.${apoyo}`;
+    } else if (ru && rd && sd > su) {
       quien = 'el detector';
-      porQue += ' La detectada encaja mejor con la armonía.';
+      porQue += ` La detectada encaja mejor con la armonía.${apoyo}`;
     } else {
       porQue += ' Una diferencia así no suele ser un error de afinación: puede ser otra nota (por ejemplo el bajo) o un error de lectura. Escuchá las dos.';
     }
@@ -219,6 +232,9 @@ function explicarSobra(d: QNote, at: number, opt: CompareOptions): { porQue: str
   const fuerza = d.strength ?? 0.5;
   if (fuerza < 0.5) {
     return { quien: 'tu versión', porQue: `${base} Su fuerza es baja (${Math.round(fuerza * 100)} %)${r ? ` y es ${r.texto}` : ''}: lo más probable es un armónico del bajo o ruido, no una nota de la trompeta.` };
+  }
+  if (fuerza >= 0.6 && r && r.score === 3 && opt.strong?.(at)) {
+    return { quien: 'el detector', porQue: `${base} Es una nota del acorde (${r.texto.replace(/^nota del acorde /, '')}) en tiempo fuerte y suena con fuerza (${Math.round(fuerza * 100)} %): es justo donde se apoya la armonía, así que probablemente es una nota real que te faltó.` };
   }
   if (fuerza >= 0.7 && d.dur <= 2) {
     return { quien: 'el detector', porQue: `${base} Es fuerte y breve${r ? ` (${r.texto})` : ''}: puede ser una nota de paso o una aproximación rápida que no escribiste. Escuchala.` };
@@ -299,19 +315,19 @@ export function compareTranscriptions(user: QNote[], det: QNote[], opt: CompareO
   }
   const sobran = ds.filter((_, i) => !used.has(i));
 
-  const diffs: Diff[] = [];
+  const raw: Omit<Diff, 'id'>[] = [];
   let coinciden = 0;
   pairs.forEach(({ u, d }) => {
     const dp = d.midi - u.midi;
     if (dp === 0) {
       if (d.start !== u.start) {
         const dt = d.start - u.start;
-        diffs.push({
+        raw.push({
           kind: 'ritmo', at: u.start, user: u, det: d, quien: 'no se puede saber',
           porQue: `La nota ${nombre(u.midi, !!opt.bb)} está ${Math.abs(dt)} corchea${Math.abs(dt) === 1 ? '' : 's'} ${dt > 0 ? 'más tarde' : 'más temprano'} en la detección. Con swing las corcheas se tocan desiguales (larga-corta): al cuantizar a corcheas iguales una nota puede correrse una corchea sin que haya un error. Revisá el tempo y la grilla de compases.`,
         });
       } else if (Math.abs(d.dur - u.dur) >= 2) {
-        diffs.push({
+        raw.push({
           kind: 'duracion', at: u.start, user: u, det: d, quien: 'no se puede saber',
           porQue: `La nota ${nombre(u.midi, !!opt.bb)} dura ${u.dur} corchea${u.dur === 1 ? '' : 's'} en tu versión y ${d.dur} en la detección. ${d.dur < u.dur ? 'La trompeta separa las notas con la lengua y deja un silencio breve: el detector mide cuándo suena, no cuánto vale escrita. Una nota escrita más larga puede ser correcta.' : 'El detector pudo unir dos notas iguales (repetición con articulación) o sostener la resonancia final.'}`,
         });
@@ -320,13 +336,100 @@ export function compareTranscriptions(user: QNote[], det: QNote[], opt: CompareO
     }
     const next = us[us.indexOf(u) + 1];
     const e = explicarAltura(u, d, u.start, next, opt);
-    diffs.push({ kind: 'altura', at: u.start, user: u, det: d, ...e });
+    raw.push({ kind: 'altura', at: u.start, user: u, det: d, ...e });
   });
   for (const u of faltan) {
     const prev = us[us.indexOf(u) - 1];
-    diffs.push({ kind: 'falta', at: u.start, user: u, ...explicarFalta(u, prev, opt) });
+    raw.push({ kind: 'falta', at: u.start, user: u, ...explicarFalta(u, prev, opt) });
   }
-  for (const d of sobran) diffs.push({ kind: 'sobra', at: d.start, det: d, ...explicarSobra(d, d.start, opt) });
-  diffs.sort((a, b) => a.at - b.at);
-  return { coinciden, diffs, global, nUser: us.length, nDet: ds.length };
+  for (const d of sobran) raw.push({ kind: 'sobra', at: d.start, det: d, ...explicarSobra(d, d.start, opt) });
+  const diffs: Diff[] = raw.sort((a, b) => a.at - b.at).map((d, id) => ({ ...d, id }));
+  return { coinciden, diffs, global, nUser: us.length, nDet: ds.length, base: us, consejos: consejos(diffs, global, us.length, ds.length) };
+}
+
+// ---------- consejos según el patrón ----------
+
+/** Qué ajustar mirando el conjunto de diferencias, no cada una: la detección (sensibilidad, filtros, afinación) o la escritura. */
+export function consejos(diffs: Diff[], global: Comparison['global'], nUser: number, nDet: number): string[] {
+  const out: string[] = [];
+  const por = (k: Kind) => diffs.filter((d) => d.kind === k);
+  const sobra = por('sobra');
+  const debiles = sobra.filter((d) => (d.det?.strength ?? 1) < 0.5);
+  const falta = por('falta');
+  const ritmo = por('ritmo');
+  const semitonos = diffs.filter((d) => d.kind === 'altura' && d.subtype === 'semitono');
+  if (!diffs.length && !global) {
+    out.push('Tu transcripción coincide con la detección. Recordá que la detección es una estimación: si las dos se equivocan igual, no lo notás; escuchá el pasaje una vez más.');
+    return out;
+  }
+  if (debiles.length >= 3 || (debiles.length >= 2 && debiles.length >= diffs.length * 0.4)) {
+    out.push(`${debiles.length} notas de más son débiles: parece que el bajo o la batería se cuelan en la detección. Probá «Aislar trompeta» en Afinación y filtros, o subí la sensibilidad para ocultar las notas flojas.`);
+  }
+  if (falta.length >= 3) {
+    out.push(`No se detectaron ${falta.length} notas que escribiste: bajá la sensibilidad o revisá que el filtro de graves/agudos no las esté cortando (la trompeta en Si♭ llega de Mi3 a Si♭5 sonando).`);
+  }
+  if (ritmo.length >= 3) {
+    out.push(`${ritmo.length} notas están corridas una corchea: se repite, así que probablemente es el swing o el tempo. Ajustá el tempo y la grilla de compases antes de comparar el ritmo.`);
+  }
+  if (semitonos.length >= 3) {
+    out.push(`${semitonos.length} diferencias de un semitono: puede ser que el disco esté afinado distinto. Probá «Estimar la afinación del disco» y corregila antes de detectar.`);
+  }
+  if (nDet > nUser * 2 && nDet - nUser >= 6) {
+    out.push(`La detección encontró ${nDet} notas y vos ${nUser}: si escribiste solo una parte del pasaje, elegí en el reproductor la selección que corresponda antes de detectar.`);
+  }
+  return out;
+}
+
+// ---------- aplicar las elecciones ----------
+
+export type Eleccion = 'mia' | 'detectada';
+
+/**
+ * Tu transcripción corregida: para cada diferencia donde elegiste la detectada se toma su altura, su ritmo o su duración,
+ * se quita una nota que la app no ve o se agrega una que vos no escribiste. Parte de tu versión ya con la corrección global.
+ */
+export function aplicarElecciones(c: Comparison, elegidas: Record<number, Eleccion>): QNote[] {
+  const clon = new Map<QNote, QNote>(c.base.map((n) => [n, { ...n }]));
+  const quitar = new Set<QNote>();
+  const agregar: QNote[] = [];
+  for (const d of c.diffs) {
+    if (elegidas[d.id] !== 'detectada') continue;
+    const mine = d.user ? clon.get(d.user) : undefined;
+    if (d.kind === 'altura' && mine && d.det) mine.midi = d.det.midi;
+    else if (d.kind === 'ritmo' && mine && d.det) mine.start = d.det.start;
+    else if (d.kind === 'duracion' && mine && d.det) mine.dur = d.det.dur;
+    else if (d.kind === 'falta' && mine) quitar.add(mine);
+    else if (d.kind === 'sobra' && d.det) agregar.push({ start: d.det.start, dur: d.det.dur, midi: d.det.midi });
+  }
+  const todas = [...clon.values()].filter((n) => !quitar.has(n)).concat(agregar).sort((a, b) => a.start - b.start || a.midi - b.midi);
+  // sin superposiciones: cada nota empieza cuando termina la anterior como pronto
+  const out: QNote[] = [];
+  let pos = 0;
+  for (const n of todas) {
+    const start = Math.max(n.start, pos);
+    const dur = n.start + n.dur - start;
+    if (dur <= 0) continue;
+    out.push({ start, dur, midi: n.midi });
+    pos = start + dur;
+  }
+  return out;
+}
+
+/** Las notas como texto para el cuadro de notas (`D4`, `D4:2`, `r:2`), en la lectura pedida (en Si♭ se escribe un tono arriba). */
+export function lineaDe(notes: QNote[], reading: 'Bb' | 'C'): string {
+  const tokens: string[] = [];
+  const push = (name: string, n: number) => {
+    while (n > 0) {
+      const d = Math.min(32, n);
+      tokens.push(name + (d > 1 ? ':' + d : ''));
+      n -= d;
+    }
+  };
+  let pos = 0;
+  for (const n of [...notes].sort((a, b) => a.start - b.start)) {
+    if (n.start > pos) push('r', n.start - pos);
+    push(midiName(n.midi + (reading === 'Bb' ? 2 : 0)), n.dur);
+    pos = n.start + n.dur;
+  }
+  return tokens.join(' ');
 }

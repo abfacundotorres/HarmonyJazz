@@ -171,6 +171,18 @@ test.describe('Transcribir', () => {
     await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
     await expect(res.getByRole('status')).toContainText('lectura');
     await expect(res.getByRole('status')).toContainText('en Si♭ lo que marcaste como concierto');
+    // consejos y elecciones: con la lectura correcta se elige la detectada en la primera diferencia y se aplica
+    await caja.getByRole('button', { name: /Escribí para trompeta/ }).click();
+    page.once('dialog', (d) => void d.accept('100'));
+    await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
+    await expect(res.getByRole('list', { name: 'Consejos' })).toBeVisible();
+    const antes = await caja.getByLabel('Notas').inputValue();
+    await res.getByRole('button', { name: 'Uso la detectada' }).first().click();
+    await expect(res.getByRole('button', { name: 'Uso la detectada' }).first()).toHaveAttribute('aria-pressed', 'true');
+    await res.getByRole('button', { name: 'Aplicar mis elecciones a mi transcripción' }).click();
+    await expect(page.getByText(/Apliqué 1 cambio a tu transcripción/)).toBeVisible();
+    expect(await caja.getByLabel('Notas').inputValue()).not.toBe(antes);
+    await expect(caja.locator('.cmpresult')).toHaveCount(0);
   });
 
   test('lo que se escribe mal se avisa y con un tema se ubica por compás y tiempo', async ({ page }) => {
