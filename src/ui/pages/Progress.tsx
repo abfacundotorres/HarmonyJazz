@@ -3,6 +3,7 @@ import type { PhraseLibrary } from '../../content/phrases';
 import { dayNum, dueItems, KEY_ORDER, keyBalance, keyMatrix, weakestKeys } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
 import { EarReview, useEarReview } from '../components/EarReview';
+import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioReview';
 import { ReviewList } from '../components/ReviewList';
 import { useMastery, useReading, useSeen } from '../hooks';
 import { lessonRows, phraseNames, scaleRows, showable } from '../progressItems';
@@ -99,6 +100,7 @@ export function Progress() {
   const phrases = useMemo(() => phraseNames(pl.phrases), [pl]);
 
   const ear = useEarReview();
+  const rpt = useRepasoRepertorio();
   const due = useMemo(() => showable(dueItems(mastery, seen, today, 300), phrases), [mastery, seen, today, phrases]);
   const balance = useMemo(() => keyBalance(mastery), [mastery]);
   const weak = weakestKeys(balance);
@@ -128,6 +130,7 @@ export function Progress() {
           </>
         )}
         {ear.due && <EarReview review={ear.review} />}
+        {rpt.due && <RepertorioReview items={rpt.items} />}
       </section>
 
       <section className="card">

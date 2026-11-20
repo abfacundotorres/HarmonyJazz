@@ -75,4 +75,12 @@ describe('herramientas de práctica: datos guardados', () => {
     expect(sanitizeKey('curricula', { aprobadas: 'no', actual: 'z' })).toEqual({ aprobadas: [], actual: null, checks: {} });
     expect(sanitizeKey('curricula', [])).toBeNull();
   });
+
+  it('el repertorio conserva sólo pasos 0 a 6, fechas válidas y temas con la forma esperada', () => {
+    expect(sanitizeKey('repertorio', { 'u:a': { hechos: [3, 0, 3, 9, 'x'], ultimo: 120.4, inicio: -5 }, malo: 5, 'u:b': { hechos: 'no' } })).toEqual({
+      'u:a': { hechos: [0, 3], ultimo: 120, inicio: 0 },
+      'u:b': { hechos: [], ultimo: 0, inicio: 0 },
+    });
+    expect(sanitizeKey('repertorio', [])).toBeNull();
+  });
 });

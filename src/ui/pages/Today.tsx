@@ -8,6 +8,7 @@ import { dayNum, dueItems } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { EarReview, useEarReview } from '../components/EarReview';
+import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioReview';
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
 import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings } from '../hooks';
@@ -65,6 +66,7 @@ export function Today() {
     [monthOn, today, settings.focusLesson, pl, scale, mp, session, tunes],
   );
   const ear = useEarReview();
+  const rpt = useRepasoRepertorio();
   const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
 
   // sin casilleros: un día cuenta como sesión del mes si se abrió Hoy ese día
@@ -100,11 +102,12 @@ export function Today() {
         )}
       </section>
 
-      {(review.length > 0 || ear.due) && (
+      {(review.length > 0 || ear.due || rpt.due) && (
         <section className="card" id="repaso">
           <h2 className="h3like">Para repasar</h2>
           {review.length > 0 && <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} />}
           {ear.due && <EarReview review={ear.review} />}
+          {rpt.due && <RepertorioReview items={rpt.items} />}
           <p>
             <a className="button" href="#/progreso">{review.length > 3 ? `Ver los ${review.length} pendientes →` : 'Ver mi progreso →'}</a>
           </p>

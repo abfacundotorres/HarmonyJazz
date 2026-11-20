@@ -9,14 +9,8 @@ import { PROGRESSIONS } from '../../content/progressions';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
 import { useCurricula, useLog, useMonth, usePersistentLibrary } from '../hooks';
+import { userTunes } from '../repertorioTemas';
 import { navigate } from '../hooks';
-
-/** Los temas propios guardados (sólo id y nombre, descartando lo que no tenga la forma esperada). */
-const userTunes = (lib: { tunes?: unknown[] }) =>
-  (lib.tunes ?? []).flatMap((t) => {
-    const x = t as { id?: unknown; name?: unknown } | null;
-    return x && typeof x.id === 'string' && typeof x.name === 'string' ? [{ id: x.id, name: x.name }] : [];
-  });
 
 function FocusPicker({ legend, foci, value, onChange, done, next }: { legend: string; foci: Focus[]; value: string; onChange: (id: string) => void; done: ReadonlySet<string>; next: string | null }) {
   return (

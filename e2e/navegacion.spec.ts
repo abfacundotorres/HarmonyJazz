@@ -26,7 +26,7 @@ test.describe('navegación en cinco grupos', () => {
     await expect(barra(page).getByRole('link', { name: 'Estudiar' })).toHaveAttribute('aria-current', 'page');
     // se va a otro grupo y se vuelve: abre en Escalas, no en Lecciones
     await barra(page).getByRole('link', { name: 'Tocar' }).click();
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link')).toHaveText(['Play-along', 'Metrónomo']);
+    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link')).toHaveText(['Play-along', 'Repertorio', 'Metrónomo']);
     await barra(page).getByRole('link', { name: 'Estudiar' }).click();
     await expect(page).toHaveURL(/#\/escalas$/);
   });
