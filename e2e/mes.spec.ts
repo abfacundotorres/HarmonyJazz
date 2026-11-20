@@ -124,7 +124,7 @@ test.describe('el mes con focos', () => {
     await page.getByLabel('Tema de repertorio').selectOption({ label: 'Hojas de otoño' });
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     const rep = await openBlock(page, 'Repertorio: Hojas de otoño');
-    await expect(rep).toContainText('Semana 1 de 4 · Conocer la forma');
+    await expect(rep).toContainText('Semana 1 de 4 · La forma en el papel');
     await expect(rep).toContainText('«Hojas de otoño»');
     await rep.getByRole('link', { name: 'Abrir el tema' }).click();
     await expect(page).toHaveURL(/#\/playalong\?p=u%3Ahoja/);

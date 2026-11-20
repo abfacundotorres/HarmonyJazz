@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { missingBefore, nextFocus, stagesOf, stepOf } from '../../content/camino';
 import { siguiente } from '../../content/curricula';
-import { focusById, type Focus, LANG_FOCI, REPERTOIRE_WEEKS, TECH_FOCI, WEEKS } from '../../content/focus';
+import { formaDe, nivelDe, nombreForma } from '../../content/standards';
+import { focusById, type Focus, LANG_FOCI, TECH_FOCI, WEEKS } from '../../content/focus';
 import { monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
+import { repertoireWeeks } from '../../content/standards';
 import { PROGRESSIONS } from '../../content/progressions';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
@@ -120,9 +122,9 @@ export function Month() {
   const [editing, setEditing] = useState(!active);
   const [tech, setTech] = useState(mp.tech || sig?.tech || nextTech || TECH_FOCI[0].id);
   const [lang, setLang] = useState(mp.lang || sig?.lang || nextLang || LANG_FOCI[0].id);
-  const [rep, setRep] = useState(repertoireName(mp.rep, tunes) !== null ? mp.rep : (tunes[0]?.id ?? 'ii-v-i'));
+  const [rep, setRep] = useState(repertoireName(mp.rep, tunes) !== null ? mp.rep : (sig ? formaDe(sig.n) : (tunes[0]?.id ?? 'ii-v-i')));
   const repName = repertoireName(rep, tunes) ?? '';
-  const weeksRep = useMemo(() => REPERTOIRE_WEEKS(repName || 'el tema'), [repName]);
+  const weeksRep = useMemo(() => repertoireWeeks(repName || 'el tema', sig && sig.tech === tech && sig.lang === lang ? sig.sem : undefined), [repName, sig, tech, lang]);
   const session = active ? sessionNumber(log, mp.startDay, dayNum(today)) : 0;
   // un mes anterior con focos válidos: se puede seguir con los mismos
   const lastMonth = !active && mp.month !== '' && mp.month !== monthOf(today);
@@ -132,7 +134,7 @@ export function Month() {
     if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && sessionNumber(log, mp.startDay, dayNum(today)) >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
       setCamino((c) => ({ done: [...new Set([...c.done, mp.tech, mp.lang])] }));
     }
-    setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today) });
+    setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today), nivel: sig && sig.tech === t && sig.lang === l ? sig.sem : undefined });
     // si son los de la materia que toca en la currícula, queda en curso
     if (sig && sig.tech === t && sig.lang === l) setProg((p) => ({ ...p, actual: sig.n }));
     setEditing(false);
@@ -175,9 +177,9 @@ export function Month() {
           {sig && (
             <div className="notice" role="status">
               <span>
-                <b>Currícula · mes {sig.n}: {sig.name}.</b> Técnica: {focusById(sig.tech)?.title} · Lenguaje: {focusById(sig.lang)?.title}. <a href="#/curricula">Ver la currícula</a>
+                <b>Currícula · mes {sig.n}: {sig.name}.</b> Técnica: {focusById(sig.tech)?.title} · Lenguaje: {focusById(sig.lang)?.title}. Tema sugerido: {nombreForma(sig.n)}. Standards de este nivel ({nivelDe(sig.sem)?.tipo.toLowerCase()}), para cargar en Mis temas: {nivelDe(sig.sem)?.ejemplos.join(', ')}. <a href="#/curricula">Ver la currícula</a>
               </span>{' '}
-              <button onClick={() => { setTech(sig.tech); setLang(sig.lang); }}>Usar la materia</button>
+              <button onClick={() => { setTech(sig.tech); setLang(sig.lang); setRep(formaDe(sig.n)); }}>Usar la materia</button>
             </div>
           )}
           <div className="notice" role="status">

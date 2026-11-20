@@ -120,6 +120,8 @@ test.describe('estudio de escalas', () => {
   });
 
   test('el plan de Hoy incluye la escala del día y su enlace abre esa escala', async ({ page }) => {
+    // el foco del día rota entre técnica, escala y armonía según el número de día: se fija uno en que toca la escala (n % 3 = 1)
+    await page.clock.setFixedTime(new Date(1970, 0, 1 + 20791, 12, 0, 0));
     await page.goto('/#/hoy');
     const bloque = await openBlock(page, 'Escala del día');
     await expect(bloque).toBeVisible();

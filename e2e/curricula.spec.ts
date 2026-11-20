@@ -55,15 +55,41 @@ test.describe('currícula de tres años', () => {
     await m3.getByRole('button', { name: 'Empezar este mes' }).click();
     await expect(page).toHaveURL(/#\/hoy$/);
     const mes = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:month')!));
-    expect(mes).toMatchObject({ lang: 'l-triadas-menores', tech: 't-boquilla-buzzing' });
+    expect(mes).toMatchObject({ lang: 'l-triadas-menores', tech: 't-boquilla-buzzing', rep: 'ii-v-i-minor', nivel: 1 });
     expect((await guardado(page)).actual).toBe(3);
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Boquilla y buzzing');
+    // el tema del mes es la forma sugerida y su recorrido es el del primer semestre
+    const rep = page.locator('article.block', { hasText: 'Repertorio:' });
+    await rep.locator('.bhead').click();
+    await expect(rep).toContainText('La forma en el papel');
+  });
+
+  test('cada materia sugiere un tema y ejemplos de standards para cargar en Mis temas', async ({ page }) => {
+    await page.goto('/#/curricula');
+    const m1 = page.locator('li.materia').first();
+    await m1.locator('summary').click();
+    await expect(m1).toContainText('Tema sugerido:');
+    await expect(m1).toContainText('Play-along → Mis temas');
+    await expect(m1).toContainText('Now’s the Time');
+    await page.locator('details.semester').nth(5).locator(':scope > summary').click();
+    await expect(page.locator('li.materia').nth(30)).toContainText('Modal');
+  });
+
+  test('las formas nuevas están en Play-along', async ({ page }) => {
+    await page.goto('/#/playalong?p=aaba-subdominante');
+    await expect(page.getByLabel('Tema', { exact: true }).locator('option:checked')).toContainText('AABA con puente en la subdominante');
+    for (const id of ['menor-aaba', 'bossa-mayor', 'blues-bb-rapido', 'ii-v-semitonos']) {
+      await page.goto(`/#/playalong?p=${id}`);
+      await expect(page.getByLabel('Tema', { exact: true })).toHaveValue(id);
+    }
   });
 
   test('Mi mes ya trae elegida la materia que toca y avisa de la currícula', async ({ page }) => {
     await page.goto('/#/mes');
     const aviso = page.locator('.notice', { hasText: 'Currícula · mes 1' });
     await expect(aviso).toContainText('Tríadas mayores');
+    await expect(aviso).toContainText('Tema sugerido:');
+    await expect(aviso).toContainText('Now’s the Time');
     await expect(page.locator('#f-l-triadas-mayores')).toBeChecked();
     // con la primera aprobada, ofrece la segunda
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:curricula', JSON.stringify({ aprobadas: [1], actual: null, checks: {} })));

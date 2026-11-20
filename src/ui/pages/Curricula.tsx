@@ -1,21 +1,19 @@
-import { useMemo } from 'react';
 import { cierre, correlativas, faltan, type Materia, PLAN, SEMESTERS, siguiente } from '../../content/curricula';
 import { focusById } from '../../content/focus';
-import { monthOf, repertoireName } from '../../content/monthPlan';
+import { formaDe, nivelDe, nombreForma } from '../../content/standards';
+import { monthOf } from '../../content/monthPlan';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
-import { navigate, useCurricula, useMonth, usePersistentLibrary } from '../hooks';
+import { navigate, useCurricula, useMonth } from '../hooks';
 
 const KIND_LABEL = { materia: 'Materia', taller: 'Taller', integracion: 'Integración' } as const;
 
 /** La currícula de tres años: seis semestres, una materia por mes, con correlativas y cierre con autoevaluación. */
 export function Curricula() {
   const [prog, setProg] = useCurricula();
-  const [mp, setMp] = useMonth();
-  const [lib] = usePersistentLibrary();
+  const [, setMp] = useMonth();
   const [, setCamino] = usePersistent<{ done: string[] }>('camino', { done: [] });
   const sig = siguiente(prog);
-  const tunes = useMemo(() => (lib.tunes ?? []).flatMap((t) => (t && typeof (t as { id?: unknown }).id === 'string' && typeof (t as { name?: unknown }).name === 'string' ? [{ id: (t as { id: string }).id, name: (t as { name: string }).name }] : [])), [lib]);
   const hechas = prog.aprobadas.length;
 
   const aprobar = (m: Materia) => {
@@ -29,8 +27,7 @@ export function Curricula() {
       return { ...p, checks: { ...p.checks, [String(m.n)]: cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i] } };
     });
   const empezar = (m: Materia) => {
-    const rep = repertoireName(mp.rep, tunes) !== null ? mp.rep : 'ii-v-i';
-    setMp({ month: monthOf(new Date()), tech: m.tech, lang: m.lang, rep, startDay: dayNum() });
+    setMp({ month: monthOf(new Date()), tech: m.tech, lang: m.lang, rep: formaDe(m.n), startDay: dayNum(), nivel: m.sem });
     setProg((p) => ({ ...p, actual: m.n }));
     navigate('#/hoy');
   };
@@ -86,6 +83,9 @@ function MateriaRow({ m, prog, esSig, actual, onTildar, onAprobar, onReabrir, on
         <p className="muted small">{m.goal}</p>
         <p className="small">
           Lenguaje: <b>{focusById(m.lang)?.title}</b> · Técnica: <b>{focusById(m.tech)?.title}</b>
+        </p>
+        <p className="small">
+          Tema sugerido: <b>{nombreForma(m.n)}</b>. Para llevarlo a un standard ({nivelDe(m.sem)?.tipo.toLowerCase()}), cargá el cifrado de tu libro en Play-along → Mis temas; por ejemplo {nivelDe(m.sem)?.ejemplos.join(', ')}.
         </p>
         {correlativas(m).length > 0 && (
           <p className="small">
