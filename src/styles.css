@@ -864,3 +864,8 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .pasos li.next { border-left: 3px solid var(--accent); padding-left: 8px; }
 .pasos label { display: flex; gap: .5em; align-items: center; min-height: 44px; }
 .tema progress { width: 100%; }
+
+/* Comparar con mi transcripción */
+.diffs { list-style: none; padding: 0; margin: 8px 0; }
+.diffs li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.diffs li p { margin: .3em 0; }

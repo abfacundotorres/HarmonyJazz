@@ -143,6 +143,60 @@ test.describe('Transcribir', () => {
     await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
   });
 
+  test('compara mi transcripción con la detectada y explica las diferencias', async ({ page }) => {
+    await openAudio(page, await makeWav());
+    await page.getByRole('button', { name: 'Espectrograma' }).click();
+    await panel(page, 'Notas: detectar');
+    await expect(page.getByRole('button', { name: 'Comparar con mi transcripción' })).toHaveCount(0);
+    await page.getByRole('button', { name: /Detectar notas/ }).click();
+    await expect(page.getByText(/notas detectadas/)).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Comparar con mi transcripción' }).click();
+    const caja = page.locator('fieldset.compare');
+    // la app muestra las notas como se leen en Si♭: se copian las seis primeras que detecta en el audio de prueba (a 100 bpm)
+    await caja.getByRole('button', { name: /Escribí para trompeta/ }).click();
+    await caja.getByLabel('Notas').fill('C4:1 E4:2 G4:2 F4:1 D4:1 E4:2');
+    page.once('dialog', (d) => void d.accept('100'));
+    await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
+    const res = caja.locator('.cmpresult');
+    await expect(res).toContainText('Tu versión tiene 6 notas');
+    // las seis que escribió coinciden con lo detectado (tolerando una corchea); lo demás son diferencias explicadas
+    const coinciden = Number(/Coinciden (\d+)/.exec(await res.innerText())![1]);
+    expect(coinciden).toBeGreaterThanOrEqual(4);
+    await expect(res.locator('ol.diffs li').first()).toContainText('Quién probablemente tiene razón');
+    await expect(res.getByText('Nota de más').first()).toBeVisible();
+    await expect(res.getByRole('button', { name: '▶ Escuchar mi versión' })).toBeVisible();
+    // las mismas notas con la lectura equivocada (concierto): todas difieren en dos semitonos y se avisa una sola vez
+    await caja.getByRole('button', { name: /Escribí en concierto/ }).click();
+    page.once('dialog', (d) => void d.accept('100'));
+    await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
+    await expect(res.getByRole('status')).toContainText('lectura');
+    await expect(res.getByRole('status')).toContainText('en Si♭ lo que marcaste como concierto');
+  });
+
+  test('lo que se escribe mal se avisa y con un tema se ubica por compás y tiempo', async ({ page }) => {
+    const chart = Array.from({ length: 4 }, () => 'Dm7 | G7 | Cmaj7 | Cmaj7').join(' | ');
+    await page.addInitScript((c) => {
+      if (!localStorage.getItem('harmonyjazz:library')) localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:hoja', name: 'Hojas de otoño', composer: '', key: 'C', mode: 'major', chart: c, tempo: 120, style: 'swing' }] }));
+    }, chart);
+    await openAudio(page, await makeWav());
+    await page.getByRole('button', { name: 'Espectrograma' }).click();
+    await panel(page, 'Notas: detectar');
+    await page.getByRole('button', { name: /Detectar notas/ }).click();
+    await expect(page.getByText(/notas detectadas/)).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Comparar con mi transcripción' }).click();
+    const caja = page.locator('fieldset.compare');
+    await caja.getByLabel('Notas').fill('H9');
+    await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
+    await expect(caja.getByRole('alert')).toContainText('No entiendo la nota');
+    await caja.getByLabel('Notas').fill('C4:1 E4:2 G4:2');
+    await caja.getByLabel('Tema para el contexto').selectOption('u:hoja');
+    await caja.getByLabel('Compás de comienzo').fill('2');
+    page.once('dialog', (d) => void d.accept('100'));
+    await caja.getByRole('button', { name: 'Comparar', exact: true }).click();
+    await expect(caja.locator('ol.diffs li').first()).toContainText(/compás \d+, tiempo \d/);
+    await expect(caja.locator('ol.diffs li').first()).toContainText('Quién probablemente tiene razón');
+  });
+
   test('estima la afinación del disco y la corrige', async ({ page }) => {
     await openAudio(page, await makeWav({ detuneCents: 30 }));
     await panel(page, 'Afinación y filtros');

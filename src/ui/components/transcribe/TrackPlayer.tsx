@@ -3,6 +3,7 @@ import { engine as tone } from '../../../audio/engine';
 import { buildMelody, mergeMelody } from '../../../content/melody';
 import { savePhraseDraft } from '../../../content/phraseDraft';
 import { saveMeta, SavedLoop, TrackMeta } from '../../../transcribe/audioStore';
+import { type Comparison, compareTranscriptions, type Diff, quantizeDetected, type QNote, userNotes } from '../../../transcribe/compare';
 import { createEngine, PlayerEngine } from '../../../transcribe/engine';
 import { Filters, NO_FILTERS, TRUMPET_FILTERS } from '../../../transcribe/filters';
 import { Grid, loopOfBars, Marker, MAX_BPM, MIN_BPM, snapRegion, snapTime, tapTempo, viewForRegion } from '../../../transcribe/grid';
@@ -14,6 +15,7 @@ import { midiName, prettyAcc } from '../../../theory/notes';
 import { barLen, beatsPerBar, parseChart, pulseLen } from '../../../theory/chart';
 import { navigate, usePersistentLibrary, useReading } from '../../hooks';
 import { useWakeLock } from '../../wakeLock';
+import { NotePad } from '../NotePad';
 import { ViewMode, WaveView } from './WaveView';
 
 const RATE_PRESETS = [50, 60, 70, 80, 90, 100];
@@ -472,6 +474,66 @@ function Loaded({
     setMsg(`Listo: puse la frase en «${targetTune.name}», desde el compás ${toTune.bar}. Es una estimación: abrila en el Play-along, escuchala con «Oír la línea» y corregí lo que no coincida.`);
     setToTune((v) => ({ ...v, open: false }));
   };
+  // ---- comparar con la transcripción de la persona ----
+  interface CmpState {
+    open: boolean;
+    reading: 'Bb' | 'C';
+    line: string;
+    tuneId: string;
+    bar: number;
+    beat: number;
+    error: string;
+    result: { c: Comparison; user: QNote[]; det: QNote[]; bpm: number; t0: number; offset: number; bl: number; pulse: number; hasTune: boolean } | null;
+  }
+  const [cmp, setCmp] = useState<CmpState>({ open: false, reading: 'Bb', line: '', tuneId: '', bar: 1, beat: 1, error: '', result: null });
+  const cmpTune = userTunes.find((t) => t.id === cmp.tuneId) ?? null;
+  const cmpChart = (() => {
+    try {
+      return cmpTune ? parseChart(cmpTune.chart) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const stopCmp = () => {
+    tone.stopLine();
+    setListening(false);
+  };
+  const playNotes = (notes: QNote[], bpm: number) => {
+    stopCmp();
+    if (!notes.length) return;
+    engine.pause();
+    const eighth = 30 / bpm;
+    setListening(true);
+    void tone.playLine(notes.map((n) => ({ midi: n.midi, start: n.start * eighth, dur: n.dur * eighth })), () => setListening(false));
+  };
+  const runCompare = () => {
+    if (!shown?.length) return;
+    const mine = userNotes(cmp.line, cmp.reading);
+    if (typeof mine === 'string') return setCmp((v) => ({ ...v, error: mine, result: null }));
+    let bpm = grid?.bpm ?? 0;
+    if (!bpm) {
+      const a = window.prompt('¿A qué tempo (negras por minuto) está este pasaje? Hace falta para pasar las notas a corcheas.', '120');
+      bpm = Number(a);
+      if (!(bpm >= MIN_BPM && bpm <= MAX_BPM)) return;
+    }
+    const t0 = region ? region.start : shown[0].start;
+    const detected = quantizeDetected(shown, bpm, t0);
+    const blc = cmpChart ? barLen(cmpChart) : 8;
+    const pu = cmpChart ? pulseLen(cmpChart) : 2;
+    const offset = cmpChart ? (cmp.bar - 1) * blc + (cmp.beat - 1) * pu : 0;
+    const chordAt = cmpChart ? (e: number) => cmpChart.chords.find((c) => offset + e >= c.start && offset + e < c.start + c.dur)?.chord ?? null : undefined;
+    const c = compareTranscriptions(mine, detected, { chordAt, bb: cmp.reading === 'Bb' });
+    setCmp((v) => ({ ...v, error: '', result: { c, user: mine, det: detected, bpm, t0, offset, bl: blc, pulse: pu, hasTune: !!cmpChart } }));
+  };
+  const where = (d: Diff) => {
+    const r = cmp.result!;
+    if (r.hasTune) {
+      const abs = r.offset + d.at;
+      return `compás ${Math.floor(abs / r.bl) + 1}, tiempo ${Math.floor((abs % r.bl) / r.pulse) + 1}`;
+    }
+    return `a los ${fmtTime(r.t0 + d.at * (30 / r.bpm))}`;
+  };
+  const KIND: Record<Diff['kind'], string> = { altura: 'Altura distinta', falta: 'Falta una nota', sobra: 'Nota de más', ritmo: 'Ritmo distinto', duracion: 'Duración distinta' };
   const toPhrase = () => {
     if (!shown?.length) return;
     let bpm = grid?.bpm ?? 0;
@@ -827,6 +889,7 @@ function Loaded({
               <button onClick={listen}>{listening ? '■ Detener' : '▶ Escuchar lo detectado'}</button>
               <button onClick={toPhrase}>Pasar a Vocabulario</button>
               <button onClick={() => setToTune((v) => ({ ...v, open: !v.open }))} aria-expanded={toTune.open}>Pasar a la melodía de un tema</button>
+              <button onClick={() => setCmp((v) => ({ ...v, open: !v.open }))} aria-expanded={cmp.open}>Comparar con mi transcripción</button>
             </>
           )}
           {notes && <button onClick={() => { setNotes(null); tone.stopLine(); setListening(false); }}>Borrar</button>}
@@ -868,6 +931,82 @@ function Loaded({
                   <button onClick={() => setToTune((v) => ({ ...v, open: false }))}>Cancelar</button>
                 </div>
               </>
+            )}
+          </fieldset>
+        )}
+        {cmp.open && shown && shown.length > 0 && (
+          <fieldset className="totune compare">
+            <legend>Comparar con mi transcripción</legend>
+            <p className="muted small">
+              Escribí lo que vos transcribiste de este mismo pasaje: la app lo compara con lo que detectó, te muestra dónde difieren y explica por qué, con teoría y con la lógica de la trompeta. No es un juez: te dice quién probablemente tiene razón y te deja escuchar las dos versiones.
+            </p>
+            <div className="seg" role="group" aria-label="Lectura de mi transcripción">
+              <button className={cmp.reading === 'Bb' ? 'on' : ''} onClick={() => setCmp((v) => ({ ...v, reading: 'Bb' }))}>Escribí para trompeta (Si♭)</button>
+              <button className={cmp.reading === 'C' ? 'on' : ''} onClick={() => setCmp((v) => ({ ...v, reading: 'C' }))}>Escribí en concierto</button>
+            </div>
+            <NotePad line={cmp.line} onLine={(l) => setCmp((v) => ({ ...v, line: l }))} placeholder="E4 G4 B4 D5:2 | C5 A4:2" rows={3} />
+            <div className="formgrid">
+              <label>
+                Tema para el contexto armónico (opcional)
+                <select aria-label="Tema para el contexto" value={cmp.tuneId} onChange={(e) => setCmp((v) => ({ ...v, tuneId: e.target.value }))}>
+                  <option value="">Sin tema (sólo intervalos e instrumento)</option>
+                  {userTunes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+              {cmpChart && (
+                <>
+                  <label>
+                    El pasaje empieza en el compás
+                    <input type="number" min={1} max={cmpChart.bars} value={cmp.bar} aria-label="Compás de comienzo" onChange={(e) => setCmp((v) => ({ ...v, bar: Math.max(1, Math.min(cmpChart.bars, Math.round(Number(e.target.value)) || 1)) }))} />
+                  </label>
+                  <label>
+                    En el tiempo
+                    <select aria-label="Tiempo de comienzo" value={cmp.beat} onChange={(e) => setCmp((v) => ({ ...v, beat: Number(e.target.value) }))}>
+                      {Array.from({ length: beatsPerBar(cmpChart) }, (_, i) => (
+                        <option key={i} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
+            </div>
+            <div className="row">
+              <button className="primary" onClick={runCompare}>Comparar</button>
+              <button onClick={() => setCmp((v) => ({ ...v, open: false }))}>Cerrar</button>
+            </div>
+            {cmp.error && <p role="alert" style={{ color: 'var(--bad)' }}>{cmp.error}</p>}
+            {cmp.result && (
+              <div className="cmpresult" aria-live="polite">
+                <h4>Resultado</h4>
+                <p>
+                  Tu versión tiene <b>{cmp.result.c.nUser}</b> notas y la detección <b>{cmp.result.c.nDet}</b>. Coinciden <b>{cmp.result.c.coinciden}</b>
+                  {cmp.result.c.diffs.length > 0 ? ` y hay ${cmp.result.c.diffs.length} diferencia${cmp.result.c.diffs.length === 1 ? '' : 's'}.` : ': no encontré diferencias.'}
+                </p>
+                {cmp.result.c.global && <p className="notice" role="status">{cmp.result.c.global.texto}</p>}
+                <div className="row">
+                  <button onClick={() => playNotes(cmp.result!.user, cmp.result!.bpm)}>▶ Escuchar mi versión</button>
+                  <button onClick={() => playNotes(cmp.result!.det, cmp.result!.bpm)}>▶ Escuchar la detectada</button>
+                  {listening && <button onClick={stopCmp}>■ Detener</button>}
+                </div>
+                <ol className="diffs">
+                  {cmp.result.c.diffs.map((d, i) => (
+                    <li key={i}>
+                      <b>{KIND[d.kind]}</b> · <span className="muted">{where(d)}</span>
+                      <p>{d.porQue}</p>
+                      <p className="small"><b>Quién probablemente tiene razón:</b> {d.quien}.</p>
+                      <div className="row">
+                        {d.user && <button onClick={() => playNotes([{ ...d.user!, start: 0 }], cmp.result!.bpm)}>▶ Mi nota</button>}
+                        {d.det && <button onClick={() => playNotes([{ ...d.det!, start: 0 }], cmp.result!.bpm)}>▶ La detectada</button>}
+                        {d.user && d.det && (
+                          <button onClick={() => playNotes([{ ...d.user!, start: 0, dur: 2 }, { ...d.det!, start: 2, dur: 2 }], cmp.result!.bpm)}>▶ Las dos, una tras otra</button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             )}
           </fieldset>
         )}
