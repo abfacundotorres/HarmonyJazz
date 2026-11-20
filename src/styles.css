@@ -857,3 +857,10 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .pathlist li.next { border-left: 3px solid var(--accent); padding-left: 8px; }
 .pathlist li small { color: var(--muted); }
 .pathlist li button { align-self: flex-start; min-height: 44px; }
+
+/* Mi repertorio */
+.pasos { list-style: none; padding: 0; margin: 8px 0; }
+.pasos li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pasos li.next { border-left: 3px solid var(--accent); padding-left: 8px; }
+.pasos label { display: flex; gap: .5em; align-items: center; min-height: 44px; }
+.tema progress { width: 100%; }

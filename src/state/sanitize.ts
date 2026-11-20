@@ -181,6 +181,18 @@ export const sanitizeCurricula: Sanitizer = (raw) => {
   return { aprobadas: ints(raw.aprobadas, 1, 36), actual, checks };
 };
 
+/** Mi repertorio: por tema, pasos logrados, último día que se tocó y día en que se empezó. */
+export const sanitizeRepertorio: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, { hechos: number[]; ultimo: number; inicio: number }> = {};
+  for (const [id, v] of Object.entries(raw).slice(0, 300)) {
+    if (id.length > 80 || !isObj(v)) continue;
+    const hechos = Array.isArray(v.hechos) ? [...new Set(v.hechos.filter((x): x is number => typeof x === 'number' && Number.isInteger(x) && x >= 0 && x <= 6))].sort((a, b) => a - b) : [];
+    out[id] = { hechos, ultimo: Math.round(num(v.ultimo, 0, 100000) ?? 0), inicio: Math.round(num(v.inicio, 0, 100000) ?? 0) };
+  }
+  return out;
+};
+
 export const SANITIZERS: Record<string, Sanitizer> = {
   settings: sanitizeSettings,
   log: sanitizeLog,
@@ -197,6 +209,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   earset: sanitizeEarSet,
   camino: sanitizeCamino,
   curricula: sanitizeCurricula,
+  repertorio: sanitizeRepertorio,
 };
 
 /**
