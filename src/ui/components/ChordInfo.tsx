@@ -28,6 +28,14 @@ export function ChordText({ chord }: { chord: Chord }) {
   );
 }
 
+/** Cuántos caracteres de ancho ocupa un acorde dibujado (los superíndices cuentan menos): sirve para que dos acordes entren en un renglón. */
+function chordGlyphs(chord: Chord, style: 'ireal' | 'full', iv: Parameters<typeof transposeChord>[1]): number {
+  const w = transposeChord(chord, iv);
+  if (style === 'full') return chordSymbol(w, true).length;
+  const p = chordParts(w);
+  return p.root.length + p.main.length + p.sup.length * 0.62 + (p.bass ? p.bass.length * 0.8 + 1 : 0);
+}
+
 interface BoardBar {
   /** Índices de los compases tocados (en la carta desplegada) que salen de este compás escrito. */
   plays: number[];
@@ -51,6 +59,9 @@ export function ChordBoard({
   layout?: DocLayout | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const { iv } = useReading();
+  const [settings] = useSettings();
+  const chordStyle = settings.chordStyle;
   const byBar: { idx: number; chord: Chord }[][] = Array.from({ length: chart.bars }, () => []);
   chart.chords.forEach((cc, i) => byBar[cc.bar].push({ idx: i, chord: cc.chord }));
 
@@ -92,6 +103,7 @@ export function ChordBoard({
           m?.repeatEnd ? 're' : '',
           m?.ending ? `end end${m.ending}` : '',
           chords.length > 2 ? 'many' : '',
+          chords.length === 2 ? 'two' : '',
         ].filter(Boolean).join(' ');
         const showEnd = m?.ending && layout?.bars[i - 1]?.ending !== m.ending;
         return (
@@ -102,6 +114,8 @@ export function ChordBoard({
             onClick={() => onBarClick?.(first)}
             disabled={!onBarClick}
             aria-pressed={inLoop}
+            // letras del cifrado de un compás con dos acordes: el atril las achica para que entren en un solo renglón
+            style={chords.length === 2 ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties) : undefined}
           >
             <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
             {sections.has(i) && <b className="sec" title={`Sección ${m?.section}`}>{m?.section}</b>}
