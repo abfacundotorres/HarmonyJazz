@@ -128,6 +128,28 @@ test.describe('modo atril: el tamaño de la letra está en Ajustes y la pantalla
   });
 });
 
+test('atril: un título larguísimo no parte la barra de arriba en dos renglones, ni en pantallas angostas', async ({ page }) => {
+  // el nombre más largo que admite un tema (80 caracteres)
+  const nombre = 'Un tema con un nombre larguísimo que no entra en una sola línea del celular'.padEnd(80, '!');
+  await page.addInitScript((n) => {
+    if (!localStorage.getItem('harmonyjazz:library')) localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:largo', name: n, composer: '', key: 'C', mode: 'major', chart: 'Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120, style: 'swing' }] }));
+  }, nombre);
+  for (const ancho of [320, 360, 412]) {
+    await page.setViewportSize({ width: ancho, height: 760 });
+    await page.goto('/#/playalong?p=u:largo');
+    await page.getByRole('button', { name: /Modo atril/ }).click();
+    const m = await page.evaluate(() => {
+      const top = document.querySelector('.atril-top')!.getBoundingClientRect();
+      const t = document.querySelector('.atril-top > b') as HTMLElement;
+      return { alto: top.height, cortado: t.scrollWidth > t.clientWidth, cierre: document.querySelector('.atril-top button')!.getBoundingClientRect().right <= window.innerWidth + 1 };
+    });
+    expect(m.alto, `${ancho} px`).toBeLessThan(60);
+    expect(m.cortado, `${ancho} px`).toBe(true);
+    expect(m.cierre, `${ancho} px: el botón Cerrar queda a la vista`).toBe(true);
+    await page.getByRole('button', { name: 'Cerrar el modo atril' }).click();
+  }
+});
+
 test.describe('formas de práctica', () => {
   test('la app no trae temas con nombre propio y un enlace viejo no rompe nada', async ({ page }) => {
     await page.goto('/#/playalong');

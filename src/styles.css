@@ -585,10 +585,11 @@ button.link { background: var(--surface-2); }
 /* modo atril */
 .atril { position: fixed; inset: 0; z-index: 100; background: var(--bg); color: var(--text); overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 12px 64px; }
 .atril-head { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 4px; border-bottom: 1px solid var(--line); }
-.atril-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 1.05rem; }
-.atril-top button { margin-left: auto; }
-.atril-top .atril-beats { margin-left: auto; align-self: center; }
-.atril-top .atril-beats + button { margin-left: 0; }
+.atril-top { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; font-size: 1.05rem; min-height: 44px; }
+/* arriba siempre es una sola línea: el título se corta con puntos suspensivos y lo demás no se parte */
+.atril-top > b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atril-top > span, .atril-top > button, .atril-top > .atril-beats { flex: none; white-space: nowrap; }
+.atril-top .atril-beats { align-self: center; }
 .atril-beats { display: flex; gap: 6px; }
 .atril-beats i { width: .9rem; height: .9rem; border-radius: 50%; border: 2px solid var(--line); }
 .atril-beats i.on { background: var(--accent); border-color: var(--accent); }
