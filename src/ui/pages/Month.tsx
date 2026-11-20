@@ -152,7 +152,7 @@ export function Month() {
           </ul>
           <p className="muted">Vas por la sesión {session}. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
           <div className="row">
-            <a className="button primary" href="#/hoy">Ir al plan de hoy</a>
+            <a className="button primary" href="#/hoy">Ir al plan</a>
             <a className="button" href="#/curricula">Currícula</a>
             <button onClick={() => setEditing(true)}>Cambiar los focos</button>
           </div>

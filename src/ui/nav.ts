@@ -10,7 +10,7 @@ export interface Group {
 }
 
 export const GROUPS: readonly Group[] = [
-  { id: 'hoy', label: 'Hoy', pages: [['hoy', 'Plan de hoy'], ['mes', 'Mi mes'], ['curricula', 'Currícula'], ['progreso', 'Progreso']] },
+  { id: 'hoy', label: 'Hoy', pages: [['hoy', 'Plan'], ['mes', 'Mi mes'], ['curricula', 'Currícula'], ['progreso', 'Progreso']] },
   { id: 'estudiar', label: 'Estudiar', pages: [['lecciones', 'Lecciones'], ['escalas', 'Escalas'], ['vocabulario', 'Vocabulario']] },
   { id: 'tocar', label: 'Tocar', pages: [['playalong', 'Play-along'], ['metronomo', 'Metrónomo']] },
   { id: 'escuchar', label: 'Escuchar', pages: [['transcribir', 'Transcribir'], ['oido', 'Oído'], ['escucha', 'Afinador']] },
