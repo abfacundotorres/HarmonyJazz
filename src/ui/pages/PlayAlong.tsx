@@ -316,8 +316,6 @@ export function PlayAlong() {
           chart={chart}
           layout={layout}
           current={ci >= 0 ? ci + offset : -1}
-          chord={chord}
-          next={next}
           pos={mine}
           loop={loopValid}
           tempo={tempo}
