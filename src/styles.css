@@ -599,7 +599,13 @@ button.link { background: var(--surface-2); }
 .atril .board .bar { font-size: var(--asz); min-height: calc(var(--asz) * 2.2); padding: .35em .3em; align-items: center; flex-wrap: wrap; cursor: default; }
 .atril .board .barno { font-size: .8rem; }
 .atril .board .bar.now { background: var(--accent); color: var(--accent-ink); }
-.atril .board .bar.now .cur { text-decoration: underline; text-underline-offset: .15em; color: inherit; }
+/* El acorde que suena se marca con un fondo, no con subrayado: el subrayado se pegaba a la base de la Δ y de otras letras y parecía una doble línea.
+   El fondo y su halo no ocupan lugar (no cambian el ancho ni el renglón del acorde). */
+.atril .board .bar.now .cur { text-decoration: none; color: inherit; border-radius: .18em; background: color-mix(in srgb, var(--accent-ink) 26%, transparent); box-shadow: 0 0 0 .1em color-mix(in srgb, var(--accent-ink) 26%, transparent); }
+.atril .board .bar.now .barno { color: inherit; opacity: .8; }
+/* Un compás con dos acordes los muestra siempre en el mismo renglón: la letra se achica lo justo para que entren (--glyphs = ancho en caracteres) */
+.atril .board .bar.two { container-type: inline-size; flex-wrap: nowrap; justify-content: space-evenly; }
+.atril .board .bar.two > span { white-space: nowrap; font-size: min(var(--asz), calc(90cqw / (var(--glyphs, 8) * .66 + .8))); }
 .atril-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px; background: var(--surface); border-top: 1px solid var(--line); }
 .atril-bar .play { width: 64px; height: 64px; font-size: 1.6rem; }
 .atril-ctl { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
