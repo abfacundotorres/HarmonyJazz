@@ -21,6 +21,8 @@ export interface Progression {
   listen?: string[];
   /** Grilla escrita (secciones, repeticiones, finales) de un tema propio. */
   doc?: ChartDoc;
+  /** Melodía de un tema propio (concierto, formato del Vocabulario). */
+  melody?: string;
 }
 
 function iiVIcycle(minor = false): string {

@@ -3,6 +3,7 @@ import { qdef } from '../theory/chords';
 import { CONCERT_KEYS, parseChart } from '../theory/chart';
 import { noteName, simplify } from '../theory/notes';
 import { compileDoc, ChartDoc, sanitizeDoc } from './chartDoc';
+import { buildMelody } from './melody';
 import type { Progression } from './progressions';
 
 /** Un tema que el usuario cargó. Se guarda sólo en su dispositivo. */
@@ -18,6 +19,8 @@ export interface UserTune {
   style: Style;
   /** Grilla del editor (secciones, repeticiones, finales). `chart` es siempre su versión desplegada. */
   doc?: ChartDoc;
+  /** Melodía escrita por el usuario (notas en concierto, formato del Vocabulario); empieza en el compás 1. */
+  melody?: string;
 }
 
 export const MAX_TUNES = 500;
@@ -81,7 +84,11 @@ export function validateTune(raw: unknown): UserTune | string {
   const tempo = Number.isFinite(tempoN) ? Math.max(40, Math.min(320, tempoN)) : 120;
   const style = STYLES.includes(t.style as Style) ? (t.style as Style) : 'swing';
   const id = typeof t.id === 'string' && /^u:[a-z0-9]{4,24}$/.test(t.id) ? t.id : newTuneId();
-  return { id, name, composer, key, mode, chart: normalizeChartText(chart), tempo, style, ...(doc ? { doc } : {}) };
+  const chartText = normalizeChartText(chart);
+  // una melodía dañada o que ya no cabe en el cifrado se descarta sin tirar el tema entero
+  const mel = typeof t.melody === 'string' ? buildMelody(chartText, t.melody, 'C') : null;
+  const melody = mel && typeof mel !== 'string' ? mel.line : undefined;
+  return { id, name, composer, key, mode, chart: chartText, tempo, style, ...(doc ? { doc } : {}), ...(melody ? { melody } : {}) };
 }
 
 export function parseImport(json: string): { tunes: UserTune[]; errors: string[] } {
@@ -116,6 +123,7 @@ export function tuneToProgression(t: UserTune): Progression {
     tempo: t.tempo,
     style: t.style,
     doc: t.doc,
+    melody: t.melody,
     notes: t.composer ? `De ${t.composer}. Cifrado cargado por vos.` : 'Cifrado cargado por vos.',
   };
 }

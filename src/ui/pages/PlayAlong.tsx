@@ -4,17 +4,19 @@ import {
   Library, MAX_TUNES, normalizeChartText, parseImport, tuneToProgression, UserTune, validateTune,
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
+import { melodyNotes, sliceMelody } from '../../content/melody';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { localizeNotes } from '../../exercises/localize';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
-  Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
+  barLen, Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
 } from '../../theory/chart';
 import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
+import { MelodyPanel } from '../components/MelodyPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
@@ -109,6 +111,15 @@ export function PlayAlong() {
   const playChart = useMemo(() => (loopValid ? sliceChart(chart, loopValid[0], loopValid[1]) : chart), [chart, loopValid]);
   const offset = loopValid ? Math.max(0, chart.chords.findIndex((c) => c.bar >= loopValid[0])) : 0;
 
+  // melodía de un tema propio: se transpone con el mismo intervalo que el cifrado y se recorta al tramo en loop
+  const melody = useMemo(() => {
+    if (useCustom || !selected.melody) return undefined;
+    const iv = baseKey ? keyInterval(baseKey, key) : shift ? semitoneInterval(shift) : undefined;
+    const notes = melodyNotes(selected.melody, iv);
+    if (!notes.length) return undefined;
+    return loopValid ? sliceMelody(notes, loopValid[0], loopValid[1], barLen(chart)) : notes;
+  }, [useCustom, selected.melody, baseKey, key, shift, loopValid, chart]);
+
   const layout = useMemo(() => {
     const d = useCustom ? doc : selected.doc;
     return d ? docLayout(d) : null;
@@ -174,7 +185,7 @@ export function PlayAlong() {
 
   // ---- biblioteca ----
   const saveTune = () => {
-    const r = validateTune({ ...draft, key: draft.key || null, chart: custom, doc: doc ?? undefined });
+    const r = validateTune({ ...draft, key: draft.key || null, chart: custom, doc: doc ?? undefined, melody: tunes.find((t) => t.id === draft.id)?.melody });
     if (typeof r === 'string') return setLibMsg(r);
     const exists = tunes.some((t) => t.id === draft.id);
     if (!exists && tunes.length >= MAX_TUNES) return setLibMsg(`Llegaste al máximo de ${MAX_TUNES} temas`);
@@ -282,6 +293,8 @@ export function PlayAlong() {
           tempo={tempo}
           onTempo={setTempo}
           style={base.style}
+          melody={melody}
+          allowMelody={!!melody}
           owner={OWNER}
           defaultMetronome={query.get('m') === '1'}
           controlRef={control}
@@ -290,6 +303,11 @@ export function PlayAlong() {
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
         </p>
       </section>
+
+      {!useCustom && selected.category === 'Mis temas' && (() => {
+        const tune = tunes.find((t) => t.id === selected.id);
+        return tune ? <MelodyPanel tune={tune} onSave={(m) => setLibrary({ tunes: tunes.map((t) => (t.id === tune.id ? { ...t, melody: m } : t)) })} /> : null;
+      })()}
 
       {atril && (
         <Atril
