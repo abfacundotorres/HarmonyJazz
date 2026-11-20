@@ -1,16 +1,17 @@
 import { useEffect } from 'react';
 import type { Position } from '../../audio/engine';
 import { beatsPerBar } from '../../theory/chart';
-import type { Chord } from '../../theory/chords';
 import type { Chart } from '../../theory/chart';
+import { ATRIL_SIZE, clampAtrilSize } from '../../state/atril';
 import { usePersistent } from '../../state/storage';
 import { useWakeLock } from '../wakeLock';
 import type { DocLayout } from '../../content/chartDoc';
-import { ChordBoard, ChordText } from './ChordInfo';
+import { ChordBoard } from './ChordInfo';
 
 /**
- * Modo atril: la grilla y el acorde actual en pantalla completa y en letra grande, para leer a distancia con el
- * celular en el atril. Mantiene la pantalla encendida. El tamaño se ajusta y se recuerda.
+ * Modo atril: la grilla en pantalla completa y en letra grande, para leer a distancia con el celular en el atril. Mantiene
+ * la pantalla encendida. Casi todo el alto es para los compases: arriba sólo el título y los tiempos, abajo sólo detener y el
+ * tempo. El acorde que suena y el que sigue se leen en la grilla misma; el tamaño de la letra se cambia en Más → Ajustes.
  */
 export function Atril({
   title,
@@ -18,8 +19,6 @@ export function Atril({
   chart,
   layout,
   current,
-  chord,
-  next,
   pos,
   loop,
   tempo,
@@ -34,8 +33,6 @@ export function Atril({
   layout?: DocLayout | null;
   /** Índice del acorde que suena en `chart` (−1 si no suena). */
   current: number;
-  chord: Chord | null;
-  next: Chord | null;
   pos: Position | null;
   loop: [number, number] | null;
   tempo: number;
@@ -44,8 +41,8 @@ export function Atril({
   onToggle: () => void;
   onClose: () => void;
 }) {
-  const [cfg, setCfg] = usePersistent<{ size: number }>('atril', { size: 2 });
-  const size = Math.min(5, Math.max(1.2, cfg.size));
+  const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
+  const size = clampAtrilSize(cfg.size);
   useWakeLock(true);
 
   // pantalla completa (si el navegador lo permite) y Escape para salir
@@ -71,25 +68,18 @@ export function Atril({
   return (
     <div className="atril" role="dialog" aria-modal="true" aria-label="Modo atril" style={{ ['--asz' as string]: `${size}rem` }}>
       <div className="atril-head">
-      <div className="atril-top">
-        <b>{title}</b>
-        {keyLabel && <span className="muted">· {keyLabel}</span>}
-        {pos && pos.chorus >= 0 && <span className="muted">· coro {pos.chorus + 1}</span>}
-        {pos?.countIn && <span className="muted">· cuenta…</span>}
-        <button onClick={onClose} aria-label="Cerrar el modo atril">✕ Cerrar</button>
-      </div>
-
-      <div className="atril-now" aria-live="off">
-        <div className="atril-sym">{chord ? <ChordText chord={chord} /> : '—'}</div>
-        <div className="atril-side">
+        <div className="atril-top">
+          <b>{title}</b>
+          {keyLabel && <span className="muted">· {keyLabel}</span>}
+          {pos && pos.chorus >= 0 && <span className="muted">· coro {pos.chorus + 1}</span>}
+          {pos?.countIn && <span className="muted">· cuenta…</span>}
           <div className="atril-beats" aria-hidden>
             {Array.from({ length: beatsPerBar(chart) }, (_, b) => (
               <i key={b} className={b === beat ? 'on' : ''} />
             ))}
           </div>
-          {next && <div className="atril-next">sigue <b><ChordText chord={next} /></b></div>}
+          <button onClick={onClose} aria-label="Cerrar el modo atril">✕ Cerrar</button>
         </div>
-      </div>
       </div>
 
       <ChordBoard chart={chart} current={current} loop={loop} layout={layout} />
@@ -102,10 +92,6 @@ export function Atril({
           <button onClick={() => onTempo(Math.max(40, tempo - 4))} aria-label="Bajar el tempo">−4</button>
           <b>{tempo} bpm</b>
           <button onClick={() => onTempo(Math.min(320, tempo + 4))} aria-label="Subir el tempo">+4</button>
-        </div>
-        <div className="atril-ctl" role="group" aria-label="Tamaño de la letra">
-          <button onClick={() => setCfg({ size: Math.max(1.2, size - 0.3) })} aria-label="Letra más chica">A−</button>
-          <button onClick={() => setCfg({ size: Math.min(5, size + 0.3) })} aria-label="Letra más grande">A+</button>
         </div>
       </div>
     </div>

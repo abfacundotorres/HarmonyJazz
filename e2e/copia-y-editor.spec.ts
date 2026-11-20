@@ -64,7 +64,7 @@ test.describe('editor de grilla', () => {
 });
 
 test.describe('modo atril', () => {
-  test('muestra el acorde y el compás que suenan, cambia el tempo y la letra, y se cierra', async ({ page }) => {
+  test('muestra el compás que suena, cambia el tempo y se cierra; la letra se cambia en Ajustes', async ({ page }) => {
     await page.goto('/#/playalong?p=rhythm');
     await page.waitForSelector('.player');
     await page.getByRole('button', { name: /Modo atril/ }).click();
@@ -73,19 +73,81 @@ test.describe('modo atril', () => {
     expect(await dialog.locator('.board .bar').count()).toBeGreaterThanOrEqual(32);
     await dialog.getByRole('button', { name: 'Reproducir' }).click();
     await expect(dialog.locator('.bar.now')).toHaveCount(1, { timeout: 15_000 });
-    await expect(dialog.locator('.atril-sym')).not.toHaveText('—');
+    // arriba no hay un acorde grande ni «sigue»: el que suena y el que sigue se leen en la grilla
+    await expect(dialog.locator('.atril-now, .atril-sym, .atril-next')).toHaveCount(0);
+    await expect(dialog.getByText(/^sigue/)).toHaveCount(0);
+    await expect(dialog.locator('.board .bar.next')).toHaveCount(1);
     const tempo = async () => Number((await dialog.locator('.atril-bar b').innerText()).replace(/\D+/g, ''));
     const t0 = await tempo();
     await dialog.getByRole('button', { name: 'Subir el tempo' }).click();
     expect(await tempo()).toBe(t0 + 4);
-    const fs = () => dialog.locator('.board .bar').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    const f0 = await fs();
-    await dialog.getByRole('button', { name: 'Letra más grande' }).click();
-    expect(await fs()).toBeGreaterThan(f0);
+    // sólo quedan detener y el tempo con − y +: no hay botones de tamaño de letra
+    await expect(dialog.locator('.atril-bar button')).toHaveCount(3);
+    await expect(dialog.getByRole('button', { name: /Letra más/ })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Detener' }).click();
     await dialog.getByRole('button', { name: 'Cerrar el modo atril' }).click();
     await expect(dialog).toHaveCount(0);
   });
+});
+
+test.describe('modo atril: el tamaño de la letra está en Ajustes y la pantalla es para la grilla', () => {
+  test('el tamaño se cambia en Más → Ajustes y el atril lo usa', async ({ page }) => {
+    await page.goto('/#/mas');
+    const barra = page.getByLabel('Tamaño de la letra del atril');
+    await barra.fill('3');
+    await expect(page.getByText('Tamaño de la letra del atril: 3.0')).toBeVisible();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:atril')!).size)).toBe(3);
+    await page.goto('/#/playalong?p=ii-v-i');
+    await page.getByRole('button', { name: /Modo atril/ }).click();
+    const fs = await page.locator('.atril .board .bar').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(fs).toBeCloseTo(48, 0);
+    // y se recuerda al recargar
+    await page.goto('/#/mas');
+    await page.reload();
+    await expect(page.getByLabel('Tamaño de la letra del atril')).toHaveValue('3');
+  });
+
+  test('en el celular la grilla ocupa casi toda la pantalla: barra de arriba y de abajo bajas', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 800 });
+    await page.goto('/#/playalong?p=blues-f');
+    await page.getByRole('button', { name: /Modo atril/ }).click();
+    const m = await page.evaluate(() => {
+      const r = (q: string) => document.querySelector(q)!.getBoundingClientRect();
+      return { arriba: r('.atril-head').bottom, abajo: window.innerHeight - r('.atril-bar').top, tablero: r('.atril .board').top };
+    });
+    expect(m.arriba).toBeLessThan(70);
+    expect(m.abajo).toBeLessThan(70);
+    expect(m.tablero).toBeLessThan(75);
+    // el título, la tonalidad y los tiempos siguen arriba, y detener y el tempo abajo
+    await expect(page.locator('.atril-top b')).toBeVisible();
+    await expect(page.locator('.atril-beats i')).toHaveCount(4);
+    const atril = page.getByRole('dialog', { name: 'Modo atril' });
+    await expect(atril.getByRole('button', { name: 'Reproducir' })).toBeVisible();
+    await expect(atril.getByRole('button', { name: 'Bajar el tempo' })).toBeVisible();
+    await expect(atril.getByRole('button', { name: 'Subir el tempo' })).toBeVisible();
+  });
+});
+
+test('atril: un título larguísimo no parte la barra de arriba en dos renglones, ni en pantallas angostas', async ({ page }) => {
+  // el nombre más largo que admite un tema (80 caracteres)
+  const nombre = 'Un tema con un nombre larguísimo que no entra en una sola línea del celular'.padEnd(80, '!');
+  await page.addInitScript((n) => {
+    if (!localStorage.getItem('harmonyjazz:library')) localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:largo', name: n, composer: '', key: 'C', mode: 'major', chart: 'Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120, style: 'swing' }] }));
+  }, nombre);
+  for (const ancho of [320, 360, 412]) {
+    await page.setViewportSize({ width: ancho, height: 760 });
+    await page.goto('/#/playalong?p=u:largo');
+    await page.getByRole('button', { name: /Modo atril/ }).click();
+    const m = await page.evaluate(() => {
+      const top = document.querySelector('.atril-top')!.getBoundingClientRect();
+      const t = document.querySelector('.atril-top > b') as HTMLElement;
+      return { alto: top.height, cortado: t.scrollWidth > t.clientWidth, cierre: document.querySelector('.atril-top button')!.getBoundingClientRect().right <= window.innerWidth + 1 };
+    });
+    expect(m.alto, `${ancho} px`).toBeLessThan(60);
+    expect(m.cortado, `${ancho} px`).toBe(true);
+    expect(m.cierre, `${ancho} px: el botón Cerrar queda a la vista`).toBe(true);
+    await page.getByRole('button', { name: 'Cerrar el modo atril' }).click();
+  }
 });
 
 test.describe('formas de práctica', () => {

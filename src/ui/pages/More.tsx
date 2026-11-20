@@ -1,11 +1,15 @@
 import { BackupCard } from '../components/BackupCard';
 import { ThemeCard } from '../components/ThemeCard';
+import { ATRIL_SIZE, clampAtrilSize } from '../../state/atril';
+import { usePersistent } from '../../state/storage';
 import { useReading, useSettings } from '../hooks';
 
 /** Ajustes: apariencia, sonido, lectura y copia de seguridad (antes repartidos entre Hoy y el reproductor). */
 export function More() {
   const [settings, setSettings] = useSettings();
   const { view } = useReading();
+  const [atril, setAtril] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
+  const size = clampAtrilSize(atril.size);
   return (
     <div className="page more">
       <ThemeCard />
@@ -41,6 +45,21 @@ export function More() {
           Todo se lee {view === 'Bb' ? 'escrito para trompeta en Si♭' : 'en concierto'} (se cambia arriba, junto al registro).
           El volumen, el swing y la salida valen para todo el audio de la app.
         </p>
+      </section>
+
+      <section className="card" id="atril">
+        <h2 className="h3like">Modo atril</h2>
+        <div className="settingslist">
+          <label>
+            Tamaño de la letra del atril: {size.toFixed(1)}
+            <input type="range" min={ATRIL_SIZE.min} max={ATRIL_SIZE.max} step={ATRIL_SIZE.step} value={size} onChange={(e) => setAtril({ size: Number(e.target.value) })} aria-label="Tamaño de la letra del atril" />
+          </label>
+        </div>
+        <div className="atril-preview" aria-hidden style={{ fontSize: `${size}rem` }}>
+          <span>G7</span>
+          <span>A-7</span>
+        </div>
+        <p className="muted small">Así se ven los acordes en el modo atril del Play-along (pantalla completa para leer a distancia). Cuanto más grande, menos compases entran.</p>
       </section>
 
       <BackupCard />

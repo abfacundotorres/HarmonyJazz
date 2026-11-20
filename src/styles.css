@@ -583,17 +583,15 @@ button.link { background: var(--surface-2); }
 .updatebar button { background: var(--accent-ink); color: var(--accent); border-color: var(--accent-ink); }
 
 /* modo atril */
-.atril { position: fixed; inset: 0; z-index: 100; background: var(--bg); color: var(--text); overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 0 14px 96px; }
-.atril-head { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0 6px; border-bottom: 1px solid var(--line); }
-.atril-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 1.05rem; }
-.atril-top button { margin-left: auto; }
-.atril-now { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 2px 4px; }
-.atril-sym { font-size: clamp(3.5rem, 17vw, 10rem); font-weight: 800; line-height: 1.05; letter-spacing: -.03em; color: var(--accent); }
-.atril-side { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
-.atril-next { font-size: clamp(1.4rem, 6vw, 3rem); color: var(--muted); }
-.atril-next b { color: var(--text); }
-.atril-beats { display: flex; gap: 8px; }
-.atril-beats i { width: 1.2rem; height: 1.2rem; border-radius: 50%; border: 2px solid var(--line); }
+.atril { position: fixed; inset: 0; z-index: 100; background: var(--bg); color: var(--text); overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 12px 64px; }
+.atril-head { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 4px; border-bottom: 1px solid var(--line); }
+.atril-top { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; font-size: 1.05rem; min-height: 44px; }
+/* arriba siempre es una sola línea: el título se corta con puntos suspensivos y lo demás no se parte */
+.atril-top > b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atril-top > span, .atril-top > button, .atril-top > .atril-beats { flex: none; white-space: nowrap; }
+.atril-top .atril-beats { align-self: center; }
+.atril-beats { display: flex; gap: 6px; }
+.atril-beats i { width: .9rem; height: .9rem; border-radius: 50%; border: 2px solid var(--line); }
 .atril-beats i.on { background: var(--accent); border-color: var(--accent); }
 .atril .board { grid-template-columns: repeat(auto-fill, minmax(calc(var(--asz) * 4.4), 1fr)); }
 .atril .board .bar { font-size: var(--asz); min-height: calc(var(--asz) * 2.2); padding: .35em .3em; align-items: center; flex-wrap: wrap; cursor: default; }
@@ -606,10 +604,11 @@ button.link { background: var(--surface-2); }
 /* Un compás con dos acordes los muestra siempre en el mismo renglón: la letra se achica lo justo para que entren (--glyphs = ancho en caracteres) */
 .atril .board .bar.two { container-type: inline-size; flex-wrap: nowrap; justify-content: space-evenly; }
 .atril .board .bar.two > span { white-space: nowrap; font-size: min(var(--asz), calc(90cqw / (var(--glyphs, 8) * .66 + .8))); }
-.atril-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px; background: var(--surface); border-top: 1px solid var(--line); }
-.atril-bar .play { width: 64px; height: 64px; font-size: 1.6rem; }
-.atril-ctl { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
-.atril-ctl button { min-width: 3em; min-height: 2.6em; }
+.atril-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 6px 10px; background: var(--surface); border-top: 1px solid var(--line); }
+.atril-bar .play { width: 44px; height: 44px; min-height: 44px; padding: 0; font-size: 1.15rem; }
+.atril-ctl { display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+.atril-ctl button { min-width: 2.6em; min-height: 44px; padding: .2em .5em; }
+.atril-preview { display: flex; gap: 1.2em; justify-content: space-around; font-weight: 800; overflow: hidden; padding: .2em 0; line-height: 1.2; border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; max-width: 100%; }
 
 .ced-shortcuts { margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; padding: 0 .8em .6em; }
 .ced-shortcuts > summary { cursor: pointer; padding: .6em 0; font-weight: 600; }
