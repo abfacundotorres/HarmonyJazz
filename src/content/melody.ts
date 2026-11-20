@@ -59,3 +59,42 @@ export function sliceMelody(notes: MelNote[], from: number, to: number, bl: numb
     return [{ ...n, start: start - a, dur: end - start }];
   });
 }
+
+/**
+ * Pone un tramo nuevo (por ejemplo lo transcripto de un audio) dentro de la melodía de un tema, empezando en una posición
+ * (en corcheas desde el comienzo). Lo que ya había en ese tramo se reemplaza —las notas que cruzan el borde se recortan—
+ * y el resto se conserva. Devuelve la melodía completa, con silencios entre las notas, o null si no hay nada que poner.
+ */
+export function mergeMelody(existing: string | undefined, segment: string, at: number): { line: string; eighths: number } | null {
+  const seg = melodyNotes(segment);
+  const len = seg.reduce((s, n) => s + n.dur, 0);
+  if (!seg.some((n) => n.pitch) || len === 0 || at < 0) return null;
+  const end = at + len;
+  const before = existing ? melodyNotes(existing) : [];
+  const kept: MelNote[] = [];
+  for (const n of before) {
+    const e = n.start + n.dur;
+    if (e <= at || n.start >= end) kept.push(n);
+    else {
+      if (n.start < at) kept.push({ ...n, dur: at - n.start }); // lo que queda antes del tramo nuevo
+      if (e > end) kept.push({ ...n, start: end, dur: e - end }); // lo que sigue después
+    }
+  }
+  const shifted = seg.map((n) => ({ ...n, start: n.start + at }));
+  const all = [...kept, ...shifted].sort((a, b) => a.start - b.start);
+  const tokens: string[] = [];
+  const push = (name: string, n: number) => {
+    while (n > 0) {
+      const d = Math.min(32, n);
+      tokens.push(name + (d > 1 ? ':' + d : ''));
+      n -= d;
+    }
+  };
+  let pos = 0;
+  for (const n of all) {
+    if (n.start > pos) push('r', n.start - pos);
+    push(n.pitch ? pitchName(simplifyPitch(n.pitch)) : 'r', n.dur);
+    pos = n.start + n.dur;
+  }
+  return { line: tokens.join(' '), eighths: pos };
+}

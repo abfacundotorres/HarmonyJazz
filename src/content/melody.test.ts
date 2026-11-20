@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseChart } from '../theory/chart';
 import { midi } from '../theory/notes';
-import { buildMelody, melodyNotes, sliceMelody } from './melody';
+import { buildMelody, melodyNotes, mergeMelody, sliceMelody } from './melody';
 
 const CHART = 'Dm7 | G7 | Cmaj7 | Cmaj7';
 
@@ -38,5 +38,34 @@ describe('melodía de un tema propio', () => {
     // una nota que cruza el borde se parte
     const largo = melodyNotes('C4:12 D4:4');
     expect(sliceMelody(largo, 1, 1, 8).map((n) => [n.start, n.dur])).toEqual([[0, 4], [4, 4]]);
+  });
+});
+
+describe('poner un tramo transcripto dentro de la melodía', () => {
+  const dur = (line: string) => melodyNotes(line).reduce((s, n) => s + n.dur, 0);
+  it('en una melodía vacía rellena con silencios hasta donde empieza', () => {
+    expect(mergeMelody(undefined, 'D4 F4:2', 8)).toEqual({ line: 'r:8 D4 F4:2', eighths: 11 });
+    expect(mergeMelody('', 'D4', 0)).toEqual({ line: 'D4', eighths: 1 });
+    expect(mergeMelody(undefined, 'D4', 40)!.line).toBe('r:32 r:8 D4'); // los silencios largos se parten en 32
+  });
+  it('reemplaza lo que había en ese tramo y conserva lo anterior y lo posterior', () => {
+    const r = mergeMelody('C4:8 D4:8 E4:8', 'G4:4 A4:4', 8)!;
+    expect(r.line).toBe('C4:8 G4:4 A4:4 E4:8');
+    expect(r.eighths).toBe(24);
+  });
+  it('recorta las notas que cruzan el borde en vez de perderlas', () => {
+    // una nota larga de 0 a 12; el tramo nuevo ocupa de 4 a 8: queda un pedazo antes (4) y otro después (4)
+    const r = mergeMelody('C4:12', 'D4:2 E4:2', 4)!;
+    expect(r.line).toBe('C4:4 D4:2 E4:2 C4:4');
+    expect(dur(r.line)).toBe(12);
+  });
+  it('un tramo al final extiende la melodía; sin notas o posición negativa no hace nada', () => {
+    expect(mergeMelody('C4:4', 'D4:4', 4)!.line).toBe('C4:4 D4:4');
+    expect(mergeMelody('C4:4', 'r:4', 0)).toBeNull();
+    expect(mergeMelody('C4:4', 'D4', -1)).toBeNull();
+  });
+  it('el resultado pasa por buildMelody si cabe en el tema', () => {
+    const r = mergeMelody(undefined, 'D4:4 E4:4', 8)!;
+    expect(buildMelody('Dm7 | G7 | Cmaj7 | Cmaj7', r.line, 'C')).toMatchObject({ bars: 2 });
   });
 });

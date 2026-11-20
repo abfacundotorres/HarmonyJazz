@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { engine as tone } from '../../../audio/engine';
+import { buildMelody, mergeMelody } from '../../../content/melody';
 import { savePhraseDraft } from '../../../content/phraseDraft';
 import { saveMeta, SavedLoop, TrackMeta } from '../../../transcribe/audioStore';
 import { createEngine, PlayerEngine } from '../../../transcribe/engine';
@@ -10,7 +11,8 @@ import { clampView, fitRegion, fmtTime, followView, normRegion, parseTime, Regio
 import { notesToLine } from '../../../transcribe/toPhrase';
 import { rateAfter, repsToTarget, roundRate, Trainer } from '../../../transcribe/trainer';
 import { midiName, prettyAcc } from '../../../theory/notes';
-import { navigate, useReading } from '../../hooks';
+import { barLen, beatsPerBar, parseChart, pulseLen } from '../../../theory/chart';
+import { navigate, usePersistentLibrary, useReading } from '../../hooks';
 import { useWakeLock } from '../../wakeLock';
 import { ViewMode, WaveView } from './WaveView';
 
@@ -434,6 +436,42 @@ function Loaded({
     setListening(true);
     void tone.playLine(shown.map((n) => ({ midi: n.midi, start: n.start - t0, dur: n.end - n.start })), () => setListening(false));
   };
+  // ---- pasar lo detectado a la melodía de un tema propio ----
+  const [lib, setLib] = usePersistentLibrary();
+  const [toTune, setToTune] = useState<{ open: boolean; id: string; bar: number; beat: number }>({ open: false, id: '', bar: 1, beat: 1 });
+  const userTunes = ((lib.tunes ?? []) as { id?: unknown; name?: unknown; chart?: unknown }[]).flatMap((t) => (typeof t?.id === 'string' && typeof t.name === 'string' && typeof t.chart === 'string' ? [{ id: t.id, name: t.name, chart: t.chart }] : []));
+  const targetTune = userTunes.find((t) => t.id === toTune.id) ?? userTunes[0];
+  const targetChart = (() => {
+    try {
+      return targetTune ? parseChart(targetTune.chart) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const bl = targetChart ? barLen(targetChart) : 8;
+  const pulse = targetChart ? pulseLen(targetChart) : 2;
+  const beats = targetChart ? beatsPerBar(targetChart) : 4;
+  const toMelody = () => {
+    if (!shown?.length || !targetTune || !targetChart) return;
+    let bpm = grid?.bpm ?? 0;
+    if (!bpm) {
+      const a = window.prompt('¿A qué tempo (negras por minuto) está este pasaje? Hace falta para pasar las notas a corcheas.', '120');
+      bpm = Number(a);
+      if (!(bpm >= MIN_BPM && bpm <= MAX_BPM)) return;
+    }
+    const t0 = region ? region.start : shown[0].start;
+    const r = notesToLine(shown, bpm, t0);
+    if (!r) return setMsg('No se pudo armar la frase.');
+    const stored = (lib.tunes as { id?: unknown; melody?: unknown }[]).find((t) => t.id === targetTune.id);
+    const at = (toTune.bar - 1) * bl + (toTune.beat - 1) * pulse;
+    const merged = mergeMelody(typeof stored?.melody === 'string' ? stored.melody : undefined, r.line, at);
+    if (!merged) return setMsg('No se pudo armar la melodía.');
+    const ok = buildMelody(targetChart, merged.line, 'C');
+    if (typeof ok === 'string') return setMsg(`No entra en «${targetTune.name}»: ${ok}`);
+    setLib({ tunes: (lib.tunes as { id?: unknown }[]).map((t) => (t.id === targetTune.id ? { ...t, melody: ok.line } : t)) as typeof lib.tunes });
+    setMsg(`Listo: puse la frase en «${targetTune.name}», desde el compás ${toTune.bar}. Es una estimación: abrila en el Play-along, escuchala con «Oír la línea» y corregí lo que no coincida.`);
+    setToTune((v) => ({ ...v, open: false }));
+  };
   const toPhrase = () => {
     if (!shown?.length) return;
     let bpm = grid?.bpm ?? 0;
@@ -788,10 +826,51 @@ function Loaded({
             <>
               <button onClick={listen}>{listening ? '■ Detener' : '▶ Escuchar lo detectado'}</button>
               <button onClick={toPhrase}>Pasar a Vocabulario</button>
+              <button onClick={() => setToTune((v) => ({ ...v, open: !v.open }))} aria-expanded={toTune.open}>Pasar a la melodía de un tema</button>
             </>
           )}
           {notes && <button onClick={() => { setNotes(null); tone.stopLine(); setListening(false); }}>Borrar</button>}
         </div>
+        {toTune.open && shown && shown.length > 0 && (
+          <fieldset className="totune">
+            <legend>Pasar a la melodía de un tema</legend>
+            {userTunes.length === 0 ? (
+              <p className="muted small">Todavía no cargaste ningún tema: cargá su cifrado en Play-along → Mis temas y después pasá la frase acá.</p>
+            ) : (
+              <>
+                <div className="formgrid">
+                  <label>
+                    Tema
+                    <select aria-label="Tema destino" value={targetTune?.id ?? ''} onChange={(e) => setToTune((v) => ({ ...v, id: e.target.value }))}>
+                      {userTunes.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Desde el compás
+                    <input type="number" min={1} max={targetChart?.bars ?? 1} value={toTune.bar} onChange={(e) => setToTune((v) => ({ ...v, bar: Math.max(1, Math.min(targetChart?.bars ?? 1, Math.round(Number(e.target.value)) || 1)) }))} aria-label="Desde el compás" />
+                  </label>
+                  <label>
+                    En el tiempo
+                    <select aria-label="En el tiempo" value={toTune.beat} onChange={(e) => setToTune((v) => ({ ...v, beat: Number(e.target.value) }))}>
+                      {Array.from({ length: beats }, (_, i) => (
+                        <option key={i} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <p className="muted small">
+                  La frase se pone desde ahí y reemplaza lo que hubiera en ese tramo; el resto de la melodía queda. Podés ir armando el tema de a pedazos, frase por frase.
+                </p>
+                <div className="row">
+                  <button className="primary" onClick={toMelody} disabled={!targetChart}>Poner en la melodía</button>
+                  <button onClick={() => setToTune((v) => ({ ...v, open: false }))}>Cancelar</button>
+                </div>
+              </>
+            )}
+          </fieldset>
+        )}
         <p className="muted small">
           Es una <b>estimación</b> automática de la melodía: con una banda detrás puede inventar notas (por los armónicos del bajo) o perder otras. Sirve para tener un punto de partida y compararlo de oído con "Escuchar lo detectado"; corregí lo que no coincida. Si el bajo molesta, usá "Aislar trompeta" en Afinación y filtros antes de detectar.
         </p>

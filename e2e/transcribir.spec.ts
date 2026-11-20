@@ -110,6 +110,39 @@ test.describe('Transcribir', () => {
     expect(await page.locator('.notelist li').count()).toBeGreaterThanOrEqual(6);
   });
 
+  test('lo detectado se pasa a la melodía de un tema propio, desde el compás elegido y sin pisar lo anterior', async ({ page }) => {
+    const chart = Array.from({ length: 4 }, () => 'Dm7 | G7 | Cmaj7 | Cmaj7').join(' | ');
+    await page.addInitScript((c) => {
+      if (!localStorage.getItem('harmonyjazz:library')) localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:hoja', name: 'Hojas de otoño', composer: '', key: 'C', mode: 'major', chart: c, tempo: 120, style: 'swing', melody: 'C4:8' }] }));
+    }, chart);
+    await openAudio(page, await makeWav());
+    await page.getByRole('button', { name: 'Espectrograma' }).click();
+    await panel(page, 'Notas: detectar');
+    await expect(page.getByRole('button', { name: 'Pasar a la melodía de un tema' })).toHaveCount(0);
+    await page.getByRole('button', { name: /Detectar notas/ }).click();
+    await expect(page.getByText(/notas detectadas/)).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Pasar a la melodía de un tema' }).click();
+    await expect(page.getByLabel('Tema destino')).toHaveValue('u:hoja');
+    await page.getByLabel('Desde el compás').fill('2');
+    page.once('dialog', (d) => void d.accept('100'));
+    await page.getByRole('button', { name: 'Poner en la melodía' }).click();
+    await expect(page.getByText(/Listo: puse la frase en «Hojas de otoño», desde el compás 2/)).toBeVisible();
+    const melody: string = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:library')!).tunes[0].melody);
+    // lo que había en el compás 1 se conserva y lo nuevo empieza en el compás 2
+    expect(melody.startsWith('C4:8 ')).toBe(true);
+    expect(melody.split(' ').length).toBeGreaterThanOrEqual(7);
+  });
+
+  test('sin temas propios, pasar a la melodía explica cómo cargar uno', async ({ page }) => {
+    await openAudio(page, await makeWav());
+    await page.getByRole('button', { name: 'Espectrograma' }).click();
+    await panel(page, 'Notas: detectar');
+    await page.getByRole('button', { name: /Detectar notas/ }).click();
+    await expect(page.getByText(/notas detectadas/)).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Pasar a la melodía de un tema' }).click();
+    await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
+  });
+
   test('estima la afinación del disco y la corrige', async ({ page }) => {
     await openAudio(page, await makeWav({ detuneCents: 30 }));
     await panel(page, 'Afinación y filtros');
