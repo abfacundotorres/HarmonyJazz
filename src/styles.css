@@ -929,3 +929,15 @@ details.info summary { cursor: pointer; color: var(--muted); }
   .page { gap: 8px; }
   .card { padding: 10px; }
 }
+
+/* modo de memoria: compases con los acordes ocultos */
+.memoria { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
+.board .bar.hid .ph { color: var(--muted); opacity: .45; letter-spacing: .15em; font-weight: 400; }
+.atril .board .bar.hid .ph { font-size: calc(var(--asz) * .8); }
+.atril .board .bar.hid.now .ph { opacity: .7; }
+.memoria .seg button { white-space: nowrap; padding-left: .65em; padding-right: .65em; }
+.atril-bar { gap: 8px; }
+.atril-ctl { gap: 6px; }
+.atril-ctl b, .atril-ctl button { white-space: nowrap; }
+@media (max-width: 400px) { .atril-ctl .unit { display: none; } }
+@media (max-width: 340px) { .atril-bar { padding-left: 4px; padding-right: 4px; gap: 6px; } .atril-ctl button { min-width: 2.2em; padding-left: .35em; padding-right: .35em; } }

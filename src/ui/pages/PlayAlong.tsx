@@ -14,6 +14,7 @@ import {
 import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
+import { MEMORIA_MODOS, type MemoriaModo, memoriaNivel, siguienteModo } from '../../content/memoria';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
 import { MelodyPanel } from '../components/MelodyPanel';
@@ -21,6 +22,7 @@ import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
 import { navigate, useReading, usePersistentLibrary, useRoute } from '../hooks';
+import { usePersistent } from '../../state/storage';
 import { usePosition } from '../usePosition';
 
 const OWNER = 'playalong';
@@ -128,10 +130,16 @@ export function PlayAlong() {
   const pos = usePosition();
   const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
   const [atril, setAtril] = useState(false);
+  // modo de memoria: la grilla se oculta (todo o de a poco); «Mirar» la muestra un rato para comprobar
+  const [memo, setMemo] = usePersistent<{ modo?: MemoriaModo }>('memoria', {});
+  const memoModo: MemoriaModo = memo.modo ?? 'off';
+  const [mirar, setMirar] = useState(false);
+  const setModo = (m: MemoriaModo) => { setMemo({ modo: m }); setMirar(false); };
   const { keyLabel, view, iv } = useReading();
   /** Los nombres y notas de las progresiones de la app están en concierto: se muestran en la lectura elegida. Los temas propios no se tocan. */
   const loc = (p: Progression, text: string) => (p.category === 'Mis temas' ? text : localizeNotes(text, 'C', 'C', iv));
   const mine = pos && pos.owner === OWNER ? pos : null;
+  const nivel = mirar ? 'todo' : memoriaNivel(memoModo, mine && mine.chorus >= 0 ? mine.chorus : -1);
   const ci = mine && !mine.countIn ? mine.chordIndex : -1;
   const chord = ci >= 0 ? playChart.chords[ci]?.chord ?? null : null;
   const next = ci >= 0 ? playChart.chords[(ci + 1) % playChart.chords.length]?.chord ?? null : null;
@@ -302,6 +310,16 @@ export function PlayAlong() {
         <p>
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
         </p>
+        <div className="memoria" role="group" aria-label="Modo de memoria">
+          <span className="muted small">🧠 De memoria</span>
+          <div className="seg">
+            {MEMORIA_MODOS.map((m) => (
+              <button key={m.id} className={memoModo === m.id ? 'on' : ''} aria-pressed={memoModo === m.id} onClick={() => setModo(m.id)}>{m.label}</button>
+            ))}
+          </div>
+          {memoModo !== 'off' && <button className={mirar ? 'on' : ''} aria-pressed={mirar} onClick={() => setMirar((v) => !v)}>👁 Mirar</button>}
+        </div>
+        {memoModo !== 'off' && <p className="muted small">{MEMORIA_MODOS.find((m) => m.id === memoModo)?.texto}</p>}
       </section>
 
       {!useCustom && selected.category === 'Mis temas' && (() => {
@@ -323,11 +341,23 @@ export function PlayAlong() {
           playing={!!mine && mine.chorus >= 0}
           onToggle={() => control.current?.toggle()}
           onClose={() => setAtril(false)}
+          memory={nivel}
+          memoryMode={memoModo}
+          onMemoryMode={() => setModo(siguienteModo(memoModo))}
+          peek={mirar}
+          onPeek={() => setMirar((v) => !v)}
         />
       )}
 
       <div className="grid2">
-        <CurrentChord chord={chord} next={next} />
+        {nivel === 'todo' ? (
+          <CurrentChord chord={chord} next={next} />
+        ) : (
+          <div className="current empty">
+            <div className="sym">—</div>
+            <p className="muted">Modo de memoria: el acorde, la escala y los guide tones están ocultos. «Mirar» los muestra.</p>
+          </div>
+        )}
         <ListenPanel
           chord={chord}
           chordIndex={ci}
@@ -367,7 +397,7 @@ export function PlayAlong() {
           )}
           {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
         </div>
-        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} />
+        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
       </section>
 

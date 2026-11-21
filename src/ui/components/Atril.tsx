@@ -6,6 +6,7 @@ import { ATRIL_SIZE, clampAtrilSize } from '../../state/atril';
 import { usePersistent } from '../../state/storage';
 import { useWakeLock } from '../wakeLock';
 import type { DocLayout } from '../../content/chartDoc';
+import { MEMORIA_MODOS, type MemoriaModo, type MemoriaNivel } from '../../content/memoria';
 import { ChordBoard } from './ChordInfo';
 
 /**
@@ -26,6 +27,11 @@ export function Atril({
   playing,
   onToggle,
   onClose,
+  memory,
+  memoryMode,
+  onMemoryMode,
+  peek,
+  onPeek,
 }: {
   title: string;
   keyLabel: string | null;
@@ -40,6 +46,13 @@ export function Atril({
   playing: boolean;
   onToggle: () => void;
   onClose: () => void;
+  /** Nivel de la grilla ya resuelto (modo de memoria, vuelta y «Mirar»). */
+  memory: MemoriaNivel;
+  memoryMode: MemoriaModo;
+  /** Pasa al modo de memoria siguiente. */
+  onMemoryMode: () => void;
+  peek: boolean;
+  onPeek: () => void;
 }) {
   const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(cfg.size);
@@ -82,7 +95,7 @@ export function Atril({
         </div>
       </div>
 
-      <ChordBoard chart={chart} current={current} loop={loop} layout={layout} />
+      <ChordBoard chart={chart} current={current} loop={loop} layout={layout} memory={memory} />
 
       <div className="atril-bar">
         <button className={`play ${playing ? 'on' : ''}`} onClick={onToggle} aria-label={playing ? 'Detener' : 'Reproducir'}>
@@ -90,8 +103,16 @@ export function Atril({
         </button>
         <div className="atril-ctl" role="group" aria-label="Tempo">
           <button onClick={() => onTempo(Math.max(40, tempo - 4))} aria-label="Bajar el tempo">−4</button>
-          <b>{tempo} bpm</b>
+          <b>{tempo}<span className="unit"> bpm</span></b>
           <button onClick={() => onTempo(Math.min(320, tempo + 4))} aria-label="Subir el tempo">+4</button>
+        </div>
+        <div className="atril-ctl" role="group" aria-label="Modo de memoria">
+          <button onClick={onMemoryMode} aria-label={`Modo de memoria: ${MEMORIA_MODOS.find((m) => m.id === memoryMode)?.label}. Tocá para cambiar`}>
+            🧠 {MEMORIA_MODOS.find((m) => m.id === memoryMode)?.label}
+          </button>
+          {memoryMode !== 'off' && (
+            <button className={peek ? 'on' : ''} aria-pressed={peek} onClick={onPeek} aria-label="Mirar los acordes">👁</button>
+          )}
         </div>
       </div>
     </div>

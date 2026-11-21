@@ -5,6 +5,7 @@
  */
 import { FOCI } from '../content/focus';
 import { cleanCustom } from '../audio/metroVoices';
+import { isMemoriaModo } from '../content/memoria';
 import { THEME_IDS } from '../ui/themes';
 
 export type Sanitizer = (raw: unknown) => unknown;
@@ -108,6 +109,8 @@ export const sanitizeAtril: Sanitizer = (raw) => {
   return size === undefined ? {} : { size };
 };
 
+export const sanitizeMemoria: Sanitizer = (raw) => (isObj(raw) ? (isMemoriaModo(raw.modo) ? { modo: raw.modo } : {}) : null);
+
 export const sanitizeEditor: Sanitizer = (raw) => (isObj(raw) ? (typeof raw.auto === 'boolean' ? { auto: raw.auto } : {}) : null);
 
 export const sanitizeMetro: Sanitizer = (raw) => {
@@ -202,6 +205,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   library: sanitizeLibrary,
   phrases: sanitizePhrases,
   atril: sanitizeAtril,
+  memoria: sanitizeMemoria,
   editor: sanitizeEditor,
   metro: sanitizeMetro,
   longnotes: sanitizeLongNotes,
