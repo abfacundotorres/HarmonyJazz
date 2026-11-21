@@ -876,3 +876,37 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .diffs li p { margin: .3em 0; }
 .consejos { margin: 8px 0; padding-left: 1.2em; }
 .consejos li { margin: .3em 0; }
+
+/* Celular: menos aire. Márgenes laterales, espacio entre tarjetas y relleno de las tarjetas más chicos, para que el contenido ocupe el ancho y se vea más por pantalla */
+@media (max-width: 560px) {
+  .app { padding: 0 6px 40px; }
+  .top { padding: 4px 0 2px; margin-bottom: 8px; gap: 4px 8px; }
+  .subnav { margin: 0 0 8px; gap: 5px; }
+  .page { gap: 8px; }
+  .card { padding: 10px 10px 12px; }
+  .card > header { margin-bottom: 4px; gap: 6px; }
+  h2 { font-size: 1.3rem; }
+  h3, .h3like { font-size: 1.08rem; }
+  p { margin: .3em 0; }
+  .grid2, .hero, .blocks, .lesson-grid, .stats { gap: 8px; }
+  .stats { margin: 6px 0; }
+  .lesson-tile { padding: 10px; }
+  .notice { margin: 0 0 8px; padding: 8px 10px; }
+  .study-wrap { gap: 8px; }
+  .study h4 { margin: 10px 0 4px; }
+  .block ul { margin: 4px 0; }
+  .block .ex-body { padding: 6px 8px; }
+  .formgrid { gap: 6px; margin: 6px 0; }
+  .keys { margin: 6px 0 2px; }
+  .themes { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+  .themes .sw { padding: 6px 8px; min-height: 40px; gap: 4px; }
+  .themes .sw b { font-size: 1.15rem; }
+  .themes .sw i { width: 14px; height: 14px; }
+  .themes .nm { padding: 4px 8px 6px; font-size: .78rem; }
+  .tracklist { margin: 8px 0; gap: 5px; }
+  .settingslist { gap: 8px; margin: 6px 0; }
+  .settingslist label { gap: 2px; }
+  .ear .seg button { flex: 1 1 auto; }
+  .blocks .block, .page > .block { margin: 0; }
+  .block footer.row, .bbody .row { margin-top: 4px; }
+}
