@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { expect, sinAtrilAutomatico, test } from './helpers';
 
 // Toma completa del tema: micrófono + acompañamiento con cuenta previa durante N coros (melodía, solo, melodía), que se
 // detiene sola y deja «Tu toma». El navegador de prueba usa un micrófono falso.
@@ -13,6 +13,11 @@ const abrir = async (page: import('@playwright/test').Page, extra = '') => {
 const rapido = (page: import('@playwright/test').Page) => page.locator('.player input[type="range"]').first().fill('320');
 
 test.describe('toma completa', () => {
+  // la tarjeta de la toma está en el Play-along: que dar play no abra el atril encima (el atril con la toma se prueba aparte)
+  test.beforeEach(async ({ page }) => {
+    await sinAtrilAutomatico(page);
+  });
+
   test('desde Mi repertorio, el paso «Grabado completo» lleva a la toma con la tarjeta abierta', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');

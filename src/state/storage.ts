@@ -74,9 +74,11 @@ export interface Settings {
   a4: number;
   /** Mantener la pantalla encendida mientras la app esté abierta (además de cuando suena algo). */
   keepAwake: boolean;
+  /** Al dar play en el Play-along, abrir el modo atril solo. */
+  autoAtril: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false, autoAtril: true };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

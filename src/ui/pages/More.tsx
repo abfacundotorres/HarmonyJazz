@@ -42,6 +42,10 @@ export function More() {
           </label>
         </div>
         <label className="keepawake">
+          <input type="checkbox" checked={settings.autoAtril} onChange={(e) => setSettings({ autoAtril: e.target.checked })} />
+          {' '}Abrir el atril al dar play en el Play-along
+        </label>
+        <label className="keepawake">
           <input type="checkbox" checked={settings.keepAwake} onChange={(e) => setSettings({ keepAwake: e.target.checked })} />
           {' '}Mantener la pantalla encendida mientras la app esté abierta
         </label>

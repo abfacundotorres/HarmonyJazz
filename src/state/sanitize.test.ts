@@ -107,3 +107,15 @@ describe('ajuste «pantalla encendida»', () => {
     expect(DEFAULT_SETTINGS.keepAwake).toBe(false);
   });
 });
+
+describe('ajuste «abrir el atril al dar play»', () => {
+  it('sólo acepta verdadero o falso y viene encendido', () => {
+    expect(sanitizeKey('settings', { autoAtril: false })).toEqual({ autoAtril: false });
+    expect(sanitizeKey('settings', { autoAtril: true })).toEqual({ autoAtril: true });
+    expect(sanitizeKey('settings', { autoAtril: 'no' })).toEqual({});
+    expect(DEFAULT_SETTINGS.autoAtril).toBe(true);
+  });
+  it('un ajuste guardado antes de existir este campo queda con el valor por defecto', () => {
+    expect({ ...DEFAULT_SETTINGS, ...(sanitizeKey('settings', { view: 'C' }) as object) }.autoAtril).toBe(true);
+  });
+});

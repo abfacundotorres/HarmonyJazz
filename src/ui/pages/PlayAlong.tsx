@@ -22,7 +22,8 @@ import { MelodyPanel } from '../components/MelodyPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
-import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useTemasDeRepertorio } from '../hooks';
+import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useSettings, useTemasDeRepertorio } from '../hooks';
+import { consignaToma } from '../../content/toma';
 import { marcar, PASO_GRABADO } from '../../content/repertorio';
 import { COROS_TOMA_INICIAL } from '../../content/toma';
 import { dayNum } from '../../state/progress';
@@ -148,6 +149,11 @@ export function PlayAlong() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [atril, setAtril] = useState(false);
+  const [settings] = useSettings();
+  const autoAtrilRef = useRef(settings.autoAtril);
+  autoAtrilRef.current = settings.autoAtril;
+  const atrilRef = useRef(false);
+  atrilRef.current = atril;
   // modo de memoria: la grilla se oculta (todo o de a poco); «Mirar» la muestra un rato para comprobar
   const [memo, setMemo] = usePersistent<{ modo?: MemoriaModo }>('memoria', {});
   const memoModo: MemoriaModo = memo.modo ?? 'off';
@@ -223,8 +229,11 @@ export function PlayAlong() {
     if (recordingRef.current) endRef.current();
   };
   const onPlaying = useCallback((p: boolean) => {
-    if (p) tomaArrancó.current = true;
-    else if (tomaRef.current && tomaArrancó.current) {
+    if (p) {
+      tomaArrancó.current = true;
+      // dar play abre el atril solo (se apaga en Más → Ajustes); si ya está abierto no hace nada
+      if (autoAtrilRef.current && !atrilRef.current) setAtril(true);
+    } else if (tomaRef.current && tomaArrancó.current) {
       tomaArrancó.current = false;
       setTomaActiva(false);
       if (recordingRef.current) endRef.current();
@@ -451,6 +460,8 @@ export function PlayAlong() {
           onMemoryMode={() => setModo(siguienteModo(memoModo))}
           peek={mirar}
           onPeek={() => setMirar((v) => !v)}
+          transpose={showKeys ? { kind: 'key', value: key, minor: base.mode === 'minor', onChange: changeKey } : { kind: 'shift', shift, onShift: (d) => setShift((s) => s + d), onReset: () => setShift(0) }}
+          consigna={tomaActiva ? consignaToma(corosToma, mine ? (mine.countIn ? -1 : mine.chorus) : -1) : null}
         />
       )}
 

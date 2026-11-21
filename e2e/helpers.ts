@@ -137,3 +137,15 @@ export async function openExercises(page: Page) {
   const n = await heads.count();
   for (let i = 0; i < n; i++) await heads.nth(i).click();
 }
+
+/** Deja apagado «Abrir el atril al dar play» (Más → Ajustes): para las pruebas que usan el reproductor del Play-along y no el atril. */
+export async function sinAtrilAutomatico(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      const k = 'harmonyjazz:settings';
+      localStorage.setItem(k, JSON.stringify({ ...JSON.parse(localStorage.getItem(k) ?? '{}'), autoAtril: false }));
+    } catch {
+      /* sin almacenamiento */
+    }
+  });
+}
