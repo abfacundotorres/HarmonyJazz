@@ -9,6 +9,7 @@ import { midi } from '../../theory/notes';
 import { KeySelect } from '../components/KeySelect';
 import { Notation } from '../components/Notation';
 import { useMark, useMastery, useReading, useRoute } from '../hooks';
+import { useWakeLock } from '../wakeLock';
 
 const MIN_BPM = 40;
 const MAX_BPM = 200;
@@ -55,6 +56,7 @@ export function Scales() {
   const [stepIdx, setStepIdx] = useState(q.pi);
   const [tempo, setTempo] = useState(PATTERNS[q.pi].bpm);
   const [playing, setPlaying] = useState(false);
+  useWakeLock(playing); // la trompeta en la mano: la pantalla no se apaga mientras suena la escala
   const [click, setClick] = useState(true);
   const [countIn, setCountIn] = useState(true);
   const [repeat, setRepeat] = useState(false);

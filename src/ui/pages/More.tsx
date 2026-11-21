@@ -41,6 +41,14 @@ export function More() {
             </select>
           </label>
         </div>
+        <label className="keepawake">
+          <input type="checkbox" checked={settings.keepAwake} onChange={(e) => setSettings({ keepAwake: e.target.checked })} />
+          {' '}Mantener la pantalla encendida mientras la app esté abierta
+        </label>
+        <p className="muted small">
+          La app ya evita que se apague mientras suena el play-along, el atril, las escalas, el metrónomo, el afinador, el oído y los audios de Transcribir.
+          Esto lo extiende a toda la app (por ejemplo, al leer una lección o escribir una grilla); gasta más batería. Si tu teléfono está en ahorro de batería, puede que el navegador no lo conceda.
+        </p>
         <p className="muted small">
           Todo se lee {view === 'Bb' ? 'escrito para trompeta en Si♭' : 'en concierto'} (se cambia arriba, junto al registro).
           El volumen, el swing y la salida valen para todo el audio de la app.

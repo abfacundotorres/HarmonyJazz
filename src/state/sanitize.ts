@@ -30,6 +30,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('chordStyle', oneOf(raw.chordStyle, ['ireal', 'full'] as const));
   set('theme', oneOf(raw.theme, THEME_IDS));
   set('a4', num(raw.a4, 415, 466));
+  set('keepAwake', typeof raw.keepAwake === 'boolean' ? raw.keepAwake : undefined);
   return out;
 };
 
