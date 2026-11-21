@@ -79,6 +79,8 @@ export function PlayAlong() {
   const [libMsg, setLibMsg] = useState<string | null>(null);
   // aviso de «Copiar a Mis temas» (aparte del de la biblioteca, para no repetirlo ni abrir esa sección)
   const [dpMsg, setDpMsg] = useState<string | null>(null);
+  // «＋ Cargar un tema»: abre Mis temas y lo lleva a la vista
+  const [cargarSenal, setCargarSenal] = useState(0);
   const [customKey, setCustomKey] = useState<string | null>(null);
   const [shift, setShift] = useState(0);
 
@@ -340,6 +342,7 @@ export function PlayAlong() {
       <section className="card">
         <header>
           <h2>Play-along</h2>
+          <button onClick={() => setCargarSenal((n) => n + 1)}>＋ Cargar un tema</button>
           <select
             value={useCustom ? '' : selected.id}
             onChange={(e) => {
@@ -537,6 +540,7 @@ export function PlayAlong() {
         error={useCustom ? (doc ? docError ?? customError : customError) : null}
         tunes={tunes}
         message={libMsg}
+        abrirSenal={cargarSenal}
         onTry={() => {
           setLibMsg(null);
           setCustomKey(null);

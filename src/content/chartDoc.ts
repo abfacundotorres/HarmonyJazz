@@ -173,6 +173,7 @@ export function playedBars(doc: ChartDoc): number | null {
 
 export const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 export const QUALITY_BUTTONS: [label: string, suffix: string][] = [
-  ['maj7', 'maj7'], ['m7', 'm7'], ['7', '7'], ['m7♭5', 'm7b5'], ['dim7', 'dim7'], ['6', '6'], ['m6', 'm6'], ['mMaj7', 'mMaj7'],
-  ['7alt', '7alt'], ['7♭9', '7b9'], ['7♯11', '7#11'], ['7♯5', '7#5'], ['7sus', '7sus'], ['maj7♯11', 'maj7#11'], ['m', 'm'], ['△', ''],
+  // las nueve de uso diario primero: en el celular son las que se ven; el resto está tras «Más»
+  ['maj7', 'maj7'], ['m7', 'm7'], ['7', '7'], ['m7♭5', 'm7b5'], ['dim7', 'dim7'], ['6', '6'], ['m6', 'm6'], ['7alt', '7alt'], ['7♭9', '7b9'],
+  ['7♯11', '7#11'], ['7♯5', '7#5'], ['7sus', '7sus'], ['mMaj7', 'mMaj7'], ['maj7♯11', 'maj7#11'], ['m', 'm'], ['△', ''],
 ];

@@ -12,9 +12,16 @@ async function openWithBlues(page: import('@playwright/test').Page) {
   await expect(page.locator('.ced-bar:not(.add)')).toHaveCount(12);
 }
 
+/** En el celular las herramientas poco usadas (secciones, repeticiones, rango, mover) están plegadas: se abren si hace falta. */
+async function abrirMas(page: import('@playwright/test').Page) {
+  const d = page.locator('details.ced-mas');
+  if (!(await d.evaluate((e: HTMLDetailsElement) => e.open))) await d.locator('summary').click();
+}
+
 test.describe('editor de grilla: comodidad', () => {
   test('rango: copiar, pegar, repetir y borrar compases', async ({ page }) => {
     await openWithBlues(page);
+    await abrirMas(page);
     const bars = page.locator('.ced-bar:not(.add)');
     const base = await chords(page);
     await bars.nth(0).click();

@@ -663,10 +663,21 @@ button.link { background: var(--surface-2); }
 .ced-nav { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; margin: .4em 0; }
 .ced-range { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; margin: .5em 0; }
 .ced-range button.on { background: var(--accent); color: var(--accent-ink); }
-@media (max-width: 820px) {
-  .ced-keypad .ced-pal { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
-  .ced-keypad .ced-pal button { flex: 0 0 auto; }
+/* teclado de acordes: nada se desplaza hacia el costado. Con ancho todo se ve en filas; en el celular, raíces 6 × 2 y calidades de a 5
+   (las nueve de uso diario y «Más»), todo en una grilla que entra en el ancho */
+.ced-pal .q-mas { display: none; }
+@media (max-width: 560px) {
+  .ced-keypad .ced-pal { display: grid; gap: 4px; }
+  .ced-keypad .ced-pal[aria-label='Raíz'] { grid-template-columns: repeat(6, 1fr); }
+  .ced-keypad .ced-pal[aria-label='Calidad'] { grid-template-columns: repeat(5, 1fr); }
+  .ced-keypad .ced-pal button { min-width: 0; padding: .2em 0; }
+  .ced-pal .q-extra { display: none; }
+  .ced-pal.mas .q-extra { display: block; }
+  .ced-pal .q-mas { display: block; background: transparent; }
 }
+.ced-tecla { min-width: 2.6em; }
+.ced-mas { margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; padding: 0 .8em .4em; }
+.ced-mas > summary { cursor: pointer; padding: .6em 0; font-weight: 600; min-height: 44px; }
 .ced-barno { font-size: .8rem; color: var(--muted); min-width: 3em; text-align: center; }
 .ced-keypad .ced-slots, .ced-keypad .ced-pal { margin: .3em 0; }
 .ced-play { min-width: 2.6em; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
@@ -896,7 +907,9 @@ details.info summary { cursor: pointer; color: var(--muted); }
   .study h4 { margin: 10px 0 4px; }
   .block ul { margin: 4px 0; }
   .block .ex-body { padding: 6px 8px; }
-  .formgrid { gap: 6px; margin: 6px 0; }
+  /* el formulario del tema en el celular: nombre y compositor a lo ancho, y de a dos tonalidad + modo y tempo + estilo (4 renglones en vez de 6) */
+  .formgrid { gap: 6px; margin: 6px 0; grid-template-columns: 1fr 1fr; }
+  .formgrid > label:nth-child(-n+2) { grid-column: 1 / -1; }
   .keys { margin: 6px 0 2px; }
   .themes { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
   .themes .sw { padding: 6px 8px; min-height: 40px; gap: 4px; }
@@ -953,8 +966,10 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .keepawake { display: flex; gap: 8px; align-items: center; min-height: 44px; margin: 8px 0 0; }
 
 /* visor de mi libro (PDF o foto) junto al editor de temas */
-.visor { position: sticky; top: 0; z-index: 6; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; margin: 8px 0; }
-.visor > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.visor { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 0 8px 6px; margin: 8px 0; }
+/* fijo arriba sólo mientras hay un libro abierto: cerrado o vacío es un renglón común y no tapa la pantalla */
+.visor.fijo[open] { position: sticky; top: 0; z-index: 6; } /* depende del atributo `open` (cambia al instante), no del estado de React, que llega un instante después */
+.visor > summary { cursor: pointer; font-weight: 600; padding: 12px 0; }
 .visor-barra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
 .visor-barra output { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
 .visor-pag { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
@@ -967,13 +982,20 @@ details.info summary { cursor: pointer; color: var(--muted); }
 /* con ancho (tablet, compu o celular apaisado): el visor a la izquierda, fijo, y el editor a la derecha */
 @media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
   .cargar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-  .cargar > .visor { top: 80px; margin: 0; }
+  .cargar > .visor { margin: 0; }
+  .cargar > .visor.fijo { top: 80px; }
   .cargar > .visor .visor-caja { height: calc(100vh - 220px); min-height: 200px; }
+}
+/* celular en vertical: título corto y sin la nota, para que el visor, el teclado y la grilla entren juntos */
+@media (max-width: 560px) {
+  .visor-largo, .visor-nota { display: none; }
+  .visor-barra { gap: 4px; }
 }
 @media (orientation: landscape) and (max-height: 520px) {
   /* celular apaisado: el visor más ancho (la barra entra en dos filas), el título en una línea y sin la nota, para que la página tenga alto */
   .cargar { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
-  .cargar > .visor { top: 4px; padding-top: 2px; padding-bottom: 4px; }
+  .cargar > .visor.fijo { top: 4px; }
+  .cargar > .visor { padding-bottom: 4px; }
   .cargar > .visor .visor-caja { height: calc(100vh - 190px); min-height: 120px; }
   .visor-largo, .visor-nota { display: none; }
   .visor-barra { margin: 0 0 4px; }
@@ -984,3 +1006,11 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .atril-key.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .atril-keys { padding: 6px 0 2px; }
 .atril-consigna { margin: 4px 0 0; font-weight: 700; font-size: 1.1rem; }
+
+/* celular: la fila del acorde (casillero, ◂ 1/12 ▸, ▶ y el botón del teclado) entra en un solo renglón */
+@media (max-width: 560px) {
+  .ced-keypad .ced-slots { flex-wrap: nowrap; gap: 4px; }
+  .ced-keypad .ced-slots input { width: 4.4em; min-width: 0; padding-left: .3em; padding-right: .3em; }
+  .ced-keypad .ced-slots button { min-width: 0; flex: 0 0 auto; padding-left: .55em; padding-right: .55em; }
+  .ced-keypad .ced-barno { min-width: 2.4em; }
+}

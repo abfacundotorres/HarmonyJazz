@@ -272,7 +272,7 @@ export function BookViewer() {
   const masAlto = () => setView({ h: altos[(altos.indexOf(altura as (typeof ALTURAS)[number]) + 1) % altos.length] });
 
   return (
-    <details className="visor" open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)} style={{ ['--visor-h' as string]: `${altura}vh` }}>
+    <details className={`visor ${abierto && libro && estado !== 'vacio' ? 'fijo' : ''}`} open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)} style={{ ['--visor-h' as string]: `${altura}vh` }}>
       <summary>📖 Mi libro (PDF o foto)<span className="visor-largo"> para copiar mirando la página</span></summary>
       <div className="visor-barra" role="toolbar" aria-label="Visor de mi libro">
         {libro && estado !== 'vacio' ? (
