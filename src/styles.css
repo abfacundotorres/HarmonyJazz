@@ -941,3 +941,7 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .atril-ctl b, .atril-ctl button { white-space: nowrap; }
 @media (max-width: 400px) { .atril-ctl .unit { display: none; } }
 @media (max-width: 340px) { .atril-bar { padding-left: 4px; padding-right: 4px; gap: 6px; } .atril-ctl button { min-width: 2.2em; padding-left: .35em; padding-right: .35em; } }
+
+/* ejercicios de un tema: dentro de la tarjeta del tema no llevan otro marco (se pierde ancho) */
+.temaex { margin-top: 10px; }
+.temaex > .card { background: transparent; border: 0; box-shadow: none; padding-left: 0; padding-right: 0; }

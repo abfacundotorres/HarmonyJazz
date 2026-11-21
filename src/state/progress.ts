@@ -76,12 +76,15 @@ export type Item =
   | { kind: 'lesson'; lesson: string; idx: number }
   | { kind: 'scale'; scale: string; pattern: string }
   | { kind: 'lick'; id: string }
+  | { kind: 'tema'; tema: string; ex: string }
   | { kind: 'other'; id: string };
 
-/** Los identificadores de `mastery`: "lección:n", "scale:escala:patrón" y "lick:id". */
+/** Los identificadores de `mastery`: "lección:n", "scale:escala:patrón", "lick:id" y "tema:tema:ejercicio". */
 export function parseItem(id: string): Item {
   const sc = /^scale:([\w-]+):([\w-]+)$/.exec(id);
   if (sc) return { kind: 'scale', scale: sc[1], pattern: sc[2] };
+  const tm = /^tema:(.+):([a-z0-9]+)$/.exec(id);
+  if (tm) return { kind: 'tema', tema: tm[1], ex: tm[2] };
   const lk = /^lick:(.+)$/.exec(id);
   if (lk) return { kind: 'lick', id: lk[1] };
   const ls = /^([\w-]+):(\d+)$/.exec(id);

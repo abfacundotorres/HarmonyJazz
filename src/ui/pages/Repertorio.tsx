@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { logrados, marcar, PASOS, siguientePaso, tocado } from '../../content/repertorio';
 import { dayNum } from '../../state/progress';
-import { useMonth, usePersistentLibrary, useRepertorio } from '../hooks';
+import { useMonth, usePersistentLibrary, useRepertorio, useRoute } from '../hooks';
+import { TemaEjercicios } from '../components/TemaEjercicios';
+import { progresionDeTema } from '../progresionDeTema';
 import { temasDeRepertorio } from '../repertorioTemas';
 
 const hace = (d: number) => (d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`);
@@ -14,6 +16,7 @@ export function Repertorio() {
   const hoy = dayNum();
   const today = useMemo(() => new Date(), []);
   const { temas, delMes } = useMemo(() => temasDeRepertorio(lib, mp, today), [lib, mp, today]);
+  const { query } = useRoute();
 
   return (
     <div className="page repertorio">
@@ -62,9 +65,17 @@ export function Repertorio() {
               <button onClick={() => setRep((r) => tocado(r, t.id, dayNum()))}>Lo toqué hoy</button>
               <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}`}>Abrir en el play-along</a>
             </div>
+            <Ejercicios id={t.id} lib={lib} abrir={query.get('t') === t.id} ex={query.get('t') === t.id ? query.get('ex') : null} k={query.get('t') === t.id ? query.get('k') : null} />
           </section>
         );
       })}
     </div>
   );
+}
+
+/** Los ejercicios de un tema (si el tema se puede armar). Con `?t=&ex=&k=` se abre ese ejercicio en esa tonalidad. */
+function Ejercicios({ id, lib, abrir, ex, k }: { id: string; lib: { tunes?: unknown[] }; abrir: boolean; ex: string | null; k: string | null }) {
+  const prog = useMemo(() => progresionDeTema(id, lib), [id, lib]);
+  // la clave hace que un enlace nuevo (otro ejercicio o tonalidad) rearme la tarjeta aunque la pantalla ya esté abierta
+  return prog ? <TemaEjercicios key={`${abrir}|${ex}|${k}`} prog={prog} abierto={abrir} ejInicial={ex} keyInicial={k} /> : null;
 }

@@ -4,6 +4,7 @@ import type { Library } from '../content/library';
 import type { Repertorio } from '../content/repertorio';
 import { bumpSeen, dayNum, type Seen } from '../state/progress';
 import { EMPTY_MONTH, type MonthPlan } from '../content/monthPlan';
+import { temasDeRepertorio } from './repertorioTemas';
 import { DEFAULT_SETTINGS, Mastery, PracticeLog, Settings, usePersistent } from '../state/storage';
 import { BB_TRUMPET, INTERVAL, Interval, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
 
@@ -39,6 +40,14 @@ export const useMonth = () => usePersistent<MonthPlan>('month', EMPTY_MONTH);
 export const useCurricula = () => usePersistent<CurriculaProgress>('curricula', EMPTY_CURRICULA);
 export const useRepertorio = () => usePersistent<Repertorio>('repertorio', {});
 export const useSeen = () => usePersistent<Seen>('seen', {});
+/** Los temas del repertorio (id y nombre): los propios y la forma del mes. Sirve para dar nombre a lo que se repasa. */
+export function useTemasDeRepertorio() {
+  const [lib] = usePersistentLibrary();
+  const [mp] = useMonth();
+  const today = useMemo(() => new Date(), []);
+  return useMemo(() => temasDeRepertorio(lib, mp, today).temas, [lib, mp, today]);
+}
+
 export const usePersistentLibrary = () => usePersistent<Library>('library', { tunes: [] });
 
 /** Transposición de lectura según la vista elegida. */

@@ -1,3 +1,4 @@
+import { ejercicioTemaById } from '../content/ejerciciosTema';
 import { LESSONS } from '../content/lessons';
 import type { Lick } from '../content/licks';
 import { PATTERNS, SCALE_GROUPS } from '../content/scaleStudy';
@@ -14,8 +15,13 @@ export interface Described {
 }
 
 /** Nombre y enlace de un identificador de `mastery`, o null si ya no existe (una frase borrada, por ejemplo). */
-export function describeItem(id: string, phrases: Pick<Lick, 'id' | 'name'>[]): Described | null {
+export function describeItem(id: string, phrases: Pick<Lick, 'id' | 'name'>[], temas: { id: string; name: string }[] = []): Described | null {
   const it = parseItem(id);
+  if (it.kind === 'tema') {
+    const t = temas.find((x) => x.id === it.tema);
+    const e = ejercicioTemaById(it.ex);
+    return t && e ? { title: t.name, detail: e.titulo, href: (k) => `#/repertorio?t=${encodeURIComponent(t.id)}&ex=${e.id}&k=${k}` } : null;
+  }
   if (it.kind === 'lesson') {
     const l = LESSONS.find((x) => x.id === it.lesson);
     const ex = l?.exercises[it.idx];
@@ -46,4 +52,5 @@ export const phraseNames = (list: unknown[] | undefined): { id: string; name: st
   });
 
 /** Sólo lo que se puede mostrar: se quitan las marcas de frases borradas o ejercicios que ya no existen. */
-export const showable = <T extends { id: string }>(items: T[], phrases: Pick<Lick, 'id' | 'name'>[]): T[] => items.filter((d) => describeItem(d.id, phrases) !== null);
+export const showable = <T extends { id: string }>(items: T[], phrases: Pick<Lick, 'id' | 'name'>[], temas: { id: string; name: string }[] = []): T[] =>
+  items.filter((d) => describeItem(d.id, phrases, temas) !== null);

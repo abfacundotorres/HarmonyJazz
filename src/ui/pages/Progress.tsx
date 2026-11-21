@@ -5,7 +5,7 @@ import { usePersistent } from '../../state/storage';
 import { EarReview, useEarReview } from '../components/EarReview';
 import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioReview';
 import { ReviewList } from '../components/ReviewList';
-import { useMastery, useReading, useSeen } from '../hooks';
+import { useMastery, useReading, useSeen, useTemasDeRepertorio } from '../hooks';
 import { lessonRows, phraseNames, scaleRows, showable } from '../progressItems';
 
 /** Columnas de barras: se dibujan con CSS y llevan su tabla equivalente (un gráfico no es la única forma de ver el dato). */
@@ -101,7 +101,8 @@ export function Progress() {
 
   const ear = useEarReview();
   const rpt = useRepasoRepertorio();
-  const due = useMemo(() => showable(dueItems(mastery, seen, today, 300), phrases), [mastery, seen, today, phrases]);
+  const temas = useTemasDeRepertorio();
+  const due = useMemo(() => showable(dueItems(mastery, seen, today, 300), phrases, temas), [mastery, seen, today, phrases, temas]);
   const balance = useMemo(() => keyBalance(mastery), [mastery]);
   const weak = weakestKeys(balance);
   const marks = Object.values(balance).reduce((a, b) => a + b, 0);
@@ -125,7 +126,7 @@ export function Progress() {
         ) : (
           <>
             <p className="muted small">{due.length} {due.length === 1 ? 'ejercicio vence' : 'ejercicios vencen'}, el más atrasado primero. Repasarlo y marcarlo de nuevo lo aleja en el calendario.</p>
-            <ReviewList items={due.slice(0, 12)} phrases={phrases} />
+            <ReviewList items={due.slice(0, 12)} phrases={phrases} temas={temas} />
             {due.length > 12 && <p className="muted small">Y {due.length - 12} más.</p>}
           </>
         )}
