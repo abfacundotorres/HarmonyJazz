@@ -945,3 +945,7 @@ details.info summary { cursor: pointer; color: var(--muted); }
 /* ejercicios de un tema: dentro de la tarjeta del tema no llevan otro marco (se pierde ancho) */
 .temaex { margin-top: 10px; }
 .temaex > .card { background: transparent; border: 0; box-shadow: none; padding-left: 0; padding-right: 0; }
+
+/* toma completa: el título va a la par de la flecha del plegable */
+.card.toma > summary h3 { display: inline; margin: 0; }
+.tomaconsigna { font-size: 1.1rem; margin: 10px 0 4px; }

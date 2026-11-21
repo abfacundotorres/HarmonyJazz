@@ -46,6 +46,10 @@ export interface PlayOptions {
   owner?: string;
   /** Subir el tempo solo: `step` bpm cada `every` vueltas, hasta `max`. */
   ramp?: Ramp;
+  /** Si está, suena esta cantidad de coros y se detiene solo al terminar el último (una toma completa). */
+  choruses?: number;
+  /** Se llama cuando se detiene solo al terminar los `choruses`. */
+  onEnd?: () => void;
 }
 
 export interface Position {
@@ -560,6 +564,15 @@ export class JazzEngine {
       this.scheduleChorus({ ...cur, tempo: tc }, time, chorus, state);
       chorus++;
       const next = at + cur.chart.bars * beatsPerBar(cur.chart) * (60 / tc);
+      if (cur.choruses && chorus >= cur.choruses) {
+        // el último coro termina en `next`: un instante después (para que no se corte la última nota) se detiene solo
+        this.repeatId = t.scheduleOnce((tm) => draw.schedule(() => {
+          if (gen !== this.gen) return;
+          this.stop();
+          cur.onEnd?.();
+        }, tm), next + 0.3);
+        return;
+      }
       this.repeatId = t.scheduleOnce((tm) => runChorus(tm, next), next);
     };
     this.repeatId = t.scheduleOnce((tm) => runChorus(tm, offset), offset);

@@ -21,6 +21,9 @@ export const PASOS: Paso[] = [
   { id: 'grabado', titulo: 'Grabado completo', ayuda: 'Melodía, un chorus y melodía, grabado de principio a fin.' },
 ];
 
+/** Posición del paso «Grabado completo» en la escalera. */
+export const PASO_GRABADO = PASOS.findIndex((p) => p.id === 'grabado');
+
 /** Avance de un tema: pasos logrados (por posición), día de la última vez que se tocó y día en que se empezó. */
 export interface Avance {
   hechos: number[];

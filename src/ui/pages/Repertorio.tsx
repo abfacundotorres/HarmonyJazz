@@ -58,6 +58,9 @@ export function Repertorio() {
                     <input type="checkbox" checked={!!a?.hechos.includes(i)} onChange={() => setRep((r) => marcar(r, t.id, i, dayNum()))} aria-label={`${t.name}: ${p.titulo}`} /> <b>{p.titulo}</b>
                   </label>
                   <small className="muted">{p.ayuda}</small>
+                  {p.id === 'grabado' && (
+                    <a className="small" href={`#/playalong?p=${encodeURIComponent(t.id)}&toma=1`}>● Grabar una toma completa de este tema →</a>
+                  )}
                 </li>
               ))}
             </ol>
