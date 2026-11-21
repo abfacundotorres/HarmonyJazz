@@ -951,3 +951,30 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .tomaconsigna { font-size: 1.1rem; margin: 10px 0 4px; }
 
 .keepawake { display: flex; gap: 8px; align-items: center; min-height: 44px; margin: 8px 0 0; }
+
+/* visor de mi libro (PDF o foto) junto al editor de temas */
+.visor { position: sticky; top: 0; z-index: 6; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; margin: 8px 0; }
+.visor > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.visor-barra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+.visor-barra output { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.visor-pag { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.visor-pag input { width: 4.2em; text-align: center; }
+.visor-caja { height: var(--visor-h, 45vh); overflow: auto; background: color-mix(in srgb, var(--text) 8%, var(--surface)); border: 1px solid var(--line); border-radius: 6px; touch-action: pan-x pan-y; overscroll-behavior: contain; }
+.visor-hoja { width: max-content; min-width: 100%; }
+.visor-hoja canvas, .visor-hoja img { display: block; background: #fff; }
+.visor-hoja img { max-width: none; height: auto; }
+.cargar { display: block; }
+/* con ancho (tablet, compu o celular apaisado): el visor a la izquierda, fijo, y el editor a la derecha */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
+  .cargar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .cargar > .visor { top: 80px; margin: 0; }
+  .cargar > .visor .visor-caja { height: calc(100vh - 220px); min-height: 200px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* celular apaisado: el visor más ancho (la barra entra en dos filas), el título en una línea y sin la nota, para que la página tenga alto */
+  .cargar { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+  .cargar > .visor { top: 4px; padding-top: 2px; padding-bottom: 4px; }
+  .cargar > .visor .visor-caja { height: calc(100vh - 190px); min-height: 120px; }
+  .visor-largo, .visor-nota { display: none; }
+  .visor-barra { margin: 0 0 4px; }
+}

@@ -4,6 +4,7 @@ import { ChartDoc, compileDoc, docFromChart } from '../../content/chartDoc';
 import { BulkEntry, MAX_CHART_CHARS, parseBulk, UserTune } from '../../content/library';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useReading } from '../hooks';
+import { BookViewer } from './BookViewer';
 import { ChartEditor } from './ChartEditor';
 
 export interface Draft {
@@ -78,7 +79,8 @@ export function TuneLibrary({
 
   return (
     <section className="card library">
-      <details open={open || !!draft.id || !!message} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <details open={open || !!draft.id || !!message} // sólo el propio `toggle`: el de un plegable de adentro (el visor de mi libro) también llega acá y cerraba toda la sección
+        onToggle={(e) => e.target === e.currentTarget && setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>
           Mis temas ({tunes.length}) · cargar un cifrado propio
         </summary>
@@ -87,6 +89,9 @@ export function TuneLibrary({
           (compases separados por <code>|</code>, <code>%</code> repite el compás anterior). Escribilos en <b>concierto</b>. Se guardan sólo en este dispositivo.
         </p>
 
+        <div className="cargar">
+          <BookViewer />
+          <div className="cargar-form">
         <div className="formgrid">
           <label>
             Nombre
@@ -149,6 +154,8 @@ export function TuneLibrary({
           {draft.id && <button onClick={() => { onDraft(EMPTY_DRAFT); onChartText(''); onDoc({ bars: [{ chords: [''] }] }); }}>Cancelar edición</button>}
         </div>
         {message && <p className="muted small" role="status">{message}</p>}
+          </div>
+        </div>
 
         {tunes.length > 0 && (
           <ul className="tunelist">
