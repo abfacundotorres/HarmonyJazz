@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { applyLocal, backupFileName, buildBackup, collectLocal, daysSinceBackup, hasData, markBackup, parseBackup, summarize, Summary } from '../../state/backup';
+import { compartirArchivo, estadoProteccion, pedirProteccion, type Proteccion, puedeCompartirArchivo } from '../../state/persist';
 import { getBlob, listTracks, normalizeMeta, saveMeta } from '../../transcribe/audioStore';
 
 /** Copia de seguridad: guarda y restaura temas, frases, progreso, ajustes y fichas de los audios. */
@@ -8,6 +9,12 @@ export function BackupCard({ onSaved }: { onSaved?: () => void } = {}) {
   const [days, setDays] = useState<number | null>(() => daysSinceBackup(localStorage));
   const [info, setInfo] = useState<Summary | null>(null);
   const [busy, setBusy] = useState(false);
+  const [prot, setProt] = useState<Proteccion>('nodisponible');
+  const [canShare] = useState(() => puedeCompartirArchivo(navigator, new File(['{}'], 'copia.json', { type: 'application/json' })));
+
+  useEffect(() => {
+    void estadoProteccion().then(setProt);
+  }, []);
 
   useEffect(() => {
     void listTracks()
@@ -15,24 +22,50 @@ export function BackupCard({ onSaved }: { onSaved?: () => void } = {}) {
       .then((a) => setInfo(summarize(collectLocal(localStorage), a)));
   }, []);
 
+  const makeFile = async () => {
+    const audios = await listTracks().catch(() => []);
+    const file = buildBackup(collectLocal(localStorage), audios);
+    return new File([JSON.stringify(file)], backupFileName(), { type: 'application/json' });
+  };
+  const done = (text: string) => {
+    markBackup(localStorage);
+    setDays(0);
+    onSaved?.();
+    setMsg(text);
+  };
+
   const save = async () => {
     setBusy(true);
     try {
-      const audios = await listTracks().catch(() => []);
-      const file = buildBackup(collectLocal(localStorage), audios);
-      const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));
+      const f = await makeFile();
+      const url = URL.createObjectURL(f);
       const a = document.createElement('a');
       a.href = url;
-      a.download = backupFileName();
+      a.download = f.name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      markBackup(localStorage);
-      setDays(0);
-      onSaved?.();
-      setMsg('Copia guardada. Conservá el archivo en un lugar seguro (por ejemplo, tu nube o tu correo).');
+      done('Copia guardada. Conservá el archivo en un lugar seguro (por ejemplo, tu nube o tu correo).');
     } finally {
       setBusy(false);
     }
+  };
+
+  // el menú de compartir del sistema (Drive, correo, WhatsApp…): sólo cuenta como copia hecha si se compartió de verdad
+  const share = async () => {
+    setBusy(true);
+    try {
+      const r = await compartirArchivo(navigator, await makeFile(), 'Copia de HarmonyJazz');
+      if (r === 'compartido') done('Copia compartida. Fijate que haya quedado en el lugar que elegiste (tu nube o tu correo).');
+      else if (r === 'error') setMsg('No se pudo abrir el menú de compartir. Probá «Guardar copia».');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const protect = async () => {
+    const r = await pedirProteccion();
+    setProt(r);
+    if (r === 'no') setMsg('El navegador no concedió la protección. Suele darla cuando la app está instalada en la pantalla de inicio; mientras tanto, guardá copias.');
   };
 
   const restore = async (f: File | undefined) => {
@@ -72,6 +105,13 @@ export function BackupCard({ onSaved }: { onSaved?: () => void } = {}) {
         Tus temas, frases, progreso y ajustes viven sólo en este navegador. Si se borran los datos del sitio o cambiás de celular, se pierden: guardá una copia de vez en cuando.
         {info && hasData(info) ? ` Hoy tenés ${info.tunes} temas, ${info.phrases} frases y ${info.audios} audios.` : ''}
       </p>
+      {prot === 'si' && <p className="muted small" role="status">🔒 Datos protegidos: el navegador no los borra si falta espacio.</p>}
+      {prot === 'no' && (
+        <div role="status" className="small">
+          <b>Datos sin proteger:</b> Android puede borrarlos si falta espacio.
+          <div className="row"><button onClick={() => void protect()}>Pedir protección</button></div>
+        </div>
+      )}
       {stale && (
         <p role="status">
           <b>{days === null ? 'Todavía no hiciste ninguna copia.' : `Hace ${days} días que no hacés una copia.`}</b>
@@ -79,6 +119,7 @@ export function BackupCard({ onSaved }: { onSaved?: () => void } = {}) {
       )}
       <div className="row">
         <button className="primary" onClick={() => void save()} disabled={busy}>Guardar copia</button>
+        {canShare && <button onClick={() => void share()} disabled={busy}>Compartir copia</button>}
         <label className="button filebtn">
           Restaurar copia…
           <input type="file" accept="application/json,.json" hidden disabled={busy} onChange={(e) => { void restore(e.target.files?.[0]); e.target.value = ''; }} />
