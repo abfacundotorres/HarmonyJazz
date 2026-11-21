@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DOMINIO_PUBLICO } from '../../content/dominioPublico';
 
 const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
@@ -19,7 +20,7 @@ export function Credits() {
       <section className="card">
         <h2>Créditos y licencias</h2>
         <p className="muted">
-          HarmonyJazz es una app personal para estudiar jazz en trompeta. Todo lo de abajo es obra de otras personas, usado según su licencia. Las melodías, letras y cifrados de los temas que estudiás los cargás vos: la app no incluye contenido de terceros.
+          HarmonyJazz es una app personal para estudiar jazz en trompeta. Todo lo de abajo es obra de otras personas, usado según su licencia. Las melodías, letras y cifrados de los temas que estudiás los cargás vos: la app no incluye contenido de terceros, salvo los pocos temas de dominio público que se listan abajo.
         </p>
       </section>
 
@@ -41,6 +42,22 @@ export function Credits() {
             <b>Metrónomo mecánico:</b> "Sound Classic Metronome 96", de Olga Ernst (Wikimedia Commons).{' '}
             <a href="https://creativecommons.org/licenses/by-sa/4.0/" {...ext}>CC BY-SA 4.0</a>. Se recortaron seis golpes, se les reconstruyó el pico recortado y se igualó el nivel; las muestras adaptadas conservan esa licencia.
           </li>
+        </ul>
+      </section>
+
+      <section className="card" id="dominio-publico">
+        <h3>Temas de dominio público</h3>
+        <p>
+          En Play-along hay unos pocos temas tradicionales de dominio público: la composición es anónima y de más de un siglo, o es libre en EE. UU. (publicada hasta 1930)
+          y sus autores murieron hace más de 70 años. Se incluye <b>sólo la armonía</b>, sin melodía ni letra, y es una <b>armonización propia, escrita de memoria y sin verificar</b>
+          contra ninguna edición: no se copió de ningún libro. Contrastala de oído.
+        </p>
+        <ul>
+          {DOMINIO_PUBLICO.map((t) => (
+            <li key={t.id}>
+              <b>{t.nombre}</b>: {t.autoria} ({t.epoca}). {t.base}
+            </li>
+          ))}
         </ul>
       </section>
 
