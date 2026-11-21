@@ -255,13 +255,18 @@ export function BookViewer() {
       setAviso('Se abrió, pero el navegador no lo pudo guardar: la próxima vez tendrás que elegirlo de nuevo.');
     }
   };
-  const quitar = () => {
+  const quitar = async () => {
     tarea.current?.cancel();
+    // primero se borra de verdad y recién entonces se actualiza la pantalla: si se recarga justo después, el libro no vuelve
+    try {
+      await borrarLibro();
+    } catch {
+      /* si el navegador no deja borrarlo, se saca igual de la pantalla */
+    }
     setLibro(null);
     setTipo(null);
     setEstado('vacio');
     setAviso('');
-    void borrarLibro().catch(() => undefined);
   };
   const altos = [...ALTURAS];
   const masAlto = () => setView({ h: altos[(altos.indexOf(altura as (typeof ALTURAS)[number]) + 1) % altos.length] });
@@ -302,7 +307,7 @@ export function BookViewer() {
             )}
             {tipo === 'pdf' && <button onClick={() => setView({ rot: rotar(rot) })} aria-label="Girar la página">↻</button>}
             <button onClick={masAlto} aria-label="Cambiar la altura del visor">↕</button>
-            <button onClick={quitar}>Quitar</button>
+            <button onClick={() => void quitar()}>Quitar</button>
           </>
         ) : (
           <button className="primary" onClick={() => fileInput.current?.click()}>Abrir mi libro…</button>
