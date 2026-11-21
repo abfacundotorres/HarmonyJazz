@@ -78,7 +78,7 @@ describe('loops y transposición', () => {
   });
 });
 
-import { parseBulk, parseKeySpec } from './library';
+import { parseBulk, parseKeySpec, parseReadingSpec } from './library';
 
 describe('parseKeySpec', () => {
   it('entiende las formas habituales', () => {
@@ -217,5 +217,43 @@ describe('melodía de un tema propio', () => {
   });
   it('un tema sin melodía no trae el campo', () => {
     expect('melody' in (validateTune(base) as object)).toBe(false);
+  });
+});
+
+describe('parseBulk: melodía y lectura en Si♭', () => {
+  it('carga la melodía en concierto junto con el tema', () => {
+    const e = parseBulk('# T\ntonalidad: C\nCmaj7 | Dm7 | G7 | Cmaj7\nmelodía: E4:2 G4:2 F4:4\nmelodía: D4:4 B3:4')[0];
+    expect(e.error).toBeNull();
+    expect(e.tune!.melody).toBe('E4:2 G4:2 F4:4 D4:4 B3:4');
+    expect(e.notes.join(' ')).toMatch(/Melodía: 2 de 4 compases/);
+  });
+  it('con lectura Bb pasa cifrado, tonalidad y melodía un tono abajo', () => {
+    const e = parseBulk('# T\nlectura: Bb\ntonalidad: D\nEmaj7 | F#m7 | B7 | Emaj7\nmelodía: G#4:4 B4:4')[0];
+    expect(e.error).toBeNull();
+    expect(e.tune!.chart).toBe('Dmaj7 | Em7 | A7 | Dmaj7');
+    expect(e.tune).toMatchObject({ key: 'C', mode: 'major' });
+    expect(e.tune!.melody).toBe('F#4:4 A4:4');
+  });
+  it('lectura Bb en un compás de 3/4 conserva el compás', () => {
+    const e = parseBulk('# V\nlectura: Bb\ncompás: 3/4\nDm7 | G7 | Cmaj7')[0];
+    expect(e.tune!.chart).toMatch(/^@3\/4 /);
+  });
+  it('una melodía que no cabe o está mal escrita no tira el tema, pero avisa', () => {
+    const largo = parseBulk('# T\nCmaj7 | G7\nmelodía: C4:8 D4:8 E4:8')[0];
+    expect(largo.tune).not.toBeNull();
+    expect(largo.tune!.melody).toBeUndefined();
+    expect(largo.notes.join(' ')).toMatch(/melodía no se importó/i);
+    const mal = parseBulk('# T\nCmaj7 | G7\nmelodía: Z9 C4')[0];
+    expect(mal.tune).not.toBeNull();
+    expect(mal.notes.join(' ')).toMatch(/melodía no se importó/i);
+  });
+  it('avisa si no entiende la lectura y usa concierto', () => {
+    const e = parseBulk('# T\nlectura: marte\nCmaj7 | G7')[0];
+    expect(e.tune!.chart).toBe('Cmaj7 | G7');
+    expect(e.notes.join(' ')).toMatch(/No entendí la lectura/);
+  });
+  it('parseReadingSpec', () => {
+    expect(['Bb', 'si♭', 'trompeta'].map(parseReadingSpec)).toEqual(['Bb', 'Bb', 'Bb']);
+    expect(['C', 'concierto', 'xx'].map(parseReadingSpec)).toEqual(['C', 'C', null]);
   });
 });

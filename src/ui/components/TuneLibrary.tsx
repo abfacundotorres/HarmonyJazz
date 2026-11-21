@@ -201,6 +201,13 @@ tempo: 120
 estilo: swing
 [A] Dm7 | G7 | Cmaj7 | % |
 Am7 | D7 | Dm7 | G7
+melodía: F4:2 A4:2 G4:4 E4:8 r:8
+melodía: C4 E4 A4 G4 F4:4 D4:4 r:8
+
+# Otro, copiado de un libro para Si♭
+lectura: Bb
+tonalidad: D mayor
+Em7 | A7 | Dmaj7 | %
 
 # Otro ejemplo
 tonalidad: A menor
@@ -228,7 +235,9 @@ function BulkImport({ existing, onImport }: { existing: UserTune[]; onImport: (t
       <p className="muted small">
         Pegá un texto o subí un archivo <code>.txt</code>. Cada tema empieza con una línea <code>#</code> y su nombre; los datos opcionales van en líneas
         <code> tonalidad:</code>, <code>tempo:</code>, <code>estilo:</code> y <code>compositor:</code>; los saltos de línea separan compases. Escribí el cifrado
-        <b> expandido</b> (sin repeticiones ni finales 1ª/2ª) y en <b>concierto</b>. Los cifrados se revisan antes de importar.
+        <b> expandido</b> (sin repeticiones ni finales 1ª/2ª). Por defecto va en <b>concierto</b>; si lo copiás de un libro para Si♭, agregá <code>lectura: Bb</code>
+        y la app pasa el cifrado, la tonalidad y la melodía a concierto. La melodía es opcional: una línea <code>melodía:</code> con las notas
+        (<code>D4 F4:2 r:2</code>, desde el compás 1; puede seguir en varias líneas). Todo se revisa antes de importar.
       </p>
       <details>
         <summary className="small">Ver un ejemplo</summary>
