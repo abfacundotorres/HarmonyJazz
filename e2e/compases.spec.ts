@@ -104,3 +104,21 @@ test('la carga de texto acepta "compás: 3/4"', async ({ page }) => {
   const t = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:library')!).tunes[0]);
   expect(t.chart).toBe('@3/4 Dm7 | G7 | Cmaj7 | Cmaj7');
 });
+
+test('la carga de texto trae la melodía y pasa de Si♭ a concierto con "lectura: Bb"', async ({ page }) => {
+  await page.goto('/#/playalong');
+  await page.getByText(/Mis temas/).first().click();
+  await page.getByText('Carga masiva: muchos temas de una vez').click();
+  await page.getByText('Ver un ejemplo').click();
+  await page.getByRole('button', { name: 'Usar este ejemplo' }).click();
+  await expect(page.locator('.bulklist li.ok')).toHaveCount(3);
+  await expect(page.locator('.bulklist')).toContainText('Melodía: 6 de 8 compases');
+  await expect(page.locator('.bulklist')).toContainText('Cifrado pasado de Si♭ a concierto');
+  await page.getByRole('button', { name: /^Importar 3 temas/ }).click();
+  const tunes = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:library')!).tunes);
+  const a = tunes.find((t: { name: string }) => t.name === 'Mi tema de ejemplo');
+  const b = tunes.find((t: { name: string }) => t.name.startsWith('Otro, copiado'));
+  expect(a.melody).toBe('F4:2 A4:2 G4:4 E4:8 r:8 C4 E4 A4 G4 F4:4 D4:4 r:8');
+  expect(b.chart).toBe('Dm7 | G7 | Cmaj7 | Cmaj7');
+  expect(b).toMatchObject({ key: 'C', mode: 'major' });
+});

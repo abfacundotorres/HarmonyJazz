@@ -1,9 +1,9 @@
 import type { Style } from '../audio/engine';
 import { qdef } from '../theory/chords';
-import { CONCERT_KEYS, parseChart } from '../theory/chart';
-import { noteName, simplify } from '../theory/notes';
+import { CONCERT_KEYS, chartToString, parseChart, transposeChart } from '../theory/chart';
+import { BB_TRUMPET, invert, noteName, parseNote, simplify, transposeNote } from '../theory/notes';
 import { compileDoc, ChartDoc, sanitizeDoc } from './chartDoc';
-import { buildMelody } from './melody';
+import { buildMelody, type Reading } from './melody';
 import type { Progression } from './progressions';
 
 /** Un tema que el usuario cargó. Se guarda sólo en su dispositivo. */
@@ -168,7 +168,15 @@ function parseStyleSpec(spec: string): Style | null {
   return null;
 }
 
-const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|modo|compás|compas|meter|metro|time)\s*[:=]\s*(.*)$/i;
+const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|modo|compás|compas|meter|metro|time|lectura|reading|melodía|melodia|melody)\s*[:=]\s*(.*)$/i;
+
+/** "Bb", "si♭", "trompeta" → 'Bb'; "C", "concierto" → 'C'; otra cosa → null. */
+export function parseReadingSpec(spec: string): Reading | null {
+  const t = spec.trim().toLowerCase().replace(/♭/g, 'b');
+  if (/^(bb|b ?flat|si ?b|si ?bemol|trompeta|trumpet|escrito|transpuesto)$/.test(t)) return 'Bb';
+  if (/^(c|do|concierto|concert|real|sonando)$/.test(t)) return 'C';
+  return null;
+}
 
 /**
  * Lee varios temas de un texto. Formato:
@@ -179,6 +187,8 @@ const META = /^(key|tonalidad|tono|tempo|style|estilo|composer|compositor|mode|m
  *   tempo: 140           (opcional)
  *   estilo: swing        (opcional: swing, en 2, balada, bossa, latin)
  *   compás: 3/4          (opcional: 4/4 por defecto; también 6/8)
+ *   lectura: Bb          (opcional: el cifrado, la tonalidad y la melodía están escritos para trompeta en Si♭; por defecto concierto)
+ *   melodía: D4 F4:2 r:2 (opcional: notas del Vocabulario desde el compás 1; puede seguir en varias líneas "melodía:")
  *   [A] Cm7 | F7 | Bbmaj7 | Ebmaj7 |
  *   Am7b5 | D7 | Gm | %
  *
@@ -208,7 +218,10 @@ export function parseBulk(text: string): BulkEntry[] {
     if (meta) {
       const k = meta[1].toLowerCase();
       const norm = k === 'tono' || k === 'tonalidad' ? 'key' : k === 'estilo' ? 'style' : k === 'compositor' ? 'composer' : k === 'modo' ? 'mode' : ['compás', 'compas', 'meter', 'metro', 'time'].includes(k) ? 'meter' : k;
-      cur.meta[norm] = meta[2].trim();
+      const val = meta[2].trim();
+      // la melodía puede seguir en varias líneas "melodía: ..."; se juntan
+      if (norm === 'melodía' || norm === 'melodia' || norm === 'melody') cur.meta.melody = ((cur.meta.melody ?? '') + ' ' + val).trim();
+      else cur.meta[norm === 'lectura' ? 'reading' : norm] = val;
       return;
     }
     cur.chart.push(line);
@@ -225,9 +238,24 @@ export function parseBulk(text: string): BulkEntry[] {
     if (d.meta.meter && !ms) notes.push(`No entendí el compás "${d.meta.meter}": se usa 4/4`);
     const chartText = ms && ms[1] !== '4/4' && !/^\s*@/.test(body) ? `@${ms[1]} ${body}` : body;
 
+    // lectura: con "Bb" el cifrado, la tonalidad y la melodía están escritos para trompeta en Si♭ y se pasan a concierto
+    let reading: Reading = 'C';
+    if (d.meta.reading) {
+      const r = parseReadingSpec(d.meta.reading);
+      if (r) reading = r;
+      else notes.push(`No entendí la lectura "${d.meta.reading}": se usa concierto (escribí "Bb" o "concierto")`);
+    }
+    const down = invert(BB_TRUMPET);
+
     let chart;
+    let concertText = chartText;
     try {
       chart = parseChart(chartText);
+      if (reading === 'Bb') {
+        chart = transposeChart(chart, down);
+        concertText = chartToString(chart);
+        notes.push('Cifrado pasado de Si♭ a concierto (un tono abajo)');
+      }
     } catch (e) {
       return { ...entry, error: (e as Error).message };
     }
@@ -237,7 +265,13 @@ export function parseBulk(text: string): BulkEntry[] {
     let mode: 'major' | 'minor' = 'major';
     if (d.meta.key) {
       const k = parseKeySpec(d.meta.key);
-      if (k) {
+      if (k && reading === 'Bb') {
+        const concert = noteName(simplify(transposeNote(parseNote(k.key), down)));
+        if (CONCERT_KEYS.includes(concert)) {
+          key = concert;
+          mode = k.mode;
+        } else notes.push(`La tonalidad "${d.meta.key}" en Si♭ no cae en una tonalidad de concierto usual: quedó sin tonalidad fija`);
+      } else if (k) {
         key = k.key;
         mode = k.mode;
       } else notes.push(`No entendí la tonalidad "${d.meta.key}": quedó sin tonalidad fija`);
@@ -258,14 +292,26 @@ export function parseBulk(text: string): BulkEntry[] {
     const style = d.meta.style ? parseStyleSpec(d.meta.style) : null;
     if (d.meta.style && !style) notes.push(`No entendí el estilo "${d.meta.style}": se usa swing`);
 
+    // la melodía se valida contra el cifrado; si falla, el tema se importa igual y se avisa por qué
+    let melody: string | undefined;
+    if (d.meta.melody) {
+      const m = buildMelody(concertText, d.meta.melody, reading);
+      if (typeof m === 'string') notes.push(`La melodía no se importó: ${m}`);
+      else {
+        melody = m.line;
+        notes.push(`Melodía: ${m.bars} de ${chart.bars} compases`);
+      }
+    }
+
     const v = validateTune({
       name: d.name,
       composer: d.meta.composer ?? '',
       key,
       mode,
-      chart: chartText,
+      chart: concertText,
       tempo: d.meta.tempo ? Number(d.meta.tempo) : 120,
       style: style ?? 'swing',
+      ...(melody ? { melody } : {}),
     });
     if (typeof v === 'string') return { ...entry, error: v };
     return { ...entry, tune: v };
