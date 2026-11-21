@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { engine, Style } from '../../audio/engine';
 import { ChartDoc, compileDoc, DocBar, docLayout, emptyBar, MAX_CHORD_CHARS, playedBars, QUALITY_BUTTONS, ROOTS, SECTIONS } from '../../content/chartDoc';
 import { copyRange, pasteBars, range, removeRange, repeatRange } from '../../content/barOps';
@@ -19,6 +19,8 @@ const valid = (c: string) => {
     return false;
   }
 };
+/** Cuántas calidades se ven siempre en el celular (el resto, tras «Más»): las nueve de uso diario de `QUALITY_BUTTONS`. */
+const QUALITY_MAIN = 9;
 /** Separa "Bbm7" en raíz ("Bb") y resto ("m7"). */
 const split = (s: string) => {
   const m = /^([A-G][b#]?)(.*)$/.exec(s);
@@ -38,6 +40,11 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
   const [clip, setClip] = useState<DocBar[]>([]);
   const [cfg, setCfg] = usePersistent<{ auto: boolean }>('editor', { auto: true });
   const [slot, setSlot] = useState(0);
+  // en el celular: el teclado se puede plegar, las calidades menos usadas están tras «Más» y las marcas de sección y rango, plegadas
+  const angosto = typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 560px)').matches;
+  const [tecladoAbierto, setTecladoAbierto] = useState(true);
+  const [masCalidades, setMasCalidades] = useState(false);
+  const [masAbierto, setMasAbierto] = useState(!angosto);
   const [tkey, setTkey] = useState('C');
   const [tminor, setTminor] = useState(false);
   const past = useRef<ChartDoc[]>([]);
@@ -317,17 +324,27 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
           <span className="ced-barno" aria-live="polite">{cur + 1}/{bars.length}</span>
           <button onClick={() => selectBar(Math.min(bars.length - 1, cur + 1))} disabled={cur === bars.length - 1} aria-label="Compás siguiente">▸</button>
           <button className={`ced-play ${playing ? 'on' : ''}`} onClick={() => void togglePlay()} aria-pressed={playing} aria-label={playing ? 'Detener' : 'Escuchar la grilla'}>{playing ? '■' : '▶'}</button>
+          <button className="ced-tecla" onClick={() => setTecladoAbierto((v) => !v)} aria-expanded={tecladoAbierto} aria-label="Mostrar u ocultar el teclado de acordes">⌨</button>
         </div>
-        <div className="ced-pal" role="group" aria-label="Raíz">
-          {ROOTS.map((r) => (
-            <button key={r} onClick={() => pickRoot(r)} className={split(bar.chords[curSlot]).root === r ? 'on' : ''}>{pretty(r)}</button>
-          ))}
-        </div>
-        <div className="ced-pal" role="group" aria-label="Calidad">
-          {QUALITY_BUTTONS.map(([label, suf]) => (
-            <button key={label} onClick={() => pickQuality(suf)} disabled={!split(bar.chords[curSlot]).root}>{label}</button>
-          ))}
-        </div>
+        {tecladoAbierto && (
+          <>
+            <div className="ced-pal" role="group" aria-label="Raíz">
+              {ROOTS.map((r) => (
+                <button key={r} onClick={() => pickRoot(r)} className={split(bar.chords[curSlot]).root === r ? 'on' : ''}>{pretty(r)}</button>
+              ))}
+            </div>
+            <div className={`ced-pal ${masCalidades ? 'mas' : ''}`} role="group" aria-label="Calidad">
+              {QUALITY_BUTTONS.map(([label, suf], i) => (
+                <Fragment key={label}>
+                  {i === QUALITY_MAIN && (
+                    <button className="q-mas" onClick={() => setMasCalidades((v) => !v)} aria-expanded={masCalidades}>{masCalidades ? 'Menos ▴' : 'Más ▾'}</button>
+                  )}
+                  <button className={i >= QUALITY_MAIN ? 'q-extra' : ''} onClick={() => pickQuality(suf)} disabled={!split(bar.chords[curSlot]).root}>{label}</button>
+                </Fragment>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {playErr && <p className="error" role="alert">{playErr}</p>}
@@ -352,6 +369,8 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
             <input type="checkbox" checked={cfg.auto} onChange={(e) => setCfg({ auto: e.target.checked })} /> Avanzar solo
           </label>
         </div>
+        <details className="ced-mas" open={masAbierto} onToggle={(e) => e.target === e.currentTarget && setMasAbierto((e.target as HTMLDetailsElement).open)}>
+          <summary>Secciones, repeticiones, rango y mover compases</summary>
         <div className="ced-marks">
           <label>
             Sección{' '}
@@ -382,6 +401,14 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
           <button onClick={doRepeat} disabled={bars.length >= MAX_BARS}>Repetir</button>
           <button onClick={doDelete}>Borrar{count > 1 ? ` ${count}` : ''}</button>
         </div>
+
+        <div className="ced-acts">
+          <button onClick={() => insertAt(cur)}>Insertar antes</button>
+          <button onClick={() => insertAt(cur + 1)}>Insertar después</button>
+          <button onClick={() => move(-1)} disabled={cur === 0} aria-label="Mover compás a la izquierda">◀</button>
+          <button onClick={() => move(1)} disabled={cur === bars.length - 1} aria-label="Mover compás a la derecha">▶</button>
+        </div>
+        </details>
 
         <details className="ced-shortcuts">
           <summary>Atajos: acordes de la tonalidad y plantillas</summary>
@@ -420,12 +447,6 @@ export function ChartEditor({ doc, onChange, tempo = 120, style = 'swing' }: { d
           </div>
         </details>
 
-        <div className="ced-acts">
-          <button onClick={() => insertAt(cur)}>Insertar antes</button>
-          <button onClick={() => insertAt(cur + 1)}>Insertar después</button>
-          <button onClick={() => move(-1)} disabled={cur === 0} aria-label="Mover compás a la izquierda">◀</button>
-          <button onClick={() => move(1)} disabled={cur === bars.length - 1} aria-label="Mover compás a la derecha">▶</button>
-        </div>
       </div>
       {!chordsOk && <p className="muted small">Hay compases con acordes vacíos o inválidos (en rojo).</p>}
     </div>

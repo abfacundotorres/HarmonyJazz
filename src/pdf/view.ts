@@ -5,8 +5,8 @@
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 5;
 /** Alturas del visor en vertical (porcentaje del alto de la pantalla). */
-export const ALTURAS = [30, 45, 60] as const;
-export const ALTURA_INICIAL = 45;
+export const ALTURAS = [20, 30, 45, 60] as const;
+export const ALTURA_INICIAL = 30;
 /** Más grande que esto no se abre (se lee entero a la memoria del navegador). */
 export const MAX_LIBRO_BYTES = 300 * 1024 * 1024;
 

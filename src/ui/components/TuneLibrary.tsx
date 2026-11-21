@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { STYLE_LABEL, Style } from '../../audio/engine';
 import { ChartDoc, compileDoc, docFromChart } from '../../content/chartDoc';
 import { BulkEntry, MAX_CHART_CHARS, parseBulk, UserTune } from '../../content/library';
@@ -50,6 +50,7 @@ export function TuneLibrary({
   onImport,
   onBulkImport,
   message,
+  abrirSenal = 0,
 }: {
   draft: Draft;
   onDraft: (d: Draft) => void;
@@ -71,14 +72,24 @@ export function TuneLibrary({
   onImport: (file: File) => void;
   onBulkImport: (tunes: UserTune[]) => void;
   message: string | null;
+  /** Cada vez que cambia (y es mayor que 0), abre la sección y la lleva a la vista. */
+  abrirSenal?: number;
 }) {
   const { keyLabel } = useReading();
   const file = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  // «＋ Cargar un tema» (arriba del Play-along): abre esta sección y la deja a la vista, sin tener que recorrer toda la pantalla
+  const seccion = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (abrirSenal <= 0) return;
+    setOpen(true);
+    const t = setTimeout(() => seccion.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50);
+    return () => clearTimeout(t);
+  }, [abrirSenal]);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => onDraft({ ...draft, [k]: v });
 
   return (
-    <section className="card library">
+    <section className="card library" ref={seccion}>
       <details open={open || !!draft.id || !!message} // sólo el propio `toggle`: el de un plegable de adentro (el visor de mi libro) también llega acá y cerraba toda la sección
         onToggle={(e) => e.target === e.currentTarget && setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>
@@ -89,6 +100,10 @@ export function TuneLibrary({
           (compases separados por <code>|</code>, <code>%</code> repite el compás anterior). Escribilos en <b>concierto</b>. Se guardan sólo en este dispositivo.
         </p>
 
+        <p className="muted small">
+          <b>Tonalidad:</b> la del cifrado que escribís (en concierto). Después lo tocás en la que quieras: se cambia en el Play-along o desde el atril.
+          Si el cifrado pasa por varias tonalidades, dejala en «Sin una tonalidad fija» y transponelo de a medio tono.
+        </p>
         <div className="cargar">
           <BookViewer />
           <div className="cargar-form">
