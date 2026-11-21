@@ -949,3 +949,5 @@ details.info summary { cursor: pointer; color: var(--muted); }
 /* toma completa: el título va a la par de la flecha del plegable */
 .card.toma > summary h3 { display: inline; margin: 0; }
 .tomaconsigna { font-size: 1.1rem; margin: 10px 0 4px; }
+
+.keepawake { display: flex; gap: 8px; align-items: center; min-height: 44px; margin: 8px 0 0; }

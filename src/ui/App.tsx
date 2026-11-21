@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { stopAll } from '../audio/stopAll';
 import { applyTheme } from './themes';
 import { useRoute, useSettings } from './hooks';
+import { useWakeLock } from './wakeLock';
 import { GROUPS, groupOf, pageLabel } from './nav';
 import { Today } from './pages/Today';
 
@@ -47,6 +48,8 @@ export function App() {
   const [lastIn, setLastIn] = useState<Record<string, string>>({});
   useEffect(() => setLastIn((m) => (m[group.id] === page ? m : { ...m, [group.id]: page })), [group.id, page]);
   const [settings, setSettings] = useSettings();
+  // «Mantener la pantalla encendida» (Más → Ajustes): mientras la app esté abierta, suene algo o no
+  useWakeLock(settings.keepAwake);
   const [updated, setUpdated] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {

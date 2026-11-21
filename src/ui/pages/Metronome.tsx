@@ -4,6 +4,7 @@ import { CUSTOM_PRESETS, CUSTOM_RANGES, DEFAULT_CUSTOM, type HitKind, isVoiceId,
 import { tempoName, type SwingBeat } from '../../audio/pendulum';
 import { MAX_TEMPO, MIN_TEMPO, type MetroOpts } from '../../audio/metronomePlan';
 import { usePersistent } from '../../state/storage';
+import { useWakeLock } from '../wakeLock';
 import { tapTempo } from '../../transcribe/grid';
 import { NumberField } from '../components/NumberField';
 import { Pendulum } from '../components/Pendulum';
@@ -47,6 +48,7 @@ const toOpts = (m: MetroState): MetroOpts & { sound: VoiceId; custom: SoundParam
 export function Metronome() {
   const [m, set] = usePersistent<MetroState>('metro', DEFAULTS);
   const [on, setOn] = useState(false);
+  useWakeLock(on);
   const [pos, setPos] = useState<{ bar: number; beat: number; tempo: number; muted: boolean } | null>(null);
   const live = useRef(m);
   live.current = m;

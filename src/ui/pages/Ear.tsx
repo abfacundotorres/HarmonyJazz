@@ -6,6 +6,7 @@ import {
 } from '../../ear/core';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
+import { useWakeLock } from '../wakeLock';
 import { chordSymbol, parseChord, transposeChord } from '../../theory/chords';
 import { CYCLE_OF_FOURTHS } from '../../theory/chart';
 import { BB_TRUMPET, INTERVAL, type Note, noteName, simplify, transposeNote } from '../../theory/notes';
@@ -35,6 +36,7 @@ export function Ear() {
   const [picked, setPicked] = useState<string | null>(null);
   const [gtPicks, setGtPicks] = useState<(GtDegree | null)[]>([null, null, null]);
   const [playing, setPlaying] = useState(false);
+  useWakeLock(true); // se contesta pensando entre sonido y sonido: la pantalla no se apaga mientras se está en esta pantalla
   const [session, setSession] = useState({ ok: 0, n: 0 });
   const last = useRef<string | undefined>(undefined);
   const rng = useRef(Math.random);

@@ -4,6 +4,7 @@ import { listen, MicListener, PitchFrame } from '../../pitch/mic';
 import { byDay, type LongNote, trend } from '../../state/longnotes';
 import { freqToMidi, midiName } from '../../theory/notes';
 import { useReading, useSettings } from '../hooks';
+import { useWakeLock } from '../wakeLock';
 import { usePersistent } from '../../state/storage';
 
 /** Afinador + medidor de estabilidad para notas largas. */
@@ -16,6 +17,7 @@ export function Listen() {
   const [saved, setSaved] = usePersistent<{ rows: LongNote[] }>('longnotes', { rows: [] });
   const [droneNote, setDroneNote] = useState<number | null>(null);
   const [on, setOn] = useState(false);
+  useWakeLock(on || droneNote !== null); // afinando o con el bordón sonando
   const [frame, setFrame] = useState<PitchFrame | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hold, setHold] = useState<{ note: number; cents: number[]; start: number } | null>(null);

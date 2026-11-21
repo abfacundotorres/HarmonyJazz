@@ -95,3 +95,15 @@ describe('modo de memoria guardado', () => {
     expect(sanitizeKey('memoria', [1])).toBeNull();
   });
 });
+
+describe('ajuste «pantalla encendida»', () => {
+  it('sólo acepta verdadero o falso', () => {
+    expect(sanitizeKey('settings', { keepAwake: true })).toEqual({ keepAwake: true });
+    expect(sanitizeKey('settings', { keepAwake: false })).toEqual({ keepAwake: false });
+    expect(sanitizeKey('settings', { keepAwake: 'si' })).toEqual({});
+    expect(sanitizeKey('settings', { keepAwake: 1 })).toEqual({});
+  });
+  it('por defecto está apagado (gasta batería)', () => {
+    expect(DEFAULT_SETTINGS.keepAwake).toBe(false);
+  });
+});
