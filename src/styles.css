@@ -968,7 +968,7 @@ details.info summary { cursor: pointer; color: var(--muted); }
 /* visor de mi libro (PDF o foto) junto al editor de temas */
 .visor { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 0 8px 6px; margin: 8px 0; }
 /* fijo arriba sólo mientras hay un libro abierto: cerrado o vacío es un renglón común y no tapa la pantalla */
-.visor.fijo { position: sticky; top: 0; z-index: 6; }
+.visor.fijo[open] { position: sticky; top: 0; z-index: 6; } /* depende del atributo `open` (cambia al instante), no del estado de React, que llega un instante después */
 .visor > summary { cursor: pointer; font-weight: 600; padding: 12px 0; }
 .visor-barra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
 .visor-barra output { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }

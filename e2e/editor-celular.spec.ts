@@ -24,7 +24,7 @@ test.describe('cargar un tema en el celular', () => {
     expect(await posicion(page, 'details.visor')).toBe('sticky'); // con libro
     await page.getByText(/Mi libro \(PDF o foto\)/).click(); // lo cierra: vuelve a no tapar
     await expect(page.locator('details.visor')).not.toHaveAttribute('open', '');
-    expect(await posicion(page, 'details.visor')).toBe('static');
+    await expect.poll(() => posicion(page, 'details.visor')).toBe('static');
     // el título es un renglón común (no dos columnas)
     const alto = await page.locator('details.visor > summary').evaluate((e) => e.getBoundingClientRect().height);
     expect(alto).toBeLessThan(90);
