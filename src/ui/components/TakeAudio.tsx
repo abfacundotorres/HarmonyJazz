@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { blobToWav } from '../../pitch/wav';
 import { addTrack } from '../../transcribe/audioStore';
 import { navigate } from '../hooks';
@@ -10,7 +10,7 @@ export const OPEN_TRACK_KEY = 'harmonyjazz:open-track';
  * La toma de audio de lo que acabás de tocar: se escucha ahí mismo y se puede guardar en Transcribir
  * para verla en el espectrograma, bajarle la velocidad o detectar sus notas.
  */
-export function TakeAudio({ blob, name, onDiscard }: { blob: Blob; name: string; onDiscard: () => void }) {
+export function TakeAudio({ blob, name, onDiscard, children }: { blob: Blob; name: string; onDiscard: () => void; children?: ReactNode }) {
   // el audio crudo de una grabación no trae duración (el reproductor no puede avanzar ni retroceder): se pasa a WAV
   const [wav, setWav] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
@@ -59,6 +59,7 @@ export function TakeAudio({ blob, name, onDiscard }: { blob: Blob; name: string;
       <div className="row">
         <button className="primary" onClick={() => void save()} disabled={busy || !wav}>{busy ? 'Guardando…' : 'Guardar en Transcribir'}</button>
         <button onClick={onDiscard} disabled={busy}>Descartar</button>
+        {children}
       </div>
       {msg && <p role="alert" style={{ color: 'var(--bad)' }}>{msg}</p>}
     </section>

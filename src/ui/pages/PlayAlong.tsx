@@ -9,7 +9,7 @@ import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { localizeNotes } from '../../exercises/localize';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
 import {
-  barLen, Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
+  barLen, beatsPerBar, Chart, keyInterval, parseChart, semitoneInterval, sliceChart, transposeChart,
 } from '../../theory/chart';
 import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
@@ -21,7 +21,12 @@ import { MelodyPanel } from '../components/MelodyPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
-import { navigate, useReading, usePersistentLibrary, useRoute } from '../hooks';
+import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useTemasDeRepertorio } from '../hooks';
+import { marcar, PASO_GRABADO } from '../../content/repertorio';
+import { COROS_TOMA_INICIAL } from '../../content/toma';
+import { dayNum } from '../../state/progress';
+import { TomaCompleta } from '../components/TomaCompleta';
+import type { PlayerControl } from '../components/Player';
 import { usePersistent } from '../../state/storage';
 import { usePosition } from '../usePosition';
 
@@ -128,7 +133,17 @@ export function PlayAlong() {
   }, [useCustom, doc, selected]);
 
   const pos = usePosition();
-  const control = useRef<{ toggle: () => void; playing: boolean } | null>(null);
+  const control = useRef<PlayerControl | null>(null);
+  // el paso «Grabado completo» de Mi repertorio se puede marcar desde la toma, si el tema está en el repertorio
+  const [rep, setRep] = useRepertorio();
+  const temasRep = useTemasDeRepertorio();
+  const esTemaRep = !useCustom && temasRep.some((t) => t.id === selected.id);
+  const grabadoHecho = !!rep[selected.id]?.hechos.includes(PASO_GRABADO);
+  // llegar desde Mi repertorio (?toma=1) deja la tarjeta de la toma a la vista
+  useEffect(() => {
+    if (query.get('toma') === '1') document.querySelector('.toma')?.scrollIntoView({ block: 'center' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [atril, setAtril] = useState(false);
   // modo de memoria: la grilla se oculta (todo o de a poco); «Mirar» la muestra un rato para comprobar
   const [memo, setMemo] = usePersistent<{ modo?: MemoriaModo }>('memoria', {});
@@ -168,20 +183,75 @@ export function PlayAlong() {
     if (midi !== null) setCount((c) => c + 1);
   }, []);
 
-  const toggleRecording = () => {
-    if (!recording) {
-      events.current = [];
-      setCount(0);
-      setTake(null);
-      setTakeAudio(null);
-      snapshot.current = { chart: playChart, keyValue: baseKey ? key : null, mode: base.mode, tempo };
-      setRecording(true);
-    } else {
-      setRecording(false);
-      const snap = snapshot.current!;
-      const choruses = transcribe(events.current, snap.chart);
-      if (choruses.length) setTake({ ...snap, choruses });
+  const beginRecording = () => {
+    events.current = [];
+    setCount(0);
+    setTake(null);
+    setTakeAudio(null);
+    snapshot.current = { chart: playChart, keyValue: baseKey ? key : null, mode: base.mode, tempo };
+    setRecording(true);
+  };
+  // sólo usa referencias y setters: se puede llamar desde el aviso de «terminó la toma» sin que quede un estado viejo
+  const endRecording = () => {
+    setRecording(false);
+    const snap = snapshot.current;
+    if (!snap) return;
+    const choruses = transcribe(events.current, snap.chart);
+    if (choruses.length) setTake({ ...snap, choruses });
+  };
+
+  // ---- toma completa: melodía, solo, melodía, con el micrófono y el acompañamiento a la vez ----
+  const micRef = useRef<{ ensure: () => Promise<boolean> } | null>(null);
+  const [corosToma, setCorosToma] = useState(COROS_TOMA_INICIAL);
+  const [tomaActiva, setTomaActiva] = useState(false);
+  const [tomaMsg, setTomaMsg] = useState('');
+  const recordingRef = useRef(false);
+  recordingRef.current = recording;
+  const tomaRef = useRef(false);
+  tomaRef.current = tomaActiva;
+  const tomaArrancó = useRef(false);
+  const endRef = useRef(endRecording);
+  endRef.current = endRecording;
+
+  /** Termina la toma (se acabaron los coros, se cortó o se detuvo el reproductor): corta la grabación y arma «Tu toma». */
+  const cerrarToma = () => {
+    tomaArrancó.current = false;
+    setTomaActiva(false);
+    if (recordingRef.current) endRef.current();
+  };
+  const onPlaying = useCallback((p: boolean) => {
+    if (p) tomaArrancó.current = true;
+    else if (tomaRef.current && tomaArrancó.current) {
+      tomaArrancó.current = false;
+      setTomaActiva(false);
+      if (recordingRef.current) endRef.current();
     }
+  }, []);
+
+  const empezarToma = async () => {
+    setTomaMsg('');
+    if (!(await micRef.current?.ensure())) {
+      setTomaMsg('Necesito el micrófono: revisá el permiso del navegador y probá de nuevo.');
+      return;
+    }
+    beginRecording();
+    tomaArrancó.current = false;
+    setTomaActiva(true);
+    if (!(await control.current?.start(corosToma))) {
+      setTomaActiva(false);
+      setRecording(false);
+      setTomaMsg('No se pudo iniciar el audio. Probá de nuevo.');
+    }
+  };
+  const cortarToma = () => {
+    if (control.current?.playing) control.current.toggle();
+    cerrarToma();
+  };
+
+  const toggleRecording = () => {
+    if (!recording) beginRecording();
+    else if (tomaActiva) cortarToma();
+    else endRecording();
   };
 
   const setQuery = (p: string, k?: string | null) => {
@@ -306,6 +376,7 @@ export function PlayAlong() {
           owner={OWNER}
           defaultMetronome={query.get('m') === '1'}
           controlRef={control}
+          onPlayingChange={onPlaying}
         />
         <p>
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
@@ -321,6 +392,20 @@ export function PlayAlong() {
         </div>
         {memoModo !== 'off' && <p className="muted small">{MEMORIA_MODOS.find((m) => m.id === memoModo)?.texto}</p>}
       </section>
+
+      <TomaCompleta
+        activa={tomaActiva}
+        coros={corosToma}
+        onCoros={setCorosToma}
+        coro={mine ? (mine.countIn ? -1 : mine.chorus) : -1}
+        compases={playChart.bars}
+        pulsosPorCompas={beatsPerBar(playChart)}
+        tempo={tempo}
+        abierta={query.get('toma') === '1'}
+        mensaje={tomaMsg}
+        onEmpezar={() => void empezarToma()}
+        onCortar={cortarToma}
+      />
 
       {!useCustom && selected.category === 'Mis temas' && (() => {
         const tune = tunes.find((t) => t.id === selected.id);
@@ -363,6 +448,7 @@ export function PlayAlong() {
           chordIndex={ci}
           chorus={mine?.chorus ?? 0}
           tempo={tempo}
+          micRef={micRef}
           recorder={{ recording, toggle: toggleRecording, onEvent, count, onAudio: setTakeAudio }}
         />
       </div>
@@ -370,7 +456,15 @@ export function PlayAlong() {
       {recording && !engine.playing && (
         <p className="card muted">Grabando: dale play al acompañamiento y tocá. Las notas se ubican en la forma según el tiempo del play-along.</p>
       )}
-      {takeAudio && !recording && <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)} />}
+      {takeAudio && !recording && (
+        <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)}>
+          {esTemaRep && (
+            grabadoHecho
+              ? <span className="muted small">✓ «Grabado completo» marcado en Mi repertorio</span>
+              : <button onClick={() => setRep((r) => marcar(r, selected.id, PASO_GRABADO, dayNum()))}>✓ Marcar «Grabado completo» en Mi repertorio</button>
+          )}
+        </TakeAudio>
+      )}
       {take && (
         <Transcription
           chart={take.chart}

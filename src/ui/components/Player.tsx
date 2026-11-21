@@ -20,7 +20,15 @@ export interface PlayerProps {
   owner?: string;
   onPlayingChange?: (playing: boolean) => void;
   /** Para que otra pantalla (el modo atril) pueda iniciar y detener este reproductor. */
-  controlRef?: MutableRefObject<{ toggle: () => void; playing: boolean } | null>;
+  controlRef?: MutableRefObject<PlayerControl | null>;
+}
+
+/** Lo que otra pantalla puede pedirle al reproductor. */
+export interface PlayerControl {
+  toggle: () => void;
+  playing: boolean;
+  /** Arranca (con cuenta previa) y se detiene solo tras `choruses` coros: una toma completa. Devuelve si arrancó. */
+  start: (choruses: number) => Promise<boolean>;
 }
 
 export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange, controlRef }: PlayerProps) {
@@ -48,8 +56,11 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   /** Tempo de la vuelta que suena (distinto del elegido si se está subiendo solo). */
   const live = pos && pos.owner === id && playing && pos.tempo ? Math.round(pos.tempo) : null;
 
+  // límite de coros de una toma completa: se mantiene si el motor se reinicia por un cambio en vivo
+  const limit = useRef<number | null>(null);
   const opts = (): PlayOptions => ({
     chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id, ramp,
+    ...(limit.current ? { choruses: limit.current, onEnd: () => { limit.current = null; setPlaying(false); } } : {}),
   });
   const optsRef = useRef(opts);
   optsRef.current = opts;
@@ -105,6 +116,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
     setError(null);
     if (playing || starting) {
       // un segundo toque mientras se prepara el audio también cancela
+      limit.current = null;
       engine.stop();
       setPlaying(false);
       setStarting(false);
@@ -122,7 +134,27 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
     }
   };
 
-  if (controlRef) controlRef.current = { toggle: () => void toggle(), playing };
+  /** Una toma completa: siempre con cuenta previa y parando solo tras `choruses` coros. */
+  const start = async (choruses: number) => {
+    setError(null);
+    limit.current = Math.max(1, Math.round(choruses));
+    setStarting(true);
+    try {
+      const started = await engine.play({ ...opts(), countIn: true });
+      setPlaying(started);
+      if (!started) limit.current = null;
+      return started;
+    } catch (e) {
+      console.error(e);
+      limit.current = null;
+      setError('No se pudo iniciar el audio: ' + ((e as Error).message || 'error desconocido') + '. Probá tocar de nuevo.');
+      return false;
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  if (controlRef) controlRef.current = { toggle: () => void toggle(), playing, start };
 
   const tog = (k: keyof Mix) => setMix((m) => ({ ...m, [k]: !m[k] }));
 

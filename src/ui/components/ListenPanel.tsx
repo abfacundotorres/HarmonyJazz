@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useRef, useState } from 'react';
 import { analyzePc, Chord, NoteRole, prettyDegree } from '../../theory/chords';
 import { BB_TRUMPET, midiName, mod } from '../../theory/notes';
 import { listen, MicListener } from '../../pitch/mic';
@@ -29,12 +29,15 @@ export function ListenPanel({
   chorus,
   tempo,
   recorder,
+  micRef,
 }: {
   chord: Chord | null;
   chordIndex: number;
   chorus: number;
   tempo: number;
   /** Si está, se muestra el botón de grabar y se le pasan las notas con su tiempo. */
+  /** Para que otra parte de la pantalla (la toma completa) pida el micrófono encendido. */
+  micRef?: MutableRefObject<{ ensure: () => Promise<boolean> } | null>;
   recorder?: { recording: boolean; toggle: () => void; onEvent: (midi: number | null, time: number) => void; count: number; /** Recibe el audio de la toma cuando termina. */ onAudio?: (b: Blob) => void };
 }) {
   const { iv } = useReading();
@@ -101,6 +104,8 @@ export function ListenPanel({
       console.error(e);
     }
   };
+
+  if (micRef) micRef.current = { ensure: async () => { if (!mic.current) await start(); return !!mic.current; } };
 
   const stop = () => {
     mic.current?.stop();
