@@ -95,3 +95,89 @@ test.describe('mi repertorio', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });
+
+const TEMA_3_4 = { id: 'u:vals', name: 'Vals de prueba', composer: '', key: 'C', mode: 'major', chart: '@3/4 Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120, style: 'swing' };
+
+test.describe('ejercicios sobre un tema', () => {
+  const abrirEjercicios = async (page: import('@playwright/test').Page) => {
+    const tema = page.getByRole('region', { name: 'Hojas de otoño' });
+    await tema.getByText('Ejercicios sobre este tema').click();
+    return tema;
+  };
+
+  test('un tema ofrece guide tones, arpegios, aproximaciones y 1-2-3-5; arma la partitura del elegido y marca el avance en su tonalidad', async ({ page }) => {
+    await conTema(page);
+    await page.goto('/#/repertorio');
+    const tema = await abrirEjercicios(page);
+    const botones = tema.getByRole('group', { name: 'Ejercicio' }).getByRole('button');
+    await expect(botones).toHaveCount(6);
+    await expect(tema.locator('.exercise')).toHaveCount(0); // sin elegir nada no se arma ninguna partitura
+    await tema.getByRole('button', { name: 'Guide tones del tema', exact: true }).click();
+    const ej = tema.locator('.exercise');
+    await expect(ej.getByRole('heading', { name: 'Hojas de otoño: Guide tones del tema' })).toBeVisible();
+    await expect(ej.locator('svg').first()).toBeVisible();
+    // pasa a otra tonalidad y marca (las teclas se leen en Si♭: la escrita «D» es Do de concierto)
+    await ej.getByRole('radio', { name: /^D/ }).click();
+    await ej.getByRole('button', { name: /Salió limpio/ }).click();
+    const m = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:mastery')!));
+    expect(Object.keys(m)).toEqual(['tema:u:hoja:guide']);
+    expect(Object.keys(m['tema:u:hoja:guide'])).toEqual(['C']);
+    expect(m['tema:u:hoja:guide'].C).toBeGreaterThan(0);
+    // otro ejercicio reemplaza al anterior
+    await tema.getByRole('button', { name: 'Arpegios acorde por acorde', exact: true }).click();
+    await expect(tema.locator('.exercise')).toHaveCount(1);
+    await expect(tema.locator('.exercise').getByRole('heading')).toContainText('Arpegios acorde por acorde');
+  });
+
+  test('un enlace de repaso abre ese ejercicio en esa tonalidad; una tonalidad inválida no rompe', async ({ page }) => {
+    await conTema(page);
+    await page.goto('/#/repertorio?t=u%3Ahoja&ex=arp3&k=Eb');
+    const ej = page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise');
+    await expect(ej.getByRole('heading')).toContainText('Arpegios desde la 3ª');
+    // k=Eb es de concierto; en la vista Si♭ la tecla marcada se lee «F»
+    await expect(ej.getByRole('radio', { checked: true })).toHaveCount(1);
+    await expect(ej.getByRole('radio', { checked: true })).toHaveAccessibleName(/^F/);
+    await page.goto('/#/repertorio?t=u%3Ahoja&ex=guide&k=ZZ');
+    await page.reload();
+    await expect(page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise').getByRole('heading')).toContainText('Guide tones del tema');
+    await page.goto('/#/repertorio?t=u%3Ahoja&ex=nada');
+    await expect(page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise')).toHaveCount(0);
+  });
+
+  test('un tema en 3/4 explica que los ejercicios son de 4/4 y no los ofrece', async ({ page }) => {
+    await page.addInitScript((t) => localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] })), TEMA_3_4);
+    await page.goto('/#/repertorio');
+    const tema = page.getByRole('region', { name: 'Vals de prueba' });
+    await expect(tema).toContainText('Los ejercicios generados son de 4/4');
+    await expect(tema.getByText('Ejercicios sobre este tema')).toHaveCount(0);
+  });
+
+  test('lo marcado entra en el repaso de Hoy y de Progreso con el nombre del tema y lleva de vuelta al ejercicio', async ({ page }) => {
+    await page.addInitScript((t) => {
+      localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] }));
+      const day = Math.floor(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) / 86400000);
+      localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'tema:u:hoja:guide': { G: 100 } }));
+      localStorage.setItem('harmonyjazz:seen', JSON.stringify({ 'tema:u:hoja:guide': { G: { d: day - 12, n: 1 } } })); // 12 días: vencido
+    }, TEMA);
+    await page.goto('/#/progreso');
+    const fila = page.locator('.reviewlist a', { hasText: 'Hojas de otoño' });
+    await expect(fila).toContainText('Guide tones del tema');
+    await expect(fila).toHaveAttribute('href', /#\/repertorio\?t=u%3Ahoja&ex=guide&k=G/);
+    await fila.click();
+    await expect(page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise').getByRole('heading')).toContainText('Guide tones del tema');
+    // y en Hoy
+    await page.goto('/#/hoy');
+    await expect(page.locator('.reviewlist a', { hasText: 'Hojas de otoño' })).toBeVisible();
+  });
+
+  test('si se borra el tema, su marca no aparece en el repaso ni rompe nada', async ({ page }) => {
+    await page.addInitScript(() => {
+      const day = Math.floor(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) / 86400000);
+      localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'tema:u:borrado:guide': { G: 100 } }));
+      localStorage.setItem('harmonyjazz:seen', JSON.stringify({ 'tema:u:borrado:guide': { G: { d: day - 12, n: 1 } } }));
+    });
+    await page.goto('/#/progreso');
+    await expect(page.getByRole('heading', { name: 'Tu progreso' })).toBeVisible();
+    await expect(page.locator('.reviewlist a', { hasText: /borrado|guide/i })).toHaveCount(0);
+  });
+});

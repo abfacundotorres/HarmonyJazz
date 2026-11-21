@@ -11,7 +11,7 @@ import { EarReview, useEarReview } from '../components/EarReview';
 import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioReview';
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
-import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings } from '../hooks';
+import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings, useTemasDeRepertorio } from '../hooks';
 import { buildMonthPlan, monthActive, repertoireName, sessionNumber } from '../../content/monthPlan';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
@@ -67,7 +67,8 @@ export function Today() {
   );
   const ear = useEarReview();
   const rpt = useRepasoRepertorio();
-  const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases)), [mastery, seen, today, pl]);
+  const temasRep = useTemasDeRepertorio();
+  const review = useMemo(() => showable(dueItems(mastery, seen, dayNum(today), 300), phraseNames(pl.phrases), temasRep), [mastery, seen, today, pl, temasRep]);
 
   // sin casilleros: un día cuenta como sesión del mes si se abrió Hoy ese día
   useEffect(() => {
@@ -105,7 +106,7 @@ export function Today() {
       {(review.length > 0 || ear.due || rpt.due) && (
         <section className="card" id="repaso">
           <h2 className="h3like">Para repasar</h2>
-          {review.length > 0 && <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} />}
+          {review.length > 0 && <ReviewList items={review.slice(0, 3)} phrases={phraseNames(pl.phrases)} temas={temasRep} />}
           {ear.due && <EarReview review={ear.review} />}
           {rpt.due && <RepertorioReview items={rpt.items} />}
           <p>

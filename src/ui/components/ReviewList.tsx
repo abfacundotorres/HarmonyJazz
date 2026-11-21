@@ -6,12 +6,12 @@ import type { Lick } from '../../content/licks';
 const when = (d: Due) => (d.ago === 1 ? 'ayer' : `hace ${d.ago} días`);
 
 /** Lista de lo que toca repasar, con enlace a cada ejercicio en su tonalidad. */
-export function ReviewList({ items, phrases }: { items: Due[]; phrases: Pick<Lick, 'id' | 'name'>[] }) {
+export function ReviewList({ items, phrases, temas = [] }: { items: Due[]; phrases: Pick<Lick, 'id' | 'name'>[]; temas?: { id: string; name: string }[] }) {
   const { keyLabel } = useReading();
   return (
     <ul className="tracklist reviewlist">
       {items.map((d) => {
-        const it = describeItem(d.id, phrases);
+        const it = describeItem(d.id, phrases, temas);
         if (!it) return null;
         return (
           <li key={`${d.id}|${d.key}`}>
