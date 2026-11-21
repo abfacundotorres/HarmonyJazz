@@ -84,3 +84,14 @@ describe('herramientas de práctica: datos guardados', () => {
     expect(sanitizeKey('repertorio', [])).toBeNull();
   });
 });
+
+describe('modo de memoria guardado', () => {
+  it('acepta un modo válido y descarta lo demás', () => {
+    expect(sanitizeKey('memoria', { modo: 'gradual' })).toEqual({ modo: 'gradual' });
+    expect(sanitizeKey('memoria', { modo: 'oculto', otro: 1 })).toEqual({ modo: 'oculto' });
+    expect(sanitizeKey('memoria', { modo: 'borrar todo' })).toEqual({});
+    expect(sanitizeKey('memoria', { modo: 7 })).toEqual({});
+    expect(sanitizeKey('memoria', 'x')).toBeNull();
+    expect(sanitizeKey('memoria', [1])).toBeNull();
+  });
+});

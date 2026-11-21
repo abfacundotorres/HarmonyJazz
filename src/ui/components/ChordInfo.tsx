@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { DocBar, DocLayout } from '../../content/chartDoc';
 import { chordParts } from '../../theory/chordFormat';
 import { Chord, chordSymbol, qdef, transposeChord } from '../../theory/chords';
+import { compasesVisibles, type MemoriaNivel } from '../../content/memoria';
 import type { Chart } from '../../theory/chart';
 import { degreeNote, noteName, simplify, transposeNote } from '../../theory/notes';
 import { SCALES } from '../../theory/scales';
@@ -49,6 +50,7 @@ export function ChordBoard({
   pending,
   onBarClick,
   layout,
+  memory = 'todo',
 }: {
   chart: Chart;
   current: number;
@@ -57,6 +59,8 @@ export function ChordBoard({
   onBarClick?: (bar: number) => void;
   /** Estructura escrita de la grilla: si coincide con la carta se muestran secciones, repeticiones y finales. */
   layout?: DocLayout | null;
+  /** Modo de memoria: cuánto de la grilla se ve ('todo' la muestra completa). Los compases ocultos conservan número, sección y marca. */
+  memory?: MemoriaNivel;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { iv } = useReading();
@@ -77,6 +81,8 @@ export function ChordBoard({
   const sections = new Set<number>();
   if (useLayout) layout.bars.forEach((b, i) => b.section && (i === 0 || layout.bars[i - 1].section !== b.section) && sections.add(i));
 
+  const visible = compasesVisibles(memory, written.length, sections);
+
   // el compás que suena queda a la vista
   useEffect(() => {
     if (curBar < 0 || onBarClick === undefined) return;
@@ -93,6 +99,7 @@ export function ChordBoard({
         const inLoop = !!loop && wb.plays.some((k) => k >= loop[0] && k <= loop[1]);
         const isNow = wb.plays.includes(curBar);
         const m = wb.mark;
+        const hide = !visible[i];
         const cls = [
           'bar',
           isNow ? 'now' : '',
@@ -102,8 +109,9 @@ export function ChordBoard({
           m?.repeatStart ? 'rs' : '',
           m?.repeatEnd ? 're' : '',
           m?.ending ? `end end${m.ending}` : '',
-          chords.length > 2 ? 'many' : '',
-          chords.length === 2 ? 'two' : '',
+          hide ? 'hid' : '',
+          !hide && chords.length > 2 ? 'many' : '',
+          !hide && chords.length === 2 ? 'two' : '',
         ].filter(Boolean).join(' ');
         const showEnd = m?.ending && layout?.bars[i - 1]?.ending !== m.ending;
         return (
@@ -115,16 +123,20 @@ export function ChordBoard({
             disabled={!onBarClick}
             aria-pressed={inLoop}
             // letras del cifrado de un compás con dos acordes: el atril las achica para que entren en un solo renglón
-            style={chords.length === 2 ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties) : undefined}
+            style={!hide && chords.length === 2 ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties) : undefined}
           >
             <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
             {sections.has(i) && <b className="sec" title={`Sección ${m?.section}`}>{m?.section}</b>}
             {showEnd && <i className="endno">{m?.ending}.</i>}
-            {chords.map((x, j) => (
-              <span key={x.idx} className={isNow && j === curPos ? 'cur' : ''}>
-                <ChordText chord={x.chord} />
-              </span>
-            ))}
+            {hide ? (
+              <span className="ph"><span aria-hidden>· · ·</span><span className="sr">Acordes ocultos</span></span>
+            ) : (
+              chords.map((x, j) => (
+                <span key={x.idx} className={isNow && j === curPos ? 'cur' : ''}>
+                  <ChordText chord={x.chord} />
+                </span>
+              ))
+            )}
           </button>
         );
       })}

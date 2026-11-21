@@ -81,8 +81,9 @@ test.describe('modo atril', () => {
     const t0 = await tempo();
     await dialog.getByRole('button', { name: 'Subir el tempo' }).click();
     expect(await tempo()).toBe(t0 + 4);
-    // sólo quedan detener y el tempo con − y +: no hay botones de tamaño de letra
-    await expect(dialog.locator('.atril-bar button')).toHaveCount(3);
+    // sólo quedan detener, el tempo con − y + y el modo de memoria (el ojo de «Mirar» aparece si hay algo oculto): no hay botones de tamaño de letra
+    await expect(dialog.locator('.atril-bar button')).toHaveCount(4);
+    await expect(dialog.getByRole('button', { name: /Modo de memoria/ })).toHaveCount(1);
     await expect(dialog.getByRole('button', { name: /Letra más/ })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Detener' }).click();
     await dialog.getByRole('button', { name: 'Cerrar el modo atril' }).click();
