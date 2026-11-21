@@ -910,3 +910,22 @@ details.info summary { cursor: pointer; color: var(--muted); }
   .blocks .block, .page > .block { margin: 0; }
   .block footer.row, .bbody .row { margin-top: 4px; }
 }
+
+/* Celular apaisado (poca altura): el encabezado ocupaba la mitad de la pantalla y quedaba fijo.
+   Pasa a una sola fila, sin el nombre, y se va con el desplazamiento; la subbarra se achica. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); padding-bottom: 32px; }
+  .top { position: static; flex-wrap: nowrap; gap: 8px 12px; padding: 4px 0; margin-bottom: 6px; }
+  .brand { order: 0; }
+  .brandname { display: none; }
+  .brand img { width: 32px; height: 32px; }
+  .top nav { order: 1; flex: 1 1 0; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a { flex: 0 0 auto; white-space: nowrap; }
+  .prefs { order: 2; margin-left: 0; flex: 0 0 auto; }
+  .subnav { margin: 0 0 6px; gap: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .subnav a { flex: 0 0 auto; white-space: nowrap; }
+  .page { gap: 8px; }
+  .card { padding: 10px; }
+}
