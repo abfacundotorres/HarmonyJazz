@@ -5,6 +5,7 @@ import {
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
 import { melodyNotes, sliceMelody } from '../../content/melody';
+import { PROGRESIONES_DOMINIO_PUBLICO } from '../../content/dominioPublico';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { localizeNotes } from '../../exercises/localize';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
@@ -52,7 +53,7 @@ export function PlayAlong() {
     () => (library.tunes ?? []).map((t) => validateTune(t)).filter((t): t is UserTune => typeof t !== 'string'),
     [library],
   );
-  const all: Progression[] = useMemo(() => [...PROGRESSIONS, ...tunes.map(tuneToProgression)], [tunes]);
+  const all: Progression[] = useMemo(() => [...PROGRESSIONS, ...PROGRESIONES_DOMINIO_PUBLICO, ...tunes.map(tuneToProgression)], [tunes]);
   const selected = all.find((p) => p.id === query.get('p')) ?? PROGRESSIONS[0];
 
   // progresión propia sin guardar ("probar")
@@ -75,6 +76,8 @@ export function PlayAlong() {
   const [useCustom, setUseCustom] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [libMsg, setLibMsg] = useState<string | null>(null);
+  // aviso de «Copiar a Mis temas» (aparte del de la biblioteca, para no repetirlo ni abrir esa sección)
+  const [dpMsg, setDpMsg] = useState<string | null>(null);
   const [customKey, setCustomKey] = useState<string | null>(null);
   const [shift, setShift] = useState(0);
 
@@ -152,7 +155,7 @@ export function PlayAlong() {
   const setModo = (m: MemoriaModo) => { setMemo({ modo: m }); setMirar(false); };
   const { keyLabel, view, iv } = useReading();
   /** Los nombres y notas de las progresiones de la app están en concierto: se muestran en la lectura elegida. Los temas propios no se tocan. */
-  const loc = (p: Progression, text: string) => (p.category === 'Mis temas' ? text : localizeNotes(text, 'C', 'C', iv));
+  const loc = (p: Progression, text: string) => (p.category === 'Mis temas' || p.category === 'Dominio público' ? text : localizeNotes(text, 'C', 'C', iv));
   const mine = pos && pos.owner === OWNER ? pos : null;
   const nivel = mirar ? 'todo' : memoriaNivel(memoModo, mine && mine.chorus >= 0 ? mine.chorus : -1);
   const ci = mine && !mine.countIn ? mine.chordIndex : -1;
@@ -278,6 +281,16 @@ export function PlayAlong() {
     setQuery(tune.id);
   };
 
+  /** Un tema de dominio público pasa a ser tuyo: se puede corregir, sumarle la melodía y llevarlo por la escalera de repertorio. */
+  const copiarAMisTemas = (p: Progression) => {
+    if (tunes.some((t) => t.name === p.name && t.chart === p.chart)) return setDpMsg(`«${p.name}» ya está en Mis temas.`);
+    if (tunes.length >= MAX_TUNES) return setDpMsg(`Llegaste al máximo de ${MAX_TUNES} temas`);
+    const r = validateTune({ name: p.name, composer: 'Tradicional', key: p.key, mode: p.mode, chart: p.chart, tempo: p.tempo, style: p.style });
+    if (typeof r === 'string') return setDpMsg(r);
+    setLibrary({ tunes: [...tunes, r] });
+    setDpMsg(`«${p.name}» copiado a Mis temas: lo encontrás ahí y en Mi repertorio.`);
+  };
+
   const exportTunes = () => {
     const blob = new Blob([JSON.stringify({ app: 'harmonyjazz', version: 1, tunes }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -324,13 +337,14 @@ export function PlayAlong() {
               const p = all.find((x) => x.id === e.target.value);
               if (!p) return;
               setUseCustom(false);
+              setDpMsg(null);
               setTempo(p.tempo);
               setQuery(p.id);
             }}
             aria-label="Tema"
           >
             {useCustom && <option value="">Progresión propia (sin guardar)</option>}
-            {(['Fundamentos', 'Blues', 'Formas', 'Avanzado', 'Mis temas'] as const).map((cat) => {
+            {(['Fundamentos', 'Blues', 'Formas', 'Avanzado', 'Dominio público', 'Mis temas'] as const).map((cat) => {
               const items = all.filter((p) => p.category === cat);
               return items.length ? (
                 <optgroup key={cat} label={cat}>
@@ -345,6 +359,12 @@ export function PlayAlong() {
           </select>
         </header>
         {!useCustom && <p className="muted">{loc(selected, selected.notes)}</p>}
+        {!useCustom && selected.category === 'Dominio público' && (
+          <p>
+            <button onClick={() => copiarAMisTemas(selected)}>Copiar a Mis temas</button>
+            {dpMsg && <span className="muted small" role="status"> {dpMsg}</span>}
+          </p>
+        )}
         {useCustom && <p className="muted">Estás tocando una progresión propia sin guardar. Guardala en "Mis temas" para conservarla.</p>}
 
         {showKeys ? (
