@@ -1,4 +1,9 @@
-import { expect, test } from './helpers';
+import { expect, test, sinAtrilAutomatico } from './helpers';
+
+// estas pruebas usan el reproductor del Play-along: que dar play no abra el atril encima
+test.beforeEach(async ({ page }) => {
+  await sinAtrilAutomatico(page);
+});
 
 const style = (page: import('@playwright/test').Page) => page.getByLabel('Estilo', { exact: true }).first();
 

@@ -978,3 +978,9 @@ details.info summary { cursor: pointer; color: var(--muted); }
   .visor-largo, .visor-nota { display: none; }
   .visor-barra { margin: 0 0 4px; }
 }
+
+/* atril: botón de tonalidad, panel de las 12 tonalidades y consigna de la toma */
+.atril-key { font-weight: 700; }
+.atril-key.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.atril-keys { padding: 6px 0 2px; }
+.atril-consigna { margin: 4px 0 0; font-weight: 700; font-size: 1.1rem; }

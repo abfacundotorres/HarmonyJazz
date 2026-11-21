@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Position } from '../../audio/engine';
 import { beatsPerBar } from '../../theory/chart';
 import type { Chart } from '../../theory/chart';
@@ -7,7 +7,14 @@ import { usePersistent } from '../../state/storage';
 import { useWakeLock } from '../wakeLock';
 import type { DocLayout } from '../../content/chartDoc';
 import { MEMORIA_MODOS, type MemoriaModo, type MemoriaNivel } from '../../content/memoria';
+import { useReading } from '../hooks';
 import { ChordBoard } from './ChordInfo';
+import { KeySelect } from './KeySelect';
+
+/** Cómo se cambia la tonalidad desde el atril: elegir una de las 12 (temas con tonalidad) o subir y bajar medio tono (sin ella). */
+export type AtrilTranspose =
+  | { kind: 'key'; value: string; minor: boolean; onChange: (k: string) => void }
+  | { kind: 'shift'; shift: number; onShift: (delta: number) => void; onReset: () => void };
 
 /**
  * Modo atril: la grilla en pantalla completa y en letra grande, para leer a distancia con el celular en el atril. Mantiene
@@ -32,6 +39,8 @@ export function Atril({
   onMemoryMode,
   peek,
   onPeek,
+  transpose,
+  consigna,
 }: {
   title: string;
   keyLabel: string | null;
@@ -53,23 +62,32 @@ export function Atril({
   onMemoryMode: () => void;
   peek: boolean;
   onPeek: () => void;
+  /** Para cambiar la tonalidad sin salir del atril. */
+  transpose?: AtrilTranspose;
+  /** Lo que hay que hacer ahora (la toma completa: «Coro 2 de 3: Improvisá»). */
+  consigna?: string | null;
 }) {
   const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(cfg.size);
+  const { keyLabel: label, view } = useReading();
+  const [keysOpen, setKeysOpen] = useState(false);
   useWakeLock(true);
 
-  // pantalla completa (si el navegador lo permite) y Escape para salir
+  // pantalla completa (si el navegador lo permite) y Escape para salir. Una sola vez: `onClose` cambia en cada actualización del
+  // Play-along (cada tiempo del compás); si el efecto dependiera de él, saldría de la pantalla completa y no podría volver a entrar
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     void document.documentElement.requestFullscreen?.().catch(() => undefined);
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') closeRef.current();
     };
     window.addEventListener('keydown', key);
     return () => {
       window.removeEventListener('keydown', key);
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     };
-  }, [onClose]);
+  }, []);
 
   // el compás que suena queda a la vista
   useEffect(() => {
@@ -83,7 +101,13 @@ export function Atril({
       <div className="atril-head">
         <div className="atril-top">
           <b>{title}</b>
-          {keyLabel && <span className="muted">· {keyLabel}</span>}
+          {transpose ? (
+            <button className={`atril-key ${keysOpen ? 'on' : ''}`} onClick={() => setKeysOpen((o) => !o)} aria-expanded={keysOpen} aria-label="Cambiar la tonalidad">
+              ♪ {transpose.kind === 'key' ? `${label(transpose.value)}${transpose.minor ? 'm' : ''}` : transpose.shift === 0 ? 'original' : `${transpose.shift > 0 ? '+' : ''}${transpose.shift}`} ▾
+            </button>
+          ) : (
+            keyLabel && <span className="muted">· {keyLabel}</span>
+          )}
           {pos && pos.chorus >= 0 && <span className="muted">· coro {pos.chorus + 1}</span>}
           {pos?.countIn && <span className="muted">· cuenta…</span>}
           <div className="atril-beats" aria-hidden>
@@ -93,6 +117,28 @@ export function Atril({
           </div>
           <button onClick={onClose} aria-label="Cerrar el modo atril">✕ Cerrar</button>
         </div>
+        {consigna && <p className="atril-consigna" role="status">{consigna}</p>}
+        {keysOpen && transpose && (
+          <div className="atril-keys" role="group" aria-label="Tonalidad">
+            {transpose.kind === 'key' ? (
+              <>
+                <KeySelect value={transpose.value} onChange={(k) => { transpose.onChange(k); setKeysOpen(false); }} minor={transpose.minor} />
+                <p className="muted small">
+                  {view === 'Bb'
+                    ? `Tocás en ${label(transpose.value)}${transpose.minor ? 'm' : ''} (escrito para Si♭); en concierto suena en ${transpose.value}${transpose.minor ? 'm' : ''}.`
+                    : `Tocás en ${transpose.value}${transpose.minor ? 'm' : ''} (concierto).`}
+                </p>
+              </>
+            ) : (
+              <div className="row">
+                <button onClick={() => transpose.onShift(-1)} aria-label="Bajar un semitono">− ½ tono</button>
+                <b>{transpose.shift === 0 ? 'original' : `${transpose.shift > 0 ? '+' : ''}${transpose.shift} semitono${Math.abs(transpose.shift) === 1 ? '' : 's'}`}</b>
+                <button onClick={() => transpose.onShift(1)} aria-label="Subir un semitono">+ ½ tono</button>
+                {transpose.shift !== 0 && <button onClick={transpose.onReset}>Volver al original</button>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <ChordBoard chart={chart} current={current} loop={loop} layout={layout} memory={memory} />

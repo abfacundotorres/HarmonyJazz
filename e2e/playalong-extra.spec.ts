@@ -1,4 +1,9 @@
-import { expect, test } from './helpers';
+import { expect, test, sinAtrilAutomatico } from './helpers';
+
+// estas pruebas usan el reproductor del Play-along: que dar play no abra el atril encima
+test.beforeEach(async ({ page }) => {
+  await sinAtrilAutomatico(page);
+});
 
 test('acelerar solo: cada vuelta sube lo pedido y la pantalla dice a cuánto suena', async ({ page }) => {
   await page.goto('/#/playalong?p=ii-v-i');

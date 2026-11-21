@@ -31,6 +31,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('theme', oneOf(raw.theme, THEME_IDS));
   set('a4', num(raw.a4, 415, 466));
   set('keepAwake', typeof raw.keepAwake === 'boolean' ? raw.keepAwake : undefined);
+  set('autoAtril', typeof raw.autoAtril === 'boolean' ? raw.autoAtril : undefined);
   return out;
 };
 
