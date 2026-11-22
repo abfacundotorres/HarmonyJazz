@@ -51,6 +51,7 @@ export function ChordBoard({
   onBarClick,
   layout,
   memory = 'todo',
+  flojos,
 }: {
   chart: Chart;
   current: number;
@@ -61,6 +62,8 @@ export function ChordBoard({
   layout?: DocLayout | null;
   /** Modo de memoria: cuánto de la grilla se ve ('todo' la muestra completa). Los compases ocultos conservan número, sección y marca. */
   memory?: MemoriaNivel;
+  /** Compases flojos (índices de la grilla escrita): se marcan con una bandera. */
+  flojos?: ReadonlySet<number>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { iv } = useReading();
@@ -105,6 +108,7 @@ export function ChordBoard({
           isNow ? 'now' : '',
           !isNow && wb.plays.includes(nextBar) ? 'next' : '',
           inLoop ? 'inloop' : '',
+          flojos?.has(i) ? 'floja' : '',
           pending !== null && pending !== undefined && wb.plays.includes(pending) ? 'pending' : '',
           m?.repeatStart ? 'rs' : '',
           m?.repeatEnd ? 're' : '',
@@ -126,6 +130,7 @@ export function ChordBoard({
             style={!hide && chords.length === 2 ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties) : undefined}
           >
             <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
+            {flojos?.has(i) && <span className="flag" aria-label="Compás flojo" title="Compás flojo">⚑</span>}
             {sections.has(i) && <b className="sec" title={`Sección ${m?.section}`}>{m?.section}</b>}
             {showEnd && <i className="endno">{m?.ending}.</i>}
             {hide ? (

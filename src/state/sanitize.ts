@@ -115,6 +115,18 @@ export const sanitizeAtril: Sanitizer = (raw) => {
 
 export const sanitizeMemoria: Sanitizer = (raw) => (isObj(raw) ? (isMemoriaModo(raw.modo) ? { modo: raw.modo } : {}) : null);
 
+/** Compases flojos por tema: ids con compases enteros de 0 a 255, ordenados y sin repetir; los vacíos se descartan. */
+export const sanitizeFlojos: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const out: Record<string, number[]> = {};
+  for (const [id, v] of Object.entries(raw).slice(0, 500)) {
+    if (!Array.isArray(v)) continue;
+    const l = [...new Set(v.filter((n): n is number => Number.isInteger(n) && n >= 0 && n <= 255))].sort((a, b) => a - b);
+    if (l.length) out[id] = l;
+  }
+  return out;
+};
+
 export const sanitizeEditor: Sanitizer = (raw) => (isObj(raw) ? (typeof raw.auto === 'boolean' ? { auto: raw.auto } : {}) : null);
 
 export const sanitizeMetro: Sanitizer = (raw) => {
@@ -220,6 +232,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   phrases: sanitizePhrases,
   atril: sanitizeAtril,
   memoria: sanitizeMemoria,
+  flojos: sanitizeFlojos,
   editor: sanitizeEditor,
   metro: sanitizeMetro,
   longnotes: sanitizeLongNotes,

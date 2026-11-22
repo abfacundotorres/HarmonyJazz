@@ -1043,3 +1043,10 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .mapa-cab { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between; }
 .mapa-acordes { font-family: var(--mono, ui-monospace, monospace); font-size: .9rem; overflow-wrap: anywhere; }
 .mapa-lista button { min-height: 44px; }
+
+/* compases flojos y loop por sección */
+.tramos { display: grid; gap: 6px; margin-bottom: 8px; }
+.tramos .row { align-items: center; }
+.tramos button { min-height: 44px; }
+.board .bar.floja { box-shadow: inset 0 0 0 2px var(--bad); }
+.board .bar .flag { position: absolute; right: 4px; bottom: 2px; font-size: .75rem; color: var(--bad); line-height: 1; }
