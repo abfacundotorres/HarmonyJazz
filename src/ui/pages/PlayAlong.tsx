@@ -15,6 +15,7 @@ import {
 import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
+import { MapaArmonico } from '../components/MapaArmonico';
 import { MEMORIA_MODOS, type MemoriaModo, memoriaNivel, siguienteModo } from '../../content/memoria';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
@@ -550,6 +551,13 @@ export function PlayAlong() {
         </div>
         <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
+        <MapaArmonico
+          chart={chart}
+          layout={layout}
+          keyValue={baseKey ? key : null}
+          minor={base.mode === 'minor'}
+          onLoop={(a, b) => { setLoop([a, b]); setPending(null); }}
+        />
       </section>
 
       <TuneLibrary
