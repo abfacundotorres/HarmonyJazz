@@ -16,6 +16,9 @@ import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { MapaArmonico } from '../components/MapaArmonico';
+import { PracticaTramos } from '../components/PracticaTramos';
+import { alternarFloja, flojosDentro, secciones as seccionesDe, sonados, tramoSiguiente, tramosFlojos } from '../../content/flojos';
+import type { Flojos } from '../../content/flojos';
 import { MEMORIA_MODOS, type MemoriaModo, memoriaNivel, siguienteModo } from '../../content/memoria';
 import { KeySelect } from '../components/KeySelect';
 import { ListenPanel } from '../components/ListenPanel';
@@ -172,7 +175,36 @@ export function PlayAlong() {
   const chord = ci >= 0 ? playChart.chords[ci]?.chord ?? null : null;
   const next = ci >= 0 ? playChart.chords[(ci + 1) % playChart.chords.length]?.chord ?? null : null;
 
+  // compases flojos (se guardan por tema, en índices de la grilla escrita) y bucle por sección
+  const [flojosTodos, setFlojosTodos] = usePersistent<Flojos>('flojos', {});
+  const [marcando, setMarcando] = useState(false);
+  const [tramoFloja, setTramoFloja] = useState<[number, number] | null>(null);
+  const orden = layout && layout.order.length === chart.bars ? layout.order : undefined;
+  const flojosTema = useMemo(() => (useCustom ? [] : flojosDentro(flojosTodos[selected.id] ?? [], orden ? Math.max(...orden) + 1 : chart.bars)), [useCustom, flojosTodos, selected.id, orden, chart.bars]);
+  const flojosSet = useMemo(() => new Set(flojosTema), [flojosTema]);
+  const tramos = useMemo(() => tramosFlojos(flojosTema), [flojosTema]);
+  const secciones = useMemo(() => seccionesDe(layout), [layout]);
+  useEffect(() => {
+    setMarcando(false);
+    setTramoFloja(null);
+  }, [selected.id, useCustom]);
+  const loopDe = (desde: number, hasta: number) => {
+    const r = sonados(desde, hasta, orden);
+    if (!r) return;
+    setLoop(r);
+    setPending(null);
+  };
+
   const onBarClick = (bar: number) => {
+    if (marcando && !useCustom) {
+      const w = orden ? orden[bar] : bar;
+      setFlojosTodos((f) => {
+        const l = alternarFloja(f[selected.id], w);
+        const { [selected.id]: _viejo, ...resto } = f;
+        return l.length ? { ...resto, [selected.id]: l } : resto;
+      });
+      return;
+    }
     if (pending === null) {
       setPending(bar);
       return;
@@ -536,6 +568,29 @@ export function PlayAlong() {
       )}
 
       <section className="card">
+        <PracticaTramos
+          secciones={secciones}
+          loop={loopValid}
+          onSeccion={(s) => { setTramoFloja(null); loopDe(s.desde, s.hasta); }}
+          flojos={useCustom ? null : { cuantos: flojosTema.length, tramos }}
+          marcando={marcando}
+          onMarcando={() => setMarcando((m) => !m)}
+          onRecorrer={() => {
+            const t = tramoSiguiente(tramos, tramoFloja);
+            if (!t) return;
+            setTramoFloja(t);
+            loopDe(t[0], t[1]);
+          }}
+          onBorrar={() => {
+            if (!window.confirm('¿Borrar las marcas de compases flojos de este tema?')) return;
+            setFlojosTodos((f) => {
+              const { [selected.id]: _viejo, ...resto } = f;
+              return resto;
+            });
+            setTramoFloja(null);
+          }}
+          tramoActual={tramoFloja}
+        />
         <div className="loopbar" role="status">
           {loopValid ? (
             <>
@@ -549,7 +604,7 @@ export function PlayAlong() {
           )}
           {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
         </div>
-        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} />
+        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} flojos={flojosSet} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
         <MapaArmonico
           chart={chart}
