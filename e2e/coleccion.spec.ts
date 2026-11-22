@@ -33,7 +33,7 @@ test.describe('mi colección', () => {
   test('sin archivo explica qué hacer; al elegirlo muestra cuántos temas hay y una primera página, con «Ver más»', async ({ page }) => {
     await abrir(page);
     await expect(page.getByRole('button', { name: 'Elegir archivo…' })).toBeVisible();
-    await expect(page.getByText(/no se sube a ningún lado/).first()).toBeVisible();
+    await expect(page.locator('details.coleccion').getByText(/no se sube a ningún lado/)).toBeVisible();
     await subir(page); // la extensión .txt (como llega por WhatsApp) también sirve
     await expect(page.getByText('«mis-temas.txt» · 1504 temas')).toBeVisible();
     await expect(page.locator('.colecc-lista li')).toHaveCount(30);

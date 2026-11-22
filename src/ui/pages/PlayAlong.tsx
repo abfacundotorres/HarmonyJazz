@@ -552,8 +552,6 @@ export function PlayAlong() {
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
       </section>
 
-      <ColeccionPanel existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
-
       <TuneLibrary
         draft={draft}
         onDraft={setDraft}
@@ -592,6 +590,9 @@ export function PlayAlong() {
         onImport={importTunes}
         onBulkImport={bulkImport}
       />
+
+      {/* la colección va debajo de Mis temas: es una fuente desde la que se agrega ahí */}
+      <ColeccionPanel existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
     </div>
   );
 }
