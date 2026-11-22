@@ -960,7 +960,7 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .temaex > .card { background: transparent; border: 0; box-shadow: none; padding-left: 0; padding-right: 0; }
 
 /* toma completa: el título va a la par de la flecha del plegable */
-.card.toma > summary h3 { display: inline; margin: 0; }
+.card.toma > summary h3, .card.coleccion > summary h3 { display: inline; margin: 0; }
 .tomaconsigna { font-size: 1.1rem; margin: 10px 0 4px; }
 
 .keepawake { display: flex; gap: 8px; align-items: center; min-height: 44px; margin: 8px 0 0; }
@@ -1014,3 +1014,13 @@ details.info summary { cursor: pointer; color: var(--muted); }
   .ced-keypad .ced-slots button { min-width: 0; flex: 0 0 auto; padding-left: .55em; padding-right: .55em; }
   .ced-keypad .ced-barno { min-width: 2.4em; }
 }
+
+/* mi colección (JSON): lista con buscador */
+.colecc-buscar { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--muted); margin: 8px 0 0; }
+.colecc-buscar input { width: 100%; }
+.colecc-lista { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.colecc-lista li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.colecc-lista li > span:first-child { flex: 1 1 14em; min-width: 0; }
+.colecc-lista .row { margin: 0; }
+.colecc-ok { border-left: 4px solid var(--accent); padding-left: 10px; margin: 8px 0; }
+.colecc-ok p { margin: 0 0 4px; }
