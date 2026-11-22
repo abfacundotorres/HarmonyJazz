@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
-import { logrados, marcar, PASOS, siguientePaso, tocado } from '../../content/repertorio';
+import { useEffect, useMemo, useState } from 'react';
+import { alternarTonalidad, type Avance, BPM, detalleDe, fijarBpm, llegoAlTempo, logrados, marcar, PASOS, resumenAvance, siguientePaso, tocado } from '../../content/repertorio';
 import { dayNum } from '../../state/progress';
-import { useMonth, usePersistentLibrary, useRepertorio, useRoute } from '../hooks';
+import { CONCERT_KEYS } from '../../theory/chart';
+import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute } from '../hooks';
 import { TemaEjercicios } from '../components/TemaEjercicios';
 import { progresionDeTema } from '../progresionDeTema';
 import { temasDeRepertorio } from '../repertorioTemas';
@@ -17,6 +18,9 @@ export function Repertorio() {
   const today = useMemo(() => new Date(), []);
   const { temas, delMes } = useMemo(() => temasDeRepertorio(lib, mp, today), [lib, mp, today]);
   const { query } = useRoute();
+  const { keyLabel } = useReading();
+  // el tempo de cada tema (el de la forma o el que se cargó), para saber si «de memoria» ya llegó
+  const tempos = useMemo(() => new Map(temas.map((t) => [t.id, progresionDeTema(t.id, lib)?.tempo])), [temas, lib]);
 
   return (
     <div className="page repertorio">
@@ -40,6 +44,7 @@ export function Repertorio() {
         const a = rep[t.id];
         const n = logrados(a);
         const sig = siguientePaso(a);
+        const res = resumenAvance(a);
         return (
           <section key={t.id} className="card tema" aria-label={t.name}>
             <header>
@@ -51,6 +56,13 @@ export function Repertorio() {
               {n} de {PASOS.length} pasos · {a && a.ultimo > 0 ? `lo tocaste ${hace(hoy - a.ultimo)}` : 'todavía no lo tocaste'}
               {sig !== null ? ` · sigue: ${PASOS[sig].titulo}` : ' · ¡completo!'}
             </p>
+            {(res.mejorBpm !== null || res.tonalidades.length > 0) && (
+              <p className="small" data-testid="resumen-tema">
+                {res.mejorBpm !== null && <>Mejor tempo anotado: <b>{res.mejorBpm} bpm</b></>}
+                {res.mejorBpm !== null && res.tonalidades.length > 0 && ' · '}
+                {res.tonalidades.length > 0 && <>Tonalidades tocadas: <b>{res.tonalidades.length} de 12</b> ({res.tonalidades.map(keyLabel).join(', ')})</>}
+              </p>
+            )}
             <ol className="pasos">
               {PASOS.map((p, i) => (
                 <li key={p.id} className={sig === i ? 'next' : ''}>
@@ -61,6 +73,16 @@ export function Repertorio() {
                   {p.id === 'grabado' && (
                     <a className="small" href={`#/playalong?p=${encodeURIComponent(t.id)}&toma=1`}>● Grabar una toma completa de este tema →</a>
                   )}
+                  <PasoDetalle
+                    paso={p.titulo}
+                    tema={t.name}
+                    avance={a}
+                    indice={i}
+                    visible={!!a?.hechos.includes(i) || sig === i}
+                    tempoTema={p.id === 'memoria' ? tempos.get(t.id) : undefined}
+                    onBpm={(v) => setRep((r) => fijarBpm(r, t.id, i, v, dayNum()))}
+                    onKey={(k) => setRep((r) => alternarTonalidad(r, t.id, i, k, dayNum()))}
+                  />
                 </li>
               ))}
             </ol>
@@ -81,4 +103,69 @@ function Ejercicios({ id, lib, abrir, ex, k }: { id: string; lib: { tunes?: unkn
   const prog = useMemo(() => progresionDeTema(id, lib), [id, lib]);
   // la clave hace que un enlace nuevo (otro ejercicio o tonalidad) rearme la tarjeta aunque la pantalla ya esté abierta
   return prog ? <TemaEjercicios key={`${abrir}|${ex}|${k}`} prog={prog} abierto={abrir} ejInicial={ex} keyInicial={k} /> : null;
+}
+
+/** Un casillero de tempo: se escribe el número y se confirma al salir del campo o con Enter; vacío lo borra. */
+function BpmInput({ value, onChange, label }: { value: number | undefined; onChange: (v: number | null) => void; label: string }) {
+  const [texto, setTexto] = useState(value === undefined ? '' : String(value));
+  useEffect(() => setTexto(value === undefined ? '' : String(value)), [value]);
+  const confirmar = () => {
+    if (texto.trim() === '') return value === undefined ? undefined : onChange(null);
+    const v = Math.round(Number(texto));
+    if (Number.isFinite(v)) onChange(v);
+    else setTexto(value === undefined ? '' : String(value));
+  };
+  return (
+    <input
+      type="number" inputMode="numeric" min={BPM.min} max={BPM.max} value={texto} placeholder="bpm" aria-label={label}
+      onChange={(e) => setTexto(e.target.value)} onBlur={confirmar} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+    />
+  );
+}
+
+/** Lo que se anota de un paso: a qué tempo salió y en qué tonalidades. Un renglón resumen y, plegado, para anotarlo. */
+function PasoDetalle({ paso, tema, avance, indice, visible, tempoTema, onBpm, onKey }: {
+  paso: string;
+  tema: string;
+  avance: Avance | undefined;
+  indice: number;
+  /** Se anota en los pasos ya tildados y en el que sigue; en los demás sólo si ya tienen algo anotado. */
+  visible: boolean;
+  /** Sólo para «De memoria, a tempo»: el tempo del tema. */
+  tempoTema?: number;
+  onBpm: (v: number | null) => void;
+  onKey: (k: string) => void;
+}) {
+  const { keyLabel } = useReading();
+  const d = detalleDe(avance, indice);
+  const hay = d.bpm !== undefined || d.keys.length > 0;
+  if (!visible && !hay) return null;
+  return (
+    <>
+      {hay && (
+        <small className="paso-resumen">
+          {d.bpm !== undefined && <>♩ {d.bpm} bpm</>}
+          {d.bpm !== undefined && d.keys.length > 0 && ' · '}
+          {d.keys.length > 0 && <>en {d.keys.map(keyLabel).join(', ')}</>}
+          {tempoTema !== undefined && d.bpm !== undefined && (llegoAlTempo(d.bpm, tempoTema) ? ` · ✓ llegaste al tempo del tema (${tempoTema})` : ` · faltan ${tempoTema - d.bpm} bpm para el tempo del tema (${tempoTema})`)}
+        </small>
+      )}
+      <details className="pasodet">
+        <summary>Tempo y tonalidades</summary>
+        <label className="small">
+          Tempo al que te salió{' '}
+          <BpmInput value={d.bpm} onChange={onBpm} label={`Tempo del paso ${paso} de ${tema}`} />
+          {tempoTema !== undefined && <span className="muted"> (tempo del tema: {tempoTema} bpm)</span>}
+        </label>
+        <div className="row" role="group" aria-label={`Tonalidades del paso ${paso} de ${tema}`}>
+          {CONCERT_KEYS.map((k) => (
+            <button key={k} className={d.keys.includes(k) ? 'on' : ''} aria-pressed={d.keys.includes(k)} onClick={() => onKey(k)} title={`Concierto: ${k}`}>
+              {keyLabel(k)}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">Las tonalidades se leen como el resto de la app (Si♭ o concierto). Tocá las que ya tocaste.</p>
+      </details>
+    </>
+  );
 }
