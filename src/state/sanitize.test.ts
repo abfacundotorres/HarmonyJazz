@@ -119,3 +119,28 @@ describe('ajuste «abrir el atril al dar play»', () => {
     expect({ ...DEFAULT_SETTINGS, ...(sanitizeKey('settings', { view: 'C' }) as object) }.autoAtril).toBe(true);
   });
 });
+
+describe('el detalle de la escalera de repertorio guardado', () => {
+  it('conserva el tempo y las tonalidades válidas por paso y descarta lo demás', () => {
+    const r = sanitizeKey('repertorio', {
+      'u:a': {
+        hechos: [3], ultimo: 5, inicio: 1,
+        detalle: {
+          3: { bpm: 140.4, keys: ['G', 'C', 'C', 'H', 5, 'Db'] },
+          5: { bpm: 9999, keys: [] },
+          6: { keys: ['F'] },
+          9: { bpm: 120, keys: ['F'] },
+          x: { bpm: 100, keys: ['F'] },
+          1: { bpm: 'rápido', keys: 'no' },
+          2: 7,
+        },
+      },
+      'u:b': { hechos: [], ultimo: 0, inicio: 0, detalle: 'nada' },
+    }) as Record<string, { detalle?: Record<number, unknown> }>;
+    expect(r['u:a'].detalle).toEqual({ 3: { bpm: 140, keys: ['C', 'Db', 'G'] }, 5: { bpm: 320, keys: [] }, 6: { keys: ['F'] } }); // un tempo fuera de rango se lleva al tope, como los demás ajustes
+    expect(r['u:b'].detalle).toBeUndefined();
+  });
+  it('un avance de antes (sin detalle) sigue igual', () => {
+    expect(sanitizeKey('repertorio', { 'u:a': { hechos: [1], ultimo: 3, inicio: 2 } })).toEqual({ 'u:a': { hechos: [1], ultimo: 3, inicio: 2 } });
+  });
+});

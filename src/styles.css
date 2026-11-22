@@ -1024,3 +1024,12 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .colecc-lista .row { margin: 0; }
 .colecc-ok { border-left: 4px solid var(--accent); padding-left: 10px; margin: 8px 0; }
 .colecc-ok p { margin: 0 0 4px; }
+
+/* escalera de repertorio: tempo y tonalidades de cada paso */
+.paso-resumen { color: var(--accent); font-weight: 600; }
+.pasodet { margin: 4px 0 2px; }
+.pasodet > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-size: .85rem; color: var(--muted); }
+.pasodet label { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+.pasodet input[type='number'] { width: 5.5em; }
+.pasodet .row button { min-width: 2.6em; }
+.pasodet .row button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

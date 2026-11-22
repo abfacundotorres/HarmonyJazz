@@ -6,6 +6,8 @@
 import { FOCI } from '../content/focus';
 import { cleanCustom } from '../audio/metroVoices';
 import { isMemoriaModo } from '../content/memoria';
+import { BPM } from '../content/repertorio';
+import { CONCERT_KEYS } from '../theory/chart';
 import { THEME_IDS } from '../ui/themes';
 
 export type Sanitizer = (raw: unknown) => unknown;
@@ -189,11 +191,21 @@ export const sanitizeCurricula: Sanitizer = (raw) => {
 /** Mi repertorio: por tema, pasos logrados, último día que se tocó y día en que se empezó. */
 export const sanitizeRepertorio: Sanitizer = (raw) => {
   if (!isObj(raw)) return null;
-  const out: Record<string, { hechos: number[]; ultimo: number; inicio: number }> = {};
+  const out: Record<string, { hechos: number[]; ultimo: number; inicio: number; detalle?: Record<number, { bpm?: number; keys: string[] }> }> = {};
   for (const [id, v] of Object.entries(raw).slice(0, 300)) {
     if (id.length > 80 || !isObj(v)) continue;
     const hechos = Array.isArray(v.hechos) ? [...new Set(v.hechos.filter((x): x is number => typeof x === 'number' && Number.isInteger(x) && x >= 0 && x <= 6))].sort((a, b) => a - b) : [];
-    out[id] = { hechos, ultimo: Math.round(num(v.ultimo, 0, 100000) ?? 0), inicio: Math.round(num(v.inicio, 0, 100000) ?? 0) };
+    const detalle: Record<number, { bpm?: number; keys: string[] }> = {};
+    if (isObj(v.detalle)) {
+      for (const [k, d] of Object.entries(v.detalle)) {
+        const paso = Number(k);
+        if (!Number.isInteger(paso) || paso < 0 || paso > 6 || !isObj(d)) continue;
+        const bpm = num(d.bpm, BPM.min, BPM.max);
+        const keys = Array.isArray(d.keys) ? CONCERT_KEYS.filter((c) => (d.keys as unknown[]).includes(c)) : [];
+        if (bpm !== undefined || keys.length) detalle[paso] = { ...(bpm !== undefined ? { bpm: Math.round(bpm) } : {}), keys };
+      }
+    }
+    out[id] = { hechos, ultimo: Math.round(num(v.ultimo, 0, 100000) ?? 0), inicio: Math.round(num(v.inicio, 0, 100000) ?? 0), ...(Object.keys(detalle).length ? { detalle } : {}) };
   }
   return out;
 };

@@ -70,6 +70,9 @@ test.describe('toma completa', () => {
     await expect(page.getByText(/«Grabado completo» marcado/)).toBeVisible();
     const rep = await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:repertorio')!));
     expect(rep['u:toma'].hechos).toContain(6);
+    // la toma anota con qué tempo y en qué tonalidad salió (se tocó a 320 bpm en el Do de concierto del tema)
+    expect(rep['u:toma'].detalle[6]).toEqual({ bpm: 320, keys: ['C'] });
+    await expect(page.getByText(/\(320 bpm\)/).first()).toBeVisible();
   });
 
   test('cortarla a mitad deja lo grabado hasta ahí y no queda nada sonando', async ({ page }) => {

@@ -42,8 +42,8 @@ test.describe('mi repertorio', () => {
     await conTema(page);
     await page.goto('/#/repertorio');
     const tema = page.getByRole('region', { name: 'Hojas de otoño' });
-    await expect(tema.locator('ol.pasos input')).toHaveCount(7);
-    for (const c of await tema.locator('ol.pasos input').all()) await c.check();
+    await expect(tema.locator('ol.pasos input[type="checkbox"]')).toHaveCount(7); // las casillas de los pasos (cada uno tiene además su campo de tempo)
+    for (const c of await tema.locator('ol.pasos input[type="checkbox"]').all()) await c.check();
     await expect(tema).toContainText('7 de 7 pasos');
     await expect(tema).toContainText('¡completo!');
     await tema.getByRole('button', { name: 'Lo toqué hoy' }).click();
@@ -179,5 +179,114 @@ test.describe('ejercicios sobre un tema', () => {
     await page.goto('/#/progreso');
     await expect(page.getByRole('heading', { name: 'Tu progreso' })).toBeVisible();
     await expect(page.locator('.reviewlist a', { hasText: /borrado|guide/i })).toHaveCount(0);
+  });
+});
+
+test.describe('tempo y tonalidades de cada paso', () => {
+  const tema = (page: import('@playwright/test').Page) => page.getByRole('region', { name: 'Hojas de otoño' });
+  const paso = (page: import('@playwright/test').Page, titulo: string) => tema(page).locator('ol.pasos li', { hasText: titulo }).first();
+  const guardadoDetalle = (page: import('@playwright/test').Page) => page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:repertorio') ?? '{}')['u:hoja']?.detalle);
+
+  test('«De memoria, a tempo»: se anota el tempo y dice si llegó al del tema', async ({ page }) => {
+    await conTema(page); // el tema se carga a 120 bpm
+    await page.goto('/#/repertorio');
+    const memoria = paso(page, 'De memoria, a tempo');
+    // sin tildar el paso (ni ser el que sigue) no se ofrece anotar nada
+    await expect(memoria.getByText('Tempo y tonalidades')).toHaveCount(0);
+    await tema(page).getByLabel('Hojas de otoño: De memoria, a tempo').check();
+    await expect(memoria.locator('.paso-resumen')).toHaveCount(0); // sin nada anotado no hay resumen
+    await memoria.getByText('Tempo y tonalidades').click();
+    await expect(memoria).toContainText('tempo del tema: 120 bpm');
+    const bpm = memoria.getByLabel('Tempo del paso De memoria, a tempo de Hojas de otoño');
+    await bpm.fill('100');
+    await bpm.press('Enter');
+    await expect(memoria.locator('.paso-resumen')).toContainText('♩ 100 bpm');
+    await expect(memoria.locator('.paso-resumen')).toContainText('faltan 20 bpm para el tempo del tema (120)');
+    await bpm.fill('130');
+    await bpm.press('Enter');
+    await expect(memoria.locator('.paso-resumen')).toContainText('✓ llegaste al tempo del tema (120)');
+    expect((await guardadoDetalle(page))[5]).toEqual({ bpm: 130, keys: [] });
+    // el tema muestra su mejor tempo
+    await expect(page.getByTestId('resumen-tema')).toContainText('Mejor tempo anotado: 130 bpm');
+    // anotar algo cuenta como haberlo tocado hoy y no destilda ni tilda otros pasos
+    await expect(tema(page)).toContainText('lo tocaste hoy');
+    await expect(tema(page)).toContainText('1 de 7 pasos');
+    // vaciar el campo lo borra
+    await bpm.fill('');
+    await bpm.press('Enter');
+    await expect(memoria.locator('.paso-resumen')).toHaveCount(0);
+    expect(await guardadoDetalle(page)).toBeUndefined();
+  });
+
+  test('el tempo se lleva a 40–320 y se recuerda al recargar', async ({ page }) => {
+    await conTema(page);
+    await page.goto('/#/repertorio');
+    const guide = paso(page, 'Guide tones');
+    await tema(page).getByLabel('Hojas de otoño: Guide tones').check();
+    await guide.getByText('Tempo y tonalidades').click();
+    const bpm = guide.getByLabel('Tempo del paso Guide tones de Hojas de otoño');
+    await bpm.fill('9999');
+    await bpm.press('Enter');
+    await expect(guide.locator('.paso-resumen')).toContainText('♩ 320 bpm');
+    await bpm.fill('5');
+    await bpm.press('Enter');
+    await expect(guide.locator('.paso-resumen')).toContainText('♩ 40 bpm');
+    await page.reload();
+    await expect(paso(page, 'Guide tones').locator('.paso-resumen')).toContainText('♩ 40 bpm');
+  });
+
+  test('«La melodía»: se marcan las tonalidades en que la tocaste, se leen como el resto de la app y se guardan en concierto', async ({ page }) => {
+    await conTema(page);
+    await page.goto('/#/repertorio');
+    const melodia = paso(page, 'La melodía');
+    await tema(page).getByLabel('Hojas de otoño: La melodía').check();
+    await melodia.getByText('Tempo y tonalidades').click();
+    const grupo = melodia.getByRole('group', { name: 'Tonalidades del paso La melodía de Hojas de otoño' });
+    await expect(grupo.getByRole('button')).toHaveCount(12);
+    // la vista por defecto es Si♭: la tecla escrita «G» es el Fa de concierto
+    await grupo.getByRole('button', { name: 'G', exact: true }).click();
+    await grupo.getByRole('button', { name: 'C', exact: true }).click(); // Si♭ de concierto
+    await expect(grupo.getByRole('button', { name: 'G', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(melodia.locator('.paso-resumen')).toContainText('en G, C'); // en el orden de las doce tonalidades de concierto (Fa, Si♭)
+    expect((await guardadoDetalle(page))[3].keys).toEqual(['F', 'Bb']);
+    await expect(page.getByTestId('resumen-tema')).toContainText('Tonalidades tocadas: 2 de 12');
+    // desmarcar
+    await grupo.getByRole('button', { name: 'G', exact: true }).click();
+    await expect(grupo.getByRole('button', { name: 'G', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    expect((await guardadoDetalle(page))[3].keys).toEqual(['Bb']);
+    // en concierto se leen como se guardan
+    await page.goto('/#/mas');
+    await page.getByRole('button', { name: 'Concierto', exact: true }).first().click();
+    await page.goto('/#/repertorio');
+    await expect(paso(page, 'La melodía').locator('.paso-resumen')).toContainText('en B♭');
+  });
+
+  test('tildar el paso no pierde lo anotado, y los temas de antes (sin detalle) siguen igual', async ({ page }) => {
+    await page.addInitScript((t) => {
+      localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] }));
+      localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [0, 1], ultimo: 1, inicio: 1 } })); // formato anterior
+    }, TEMA);
+    await page.goto('/#/repertorio');
+    await expect(tema(page)).toContainText('2 de 7 pasos');
+    await expect(tema(page).locator('.paso-resumen')).toHaveCount(0);
+    const forma = paso(page, 'La forma');
+    await forma.getByText('Tempo y tonalidades').click();
+    await forma.getByLabel('Tempo del paso La forma de Hojas de otoño').fill('90');
+    await forma.getByLabel('Tempo del paso La forma de Hojas de otoño').press('Enter');
+    await tema(page).getByLabel('Hojas de otoño: La forma').uncheck();
+    await expect(forma.locator('.paso-resumen')).toContainText('♩ 90 bpm');
+    await tema(page).getByLabel('Hojas de otoño: La forma').check();
+    await expect(forma.locator('.paso-resumen')).toContainText('♩ 90 bpm');
+  });
+
+  test('un dato guardado dañado no rompe la pantalla', async ({ page }) => {
+    await page.addInitScript((t) => {
+      localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] }));
+      localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [1], ultimo: 1, inicio: 1, detalle: { 3: { bpm: 'x', keys: [1, 'H'] }, 99: 5, 5: { bpm: 140, keys: ['F'] } } } }));
+    }, TEMA);
+    await page.goto('/#/repertorio');
+    await expect(tema(page)).toContainText('1 de 7 pasos');
+    await expect(paso(page, 'De memoria, a tempo').locator('.paso-resumen')).toContainText('♩ 140 bpm');
+    await expect(paso(page, 'La melodía').locator('.paso-resumen')).toHaveCount(0);
   });
 });

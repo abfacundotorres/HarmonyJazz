@@ -24,7 +24,7 @@ import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
 import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useSettings, useTemasDeRepertorio } from '../hooks';
 import { consignaToma } from '../../content/toma';
-import { marcar, PASO_GRABADO } from '../../content/repertorio';
+import { detalleDe, logrado, PASO_GRABADO } from '../../content/repertorio';
 import { COROS_TOMA_INICIAL } from '../../content/toma';
 import { dayNum } from '../../state/progress';
 import { TomaCompleta } from '../components/TomaCompleta';
@@ -517,8 +517,8 @@ export function PlayAlong() {
         <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)}>
           {esTemaRep && (
             grabadoHecho
-              ? <span className="muted small">✓ «Grabado completo» marcado en Mi repertorio</span>
-              : <button onClick={() => setRep((r) => marcar(r, selected.id, PASO_GRABADO, dayNum()))}>✓ Marcar «Grabado completo» en Mi repertorio</button>
+              ? <span className="muted small">✓ «Grabado completo» marcado en Mi repertorio{detalleDe(rep[selected.id], PASO_GRABADO).bpm ? ` (${detalleDe(rep[selected.id], PASO_GRABADO).bpm} bpm)` : ''}</span>
+              : <button onClick={() => setRep((r) => logrado(r, selected.id, PASO_GRABADO, dayNum(), { bpm: tempo, key: baseKey ? key : undefined }))}>✓ Marcar «Grabado completo» en Mi repertorio ({tempo} bpm)</button>
           )}
         </TakeAudio>
       )}
