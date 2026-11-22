@@ -28,6 +28,7 @@ import { marcar, PASO_GRABADO } from '../../content/repertorio';
 import { COROS_TOMA_INICIAL } from '../../content/toma';
 import { dayNum } from '../../state/progress';
 import { TomaCompleta } from '../components/TomaCompleta';
+import { ColeccionPanel } from '../components/ColeccionPanel';
 import type { PlayerControl } from '../components/Player';
 import { usePersistent } from '../../state/storage';
 import { usePosition } from '../usePosition';
@@ -302,6 +303,28 @@ export function PlayAlong() {
     setDpMsg(`«${p.name}» copiado a Mis temas: lo encontrás ahí y en Mi repertorio.`);
   };
 
+  /** Un tema de la colección pasa a Mis temas (sin repetir el nombre y respetando el máximo); con `tocar`, queda elegido en el Play-along. */
+  const agregarDeColeccion = (t: UserTune, tocar: boolean): { ok: boolean; mensaje: string } => {
+    if (tunes.some((x) => x.name.toLowerCase() === t.name.toLowerCase())) return { ok: false, mensaje: `«${t.name}» ya está en Mis temas.` };
+    if (tunes.length >= MAX_TUNES) return { ok: false, mensaje: `Llegaste al máximo de ${MAX_TUNES} temas en Mis temas.` };
+    setLibrary({ tunes: [...tunes, t] });
+    if (tocar) {
+      setUseCustom(false);
+      setTempo(t.tempo);
+      setQuery(t.id);
+    }
+    return { ok: true, mensaje: `«${t.name}» agregado a Mis temas${tocar ? ' y listo para tocar' : ''} (${t.chart.split('|').length} compases).` };
+  };
+  const nombresEnMisTemas = useMemo(() => new Map(tunes.map((t) => [t.name.toLowerCase(), t.id])), [tunes]);
+  const tocarExistente = (id: string) => {
+    const t = tunes.find((x) => x.id === id);
+    if (!t) return;
+    setUseCustom(false);
+    setTempo(t.tempo);
+    setQuery(t.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const exportTunes = () => {
     const blob = new Blob([JSON.stringify({ app: 'harmonyjazz', version: 1, tunes }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -528,6 +551,8 @@ export function PlayAlong() {
         <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} />
         {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
       </section>
+
+      <ColeccionPanel existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
 
       <TuneLibrary
         draft={draft}
