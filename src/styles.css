@@ -1043,3 +1043,10 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .atril .board .bar.prop { display: grid; grid-template-columns: var(--cols); container-type: inline-size; flex-wrap: nowrap; justify-items: center; align-items: center; column-gap: 0; }
 .atril .board .bar.prop > span { white-space: nowrap; min-width: 0; text-align: center; font-size: min(var(--asz), calc(var(--share, .5) * 92cqw / (var(--glyphs, 4) * .6 + .8))); }
 .atril .board .bar.prop > span + span { border-left: 1px solid var(--line); padding-left: .15em; }
+
+/* pantallas que viven en «Más» */
+.extras { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.extras li { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; min-height: 44px; align-content: center; }
+.extras a { font-weight: 600; }
+.hoymas { margin: 14px 0 6px; text-align: center; }
+.hoymas a { padding: 10px 4px; display: inline-block; }

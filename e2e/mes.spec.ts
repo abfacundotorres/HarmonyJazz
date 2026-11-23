@@ -15,7 +15,6 @@ async function alSegundoDia(page: import('@playwright/test').Page) {
   await page.reload();
 }
 
-const hoy = (page: import('@playwright/test').Page) => page.getByRole('navigation', { name: 'Pantallas de Hoy' });
 
 test.describe('el mes con focos', () => {
   test('sin focos elegidos Hoy sigue con el plan de siempre, sin avisos del mes, y Mi mes está en la subbarra', async ({ page }) => {
@@ -23,9 +22,9 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('.notice.monthbar')).toHaveCount(0);
     await expect(page.locator('.hero')).toContainText('Tema de la semana');
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
-    await hoy(page).getByRole('link', { name: 'Mi mes' }).click();
+    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
     await expect(page).toHaveURL(/#\/mes$/);
-    await expect(hoy(page).getByRole('link')).toHaveText(['Plan', 'Mi mes', 'Currícula', 'Progreso']);
+    await expect(page.getByRole('navigation', { name: 'Pantallas de Más' }).getByRole('link', { name: 'Mi mes' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('hay focos nuevos para elegir (tríadas menores, mayores y menores, acordes de cuatro notas, células) y el plan de Hoy los trabaja', async ({ page }) => {
@@ -157,7 +156,7 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('.notice.monthbar')).toHaveCount(0);
     await expect(page.locator('.hero')).toContainText('Tema de la semana'); // vuelve al plan de siempre mientras tanto
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
-    await hoy(page).getByRole('link', { name: 'Mi mes' }).click();
+    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
     await expect(page.getByText(/¿Seguís con los mismos focos \(Flexibilidad y ligaduras, Guide tones/)).toBeVisible();
     await page.getByRole('button', { name: 'Seguir con los mismos' }).click();
     await expect(page.locator('.hero')).toContainText('Tu mes');
