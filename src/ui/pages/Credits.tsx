@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DOMINIO_PUBLICO } from '../../content/dominioPublico';
+import { FUENTES } from '../../content/estudio';
 
 const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
@@ -56,6 +57,21 @@ export function Credits() {
           {DOMINIO_PUBLICO.map((t) => (
             <li key={t.id}>
               <b>{t.nombre}</b>: {t.autoria} ({t.epoca}). {t.base}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card" id="listas-de-estudio">
+        <h3>Listas de temas para estudiar</h3>
+        <p>
+          «Qué estudiar y en qué orden» (Mi repertorio) toma de estas cuatro listas publicadas <b>sólo los títulos y compositores</b> de los temas y cuántas listas coinciden en cada uno.
+          No incluye acordes, melodías ni textos de esas páginas. El orden en etapas es criterio propio de la app.
+        </p>
+        <ul>
+          {FUENTES.map((f) => (
+            <li key={f.id}>
+              <a href={f.url} {...ext}>{f.nombre}</a>
             </li>
           ))}
         </ul>

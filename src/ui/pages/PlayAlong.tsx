@@ -655,7 +655,7 @@ export function PlayAlong() {
       />
 
       {/* la colección va debajo de Mis temas: es una fuente desde la que se agrega ahí */}
-      <ColeccionPanel existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
+      <ColeccionPanel key={query.get('buscar') ?? ''} consultaInicial={query.get('buscar') ?? ''} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
     </div>
   );
 }

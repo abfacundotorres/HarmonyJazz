@@ -3,6 +3,7 @@ import { alternarTonalidad, type Avance, BPM, detalleDe, fijarBpm, llegoAlTempo,
 import { dayNum } from '../../state/progress';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute } from '../hooks';
+import { QueEstudiar } from '../components/QueEstudiar';
 import { TemaEjercicios } from '../components/TemaEjercicios';
 import { progresionDeTema } from '../progresionDeTema';
 import { temasDeRepertorio } from '../repertorioTemas';
@@ -30,6 +31,8 @@ export function Repertorio() {
           Cada tema que estás aprendiendo tiene siete pasos, de saber la forma a tenerlo grabado. Tildá lo que ya te sale; la app te avisa cuando hace una semana que no lo tocás. Los temas son los de Play-along → Mis temas, y el tema del mes de la currícula.
         </p>
       </section>
+
+      <QueEstudiar tunes={lib.tunes} />
 
       {temas.length === 0 && (
         <section className="card">
