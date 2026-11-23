@@ -15,6 +15,7 @@ import {
 import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
+import { FichaAcordes } from '../components/FichaAcordes';
 import { MapaArmonico } from '../components/MapaArmonico';
 import { QuizAcordes } from '../components/QuizAcordes';
 import { PracticaTramos } from '../components/PracticaTramos';
@@ -603,6 +604,7 @@ export function PlayAlong() {
           }}
           tramoActual={tramoFloja}
         />
+        <FichaAcordes chart={chart} layout={layout} />
         <MapaArmonico
           chart={chart}
           layout={layout}

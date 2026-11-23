@@ -1048,3 +1048,13 @@ details.info summary { cursor: pointer; color: var(--muted); }
 /* «Estudiar este tema»: las herramientas de estudio, plegadas debajo del tablero */
 .card.estudio > details { margin-top: 8px; }
 .card.estudio .memoria { margin-bottom: 10px; }
+
+/* Ayuda memoria quieta del Play-along: un bloque por acorde distinto, para leerlo despacio */
+.ficha { margin-top: 10px; }
+.ficha > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.ficha-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 14px; }
+.ficha-acorde { border-left: 3px solid var(--accent, #c9a24b); padding: 2px 0 2px 12px; }
+.ficha-cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ficha-cab .sym { font-family: var(--serif); font-weight: 800; font-size: 2rem; color: var(--accent); line-height: 1.1; }
+.ficha-acorde .facts { display: grid; gap: 6px; margin-top: 6px; }
+.ficha-acorde .gt { font-size: 1.2rem; }
