@@ -16,6 +16,7 @@ import { Atril } from '../components/Atril';
 import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { MapaArmonico } from '../components/MapaArmonico';
+import { QuizAcordes } from '../components/QuizAcordes';
 import { PracticaTramos } from '../components/PracticaTramos';
 import { alternarFloja, flojosDentro, secciones as seccionesDe, sonados, tramoSiguiente, tramosFlojos } from '../../content/flojos';
 import type { Flojos } from '../../content/flojos';
@@ -612,6 +613,15 @@ export function PlayAlong() {
           keyValue={baseKey ? key : null}
           minor={base.mode === 'minor'}
           onLoop={(a, b) => { setLoop([a, b]); setPending(null); }}
+        />
+        <QuizAcordes
+          chart={chart}
+          memoModo={memoModo}
+          onOcultar={() => setModo('oculto')}
+          onMarcarFloja={useCustom ? undefined : (bar) => {
+            const w = orden ? orden[bar] : bar;
+            setFlojosTodos((f) => (f[selected.id]?.includes(w) ? f : { ...f, [selected.id]: alternarFloja(f[selected.id], w) }));
+          }}
         />
       </section>
 
