@@ -161,6 +161,8 @@ export async function abrirMenu(page: Page) {
 export async function irA(page: Page, nombre: string) {
   const menu = await abrirMenu(page);
   await menu.getByRole('link', { name: nombre, exact: true }).click();
+  // elegir una pantalla cierra el menú: esperar a que se cierre evita que el próximo `abrirMenu` lo vea abierto justo antes de cerrarse
+  await expect(page.getByRole('button', { name: /\(menú de pantallas\)$/ })).toHaveAttribute('aria-expanded', 'false');
 }
 
 /** Abre «Estudiar este tema» del Play-along (memoria, loop por sección, flojos, mapa y quiz viven ahí). */
