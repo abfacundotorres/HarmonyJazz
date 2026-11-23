@@ -4,6 +4,7 @@ import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
 import { registerAcciones, setSonando } from './sonando';
+import { defaultMixer, STRIPS, type Mixer, type StripId } from './mixer';
 import { Ramp, rampTempo } from './ramp';
 import { barPlan, type MetroOpts } from './metronomePlan';
 import { type HitKind, hasRealBase, renderHit, setRealBase, type SoundParams, splitReal, type VoiceId } from './metroVoices';
@@ -177,6 +178,8 @@ class Instruments {
   master: Tone.Volume;
   /** Volumen del usuario, después del compresor: así sube el nivel de verdad en lugar de ser aplastado. */
   trim: Tone.Volume;
+  /** Ecualizador y volumen del usuario de cada instrumento (y de la mezcla general), después de su bus. */
+  private strips = {} as Record<StripId, { eq: Tone.EQ3; vol: Tone.Volume }>;
   private pianoBus: Tone.Volume;
   private bassBus: Tone.Volume;
   private hornBus: Tone.Volume;
@@ -203,9 +206,12 @@ class Instruments {
       return a < t ? x : Math.sign(x) * (t + (0.95 - t) * Math.tanh((a - t) / (0.95 - t)));
     }, 4096);
     shaper.oversample = 'none'; // con sobremuestreo el filtro de salida rebasa el techo en los transitorios (batería)
+    this.strips.master = { eq: new Tone.EQ3({ low: 0, mid: 0, high: 0 }), vol: new Tone.Volume(0) };
     this.master.chain(
       this.hp,
       this.presence,
+      this.strips.master.eq,
+      this.strips.master.vol,
       new Tone.Compressor({ threshold: -24, ratio: 4, attack: 0.003, release: 0.15 }),
       this.trim,
       new Tone.Limiter(-3),
@@ -216,11 +222,18 @@ class Instruments {
     const comp = new Tone.Compressor(-18, 3).connect(this.reverb);
 
     // buses: cada instrumento (real o sintético) entra por el suyo, con su nivel
-    this.pianoBus = new Tone.Volume(BUS_DB.synth.piano).connect(comp);
-    this.bassBus = new Tone.Volume(BUS_DB.synth.bass).connect(comp);
+    // cada bus pasa por su ecualizador y su volumen antes de llegar a donde iba
+    const strip = (id: StripId, target: Tone.InputNode) => {
+      const vol = new Tone.Volume(0).connect(target);
+      const eq = new Tone.EQ3({ low: 0, mid: 0, high: 0 }).connect(vol);
+      this.strips[id] = { eq, vol };
+      return eq;
+    };
+    this.pianoBus = new Tone.Volume(BUS_DB.synth.piano).connect(strip('piano', comp));
+    this.bassBus = new Tone.Volume(BUS_DB.synth.bass).connect(strip('bass', comp));
     this.bassBase = BUS_DB.synth.bass;
-    this.hornBus = new Tone.Volume(BUS_DB.synth.horn).connect(this.reverb);
-    this.drumBus = new Tone.Volume(BUS_DB.synth.drums).connect(this.reverb);
+    this.hornBus = new Tone.Volume(BUS_DB.synth.horn).connect(strip('horn', this.reverb));
+    this.drumBus = new Tone.Volume(BUS_DB.synth.drums).connect(strip('drums', this.reverb));
 
     // excitador de armónicos del bajo: un altavoz de celular casi no reproduce por debajo de ~300 Hz, pero
     // si se agregan armónicos (240–900 Hz) el oído reconstruye la nota grave. Sólo suena en la salida "phone".
@@ -235,7 +248,7 @@ class Instruments {
       new Tone.Filter({ type: 'highpass', frequency: 140, rolloff: -24 }),
       new Tone.Filter({ type: 'lowpass', frequency: 900, rolloff: -12 }),
       this.exciter,
-      comp,
+      this.strips.bass.eq, // los armónicos del altavoz también pasan por el volumen y el ecualizador del bajo
     );
 
     this.piano = new Tone.PolySynth(Tone.FMSynth, {
@@ -304,6 +317,18 @@ class Instruments {
     this.exciter.mute = !phone;
     this.phoneOut = phone;
     this.applyBassLevel();
+  }
+
+  /** Aplica el volumen y el ecualizador de cada instrumento: se oye al instante, sin reiniciar nada. */
+  setMixer(m: Mixer) {
+    for (const id of STRIPS) {
+      const st = this.strips[id];
+      const v = m[id];
+      st.vol.volume.value = v.vol;
+      st.eq.low.value = v.low;
+      st.eq.mid.value = v.mid;
+      st.eq.high.value = v.high;
+    }
   }
 
   private applyBassLevel() {
@@ -437,6 +462,7 @@ export class JazzEngine {
   private loading: Promise<void> | null = null;
   private volumeDb = 0;
   private outputMode: OutputMode = 'normal';
+  private mixer: Mixer = defaultMixer();
 
   /** Crea los instrumentos y empieza a bajar las muestras. No necesita un gesto del usuario. */
   private ensure(): Instruments {
@@ -445,6 +471,7 @@ export class JazzEngine {
       this.inst = inst;
       inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
       inst.setOutput(this.outputMode);
+      inst.setMixer(this.mixer);
       this.meter = new Tone.Meter({ smoothing: 0.7 });
       Tone.getDestination().connect(this.meter);
       this.samples = 'loading';
@@ -474,6 +501,12 @@ export class JazzEngine {
   setVolume(db: number) {
     this.volumeDb = Math.max(-14, Math.min(2, Number.isFinite(db) ? db : 0));
     if (this.inst) this.inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
+  }
+
+  /** Volumen y ecualizador de cada instrumento y de la mezcla general; se oye al instante. */
+  setMixer(m: Mixer) {
+    this.mixer = m;
+    this.inst?.setMixer(m);
   }
 
   /** Salida: "phone" para altavoz de celular (más presencia y armónicos del bajo) o "normal". */
