@@ -104,10 +104,10 @@ export function App() {
         </div>
       )}
       <header className="top">
+        <NavMenu page={page} />
         <a href="#/hoy" className="brand">
           <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
-        <NavMenu page={page} />
         <div className="prefs">
           <div className="seg" role="group" aria-label="Transposición">
             <button className={settings.view === 'Bb' ? 'on' : ''} onClick={() => setSettings({ view: 'Bb' })} title="Notación y cifrados escritos para trompeta en Si♭">

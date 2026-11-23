@@ -566,7 +566,7 @@ export function PlayAlong() {
         />
       )}
 
-      <details className="card estudio" open={estudioAbierto} onToggle={(e) => e.target === e.currentTarget && setEstudioAbierto((e.target as HTMLDetailsElement).open)}>
+      <details className="card estudio-tema" open={estudioAbierto} onToggle={(e) => e.target === e.currentTarget && setEstudioAbierto((e.target as HTMLDetailsElement).open)}>
         <summary>
           <h3>
             📖 Estudiar este tema

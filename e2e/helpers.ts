@@ -167,7 +167,7 @@ export async function irA(page: Page, nombre: string) {
 
 /** Abre «Estudiar este tema» del Play-along (memoria, loop por sección, flojos, mapa y quiz viven ahí). */
 export async function abrirEstudio(page: Page) {
-  const det = page.locator('details.estudio');
+  const det = page.locator('details.estudio-tema');
   await det.waitFor();
   if (!(await det.evaluate((d) => (d as HTMLDetailsElement).open))) await det.locator('> summary').click();
 }
