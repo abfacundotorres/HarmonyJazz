@@ -15,9 +15,9 @@ test('el play-along sigue sonando al cambiar de pantalla y se maneja desde la ba
 
   await irA(page, 'Escalas');
   await expect(barra).toBeVisible(); // sigue sonando en otra pantalla
-  await barra.getByRole('button', { name: 'Pausa' }).click();
+  await barra.getByRole('button', { name: 'Pausar el play-along' }).click();
   await expect(barra).toContainText('en pausa');
-  await barra.getByRole('button', { name: 'Seguir' }).click();
+  await barra.getByRole('button', { name: 'Seguir el play-along' }).click();
   await expect(barra).not.toContainText('en pausa');
 
   // volver con «Abrir»: el reproductor sigue marcado como sonando, con el mismo tema
@@ -28,7 +28,7 @@ test('el play-along sigue sonando al cambiar de pantalla y se maneja desde la ba
   // pausa desde el propio reproductor y stop desde la barra
   await page.locator('.player').first().getByRole('button', { name: 'Pausa' }).click();
   await expect(barra).toContainText('en pausa');
-  await barra.getByRole('button', { name: 'Detener' }).click();
+  await barra.getByRole('button', { name: 'Parar el play-along' }).click();
   await expect(barra).toHaveCount(0);
   await expect(page.locator('.player').first().getByRole('button', { name: 'Reproducir' })).toBeVisible();
 });

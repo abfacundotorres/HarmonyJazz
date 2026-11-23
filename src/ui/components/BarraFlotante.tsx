@@ -11,10 +11,10 @@ export function BarraFlotante({ pantalla }: { pantalla: string }) {
   const a = accionesSonando();
   return (
     <div className="barra-flotante" role="region" aria-label="Play-along sonando">
-      <button className="bf-pp" onClick={() => (s.paused ? a?.resume() : a?.pause())} aria-label={s.paused ? 'Seguir' : 'Pausa'}>
+      <button className="bf-pp" onClick={() => (s.paused ? a?.resume() : a?.pause())} aria-label={s.paused ? 'Seguir el play-along' : 'Pausar el play-along'}>
         {s.paused ? '▶' : '⏸'}
       </button>
-      <button className="bf-stop" onClick={() => a?.stop()} aria-label="Detener">■</button>
+      <button className="bf-stop" onClick={() => a?.stop()} aria-label="Parar el play-along">■</button>
       <span className="bf-nombre">
         {s.label}
         {s.paused && <span className="muted small"> · en pausa</span>}
