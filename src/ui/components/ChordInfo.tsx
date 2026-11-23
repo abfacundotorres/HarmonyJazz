@@ -174,6 +174,33 @@ export function ChordBoard({
   );
 }
 
+/** Guide tones, notas del acorde, tensiones y escala de un acorde, escritos en la vista elegida (Si♭ o concierto). */
+export function ChordFacts({ chord }: { chord: Chord }) {
+  const { iv } = useReading();
+  const d = qdef(chord);
+  const name = (deg: string) => noteName(simplify(transposeNote(degreeNote(chord.root, deg), iv)), true);
+  return (
+    <div className="facts">
+      <div>
+        <span className="lbl">Guide tones</span>
+        <b className="gt">{d.guide.map(name).join(' · ')}</b>
+      </div>
+      <div>
+        <span className="lbl">Acorde</span>
+        {d.tones.map(name).join(' ')}
+      </div>
+      <div>
+        <span className="lbl">Tensiones</span>
+        {d.tensions.map(name).join(' ')}
+      </div>
+      <div>
+        <span className="lbl">{SCALES[d.scale].name}</span>
+        {SCALES[d.scale].degrees.map(name).join(' ')}
+      </div>
+    </div>
+  );
+}
+
 /** Acorde actual en grande, con escala y notas para leer en la vista elegida. */
 export function CurrentChord({ chord, next }: { chord: Chord | null; next: Chord | null }) {
   const { iv, view } = useReading();
@@ -185,30 +212,11 @@ export function CurrentChord({ chord, next }: { chord: Chord | null; next: Chord
       </div>
     );
   }
-  const d = qdef(chord);
   const w = transposeChord(chord, iv);
-  const name = (deg: string) => noteName(simplify(transposeNote(degreeNote(chord.root, deg), iv)), true);
   return (
     <div className="current">
       <div className="sym">{chordSymbol(w, true)}</div>
-      <div className="facts">
-        <div>
-          <span className="lbl">Guide tones</span>
-          <b className="gt">{d.guide.map(name).join(' · ')}</b>
-        </div>
-        <div>
-          <span className="lbl">Acorde</span>
-          {d.tones.map(name).join(' ')}
-        </div>
-        <div>
-          <span className="lbl">Tensiones</span>
-          {d.tensions.map(name).join(' ')}
-        </div>
-        <div>
-          <span className="lbl">{SCALES[d.scale].name}</span>
-          {SCALES[d.scale].degrees.map(name).join(' ')}
-        </div>
-      </div>
+      <ChordFacts chord={chord} />
       {next && <div className="next">Sigue: {chordSymbol(transposeChord(next, iv), true)}</div>}
     </div>
   );
