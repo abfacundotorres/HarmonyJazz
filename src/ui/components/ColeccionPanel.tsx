@@ -20,6 +20,7 @@ export function ColeccionPanel({
   existentes,
   onAgregar,
   onTocar,
+  consultaInicial = '',
 }: {
   /** Temas que ya están en Mis temas: nombre en minúsculas → id. */
   existentes: Map<string, string>;
@@ -27,15 +28,23 @@ export function ColeccionPanel({
   onAgregar: (t: UserTune, tocar: boolean) => { ok: boolean; mensaje: string };
   /** Toca un tema que ya está en Mis temas. */
   onTocar: (id: string) => void;
+  /** Búsqueda con que se abre (viene de «Qué estudiar»): deja la colección abierta y filtrada. */
+  consultaInicial?: string;
 }) {
   const [col, setCol] = useState<Cargada | null>(null);
   const [error, setError] = useState('');
   const [consulta, setConsulta] = useState('');
   const [limite, setLimite] = useState(PAGINA);
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(!!consultaInicial);
   const [ultimo, setUltimo] = useState<{ ok: boolean; mensaje: string; avisos: string[] } | null>(null);
   const [leyendo, setLeyendo] = useState(false);
   const archivo = useRef<HTMLInputElement>(null);
+  const caja = useRef<HTMLDetailsElement>(null);
+  // llegar con una búsqueda (desde «Qué estudiar») deja la colección a la vista
+  useEffect(() => {
+    if (consultaInicial) caja.current?.scrollIntoView({ block: 'start' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const abrirTexto = (name: string, texto: string): boolean => {
     const r = leerColeccion(texto);
@@ -45,7 +54,7 @@ export function ColeccionPanel({
     }
     setError('');
     setCol({ name, ...r });
-    setConsulta('');
+    setConsulta(consultaInicial);
     setLimite(PAGINA);
     setAbierto(true);
     return true;
@@ -61,6 +70,7 @@ export function ColeccionPanel({
     return () => {
       vivo = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const elegir = async (f: File | undefined) => {
@@ -101,7 +111,7 @@ export function ColeccionPanel({
   };
 
   return (
-    <details className="card coleccion" open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)}>
+    <details ref={caja} className="card coleccion" open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)}>
       <summary><h3>📚 Mi colección (archivo JSON)</h3></summary>
       <input
         ref={archivo}

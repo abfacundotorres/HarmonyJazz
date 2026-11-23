@@ -23,6 +23,8 @@ test.describe('Hoy', () => {
   });
 
   test('Hoy no muestra racha, duración de la sesión, minutos, temporizador ni casilleros', async ({ page }) => {
+    // fecha fija: el bloque de calentamiento rota por día y algunos días el texto de un ejercicio dice «2 min.» (eso no es una duración de la sesión)
+    await page.clock.setFixedTime(diaTecnica(0));
     await page.goto('/#/hoy');
     await expect(page.locator('.hero')).toContainText('Tonalidad del día');
     await expect(page.getByText(/Racha|Duración|min hechos|¿Cómo se arma/)).toHaveCount(0);
