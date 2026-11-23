@@ -25,9 +25,9 @@ test.describe('celular apaisado', () => {
             alto: q.height,
             fijo: getComputedStyle(top).position,
             nombre: getComputedStyle(top.querySelector('.brandname')!).display,
-            // marca, pestañas y preferencias en el mismo renglón y en ese orden
+            // menú, marca y preferencias en el mismo renglón y en ese orden (el menú va arriba a la izquierda)
             fila: Math.abs(nav.top - prefs.top) < 12 && Math.abs(brand.top - prefs.top) < 12,
-            orden: brand.left < nav.left && nav.left < prefs.left,
+            orden: nav.left < brand.left && brand.left < prefs.left,
             primera: card.top,
             desborde: document.documentElement.scrollWidth <= window.innerWidth,
           };
@@ -36,7 +36,7 @@ test.describe('celular apaisado', () => {
         expect(['static', 'relative'], 'no fijo (relative ancla el panel del menú)').toContain(m.fijo);
         expect(m.nombre).toBe('none');
         expect(m.fila, 'una sola fila').toBe(true);
-        expect(m.orden, 'marca, pestañas, preferencias').toBe(true);
+        expect(m.orden, 'menú, marca, preferencias').toBe(true);
         expect(m.primera, 'el contenido empieza arriba').toBeLessThanOrEqual(150);
         expect(m.desborde).toBe(true);
       });
