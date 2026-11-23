@@ -4,7 +4,7 @@ import { App } from './ui/App';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Gate } from './ui/components/Gate';
 import { DEFAULT_SETTINGS, load } from './state/storage';
-import { pedirProteccion } from './state/persist';
+import { limpiarLibroViejo, pedirProteccion } from './state/persist';
 import { applyTheme } from './ui/themes';
 import '@fontsource/dm-serif-display/latin-400.css';
 import '@fontsource/dm-serif-display/latin-400-italic.css';
@@ -28,6 +28,8 @@ createRoot(document.getElementById('root')!).render(
 // pide que el navegador no borre los datos si falta espacio (una app instalada suele recibirlo sin preguntar); si no lo da,
 // la tarjeta «Copia de seguridad» lo dice y deja reintentar
 void pedirProteccion();
+// el visor de libros se quitó: no quedan guardados los PDF o fotos que se hubieran elegido
+limpiarLibroViejo();
 
 // modo sin conexión (sólo en el sitio publicado)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

@@ -4,7 +4,6 @@ import { ChartDoc, compileDoc, docFromChart } from '../../content/chartDoc';
 import { BulkEntry, MAX_CHART_CHARS, parseBulk, UserTune } from '../../content/library';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useReading } from '../hooks';
-import { BookViewer } from './BookViewer';
 import { ChartEditor } from './ChartEditor';
 
 export interface Draft {
@@ -90,7 +89,7 @@ export function TuneLibrary({
 
   return (
     <section className="card library" ref={seccion}>
-      <details open={open || !!draft.id || !!message} // sólo el propio `toggle`: el de un plegable de adentro (el visor de mi libro) también llega acá y cerraba toda la sección
+      <details open={open || !!draft.id || !!message} // sólo el propio `toggle`: el de un plegable de adentro también llega acá y cerraba toda la sección
         onToggle={(e) => e.target === e.currentTarget && setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>
           Mis temas ({tunes.length}) · cargar un cifrado propio
@@ -104,9 +103,6 @@ export function TuneLibrary({
           <b>Tonalidad:</b> la del cifrado que escribís (en concierto). Después lo tocás en la que quieras: se cambia en el Play-along o desde el atril.
           Si el cifrado pasa por varias tonalidades, dejala en «Sin una tonalidad fija» y transponelo de a medio tono.
         </p>
-        <div className="cargar">
-          <BookViewer />
-          <div className="cargar-form">
         <div className="formgrid">
           <label>
             Nombre
@@ -169,8 +165,6 @@ export function TuneLibrary({
           {draft.id && <button onClick={() => { onDraft(EMPTY_DRAFT); onChartText(''); onDoc({ bars: [{ chords: [''] }] }); }}>Cancelar edición</button>}
         </div>
         {message && <p className="muted small" role="status">{message}</p>}
-          </div>
-        </div>
 
         {tunes.length > 0 && (
           <ul className="tunelist">

@@ -1,9 +1,8 @@
 import { expect, test } from './helpers';
 import type { Page } from '@playwright/test';
 
-// Cargar un tema en el celular (390 px): nada fijo tapando sin necesidad, el teclado sin desplazamiento lateral, lo poco usado plegado y el
+// Cargar un tema en el celular (390 px): el teclado sin desplazamiento lateral, lo poco usado plegado y el
 // formulario compacto. Con ancho (compu) todo sigue a la vista.
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 const abrir = async (page: Page) => {
   await page.goto('/#/playalong');
   if (!(await page.locator('.library > details[open]').count())) await page.getByText(/Mis temas/).first().click();
@@ -11,25 +10,8 @@ const abrir = async (page: Page) => {
 };
 const raiz = (page: Page) => page.getByRole('group', { name: 'Raíz' });
 const calidad = (page: Page) => page.getByRole('group', { name: 'Calidad' });
-const posicion = (page: Page, sel: string) => page.locator(sel).evaluate((e) => getComputedStyle(e).position);
 
 test.describe('cargar un tema en el celular', () => {
-  test('el visor de libro no queda fijo si está cerrado o vacío, sólo con un libro abierto', async ({ page }) => {
-    await abrir(page);
-    expect(await posicion(page, 'details.visor')).toBe('static'); // cerrado
-    await page.getByText(/Mi libro \(PDF o foto\)/).click();
-    expect(await posicion(page, 'details.visor')).toBe('static'); // abierto pero sin libro
-    await page.locator('input[aria-label="Archivo del libro"]').setInputFiles({ name: 'pagina.png', mimeType: 'image/png', buffer: PNG });
-    await expect(page.getByRole('img', { name: 'Página de tu libro' })).toBeVisible();
-    expect(await posicion(page, 'details.visor')).toBe('sticky'); // con libro
-    await page.getByText(/Mi libro \(PDF o foto\)/).click(); // lo cierra: vuelve a no tapar
-    await expect(page.locator('details.visor')).not.toHaveAttribute('open', '');
-    await expect.poll(() => posicion(page, 'details.visor')).toBe('static');
-    // el título es un renglón común (no dos columnas)
-    const alto = await page.locator('details.visor > summary').evaluate((e) => e.getBoundingClientRect().height);
-    expect(alto).toBeLessThan(90);
-  });
-
   test('el teclado no se desplaza hacia el costado: raíces en 2 filas y calidades de a cinco con «Más»', async ({ page }) => {
     await abrir(page);
     const sinLateral = await page.locator('.ced-keypad .ced-pal').evaluateAll((l) => l.map((e) => e.scrollWidth <= e.clientWidth));

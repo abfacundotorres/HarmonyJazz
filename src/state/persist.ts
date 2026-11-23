@@ -50,3 +50,17 @@ export async function compartirArchivo(nav: Partial<ShareApi>, file: File, title
     return (e as { name?: string })?.name === 'AbortError' ? 'cancelado' : 'error';
   }
 }
+
+/** Nombre de la base del visor de libros, que ya no existe (se quitó): se borra lo que haya quedado guardado en el navegador. */
+export const BASE_LIBRO_VIEJA = 'harmonyjazz-libro';
+
+/** Borra el libro (PDF o foto) que guardaba el visor retirado. No hace nada si el navegador no tiene IndexedDB o ya no hay nada. */
+export function limpiarLibroViejo(): void {
+  try {
+    if (typeof indexedDB === 'undefined') return;
+    const r = indexedDB.deleteDatabase(BASE_LIBRO_VIEJA);
+    r.onerror = () => undefined;
+  } catch {
+    /* sin permiso o modo privado: no pasa nada */
+  }
+}
