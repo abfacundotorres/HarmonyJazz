@@ -162,3 +162,10 @@ export async function irA(page: Page, nombre: string) {
   const menu = await abrirMenu(page);
   await menu.getByRole('link', { name: nombre, exact: true }).click();
 }
+
+/** Abre «Estudiar este tema» del Play-along (memoria, loop por sección, flojos, mapa y quiz viven ahí). */
+export async function abrirEstudio(page: Page) {
+  const det = page.locator('details.estudio');
+  await det.waitFor();
+  if (!(await det.evaluate((d) => (d as HTMLDetailsElement).open))) await det.locator('> summary').click();
+}

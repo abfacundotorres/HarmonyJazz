@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirEstudio, expect, test } from './helpers';
 import type { Page } from '@playwright/test';
 
 // «¿Qué acorde sigue?»: pregunta de memoria con cuatro opciones. Las preguntas salen al azar, así que las pruebas comprueban lo que siempre
@@ -10,6 +10,7 @@ const abrir = async (page: Page) => {
   await conTema(page);
   await page.goto('/#/playalong?p=u:quizfake');
   await page.waitForSelector('.board');
+  await abrirEstudio(page);
   await quiz(page).locator('> summary').click();
 };
 
@@ -80,6 +81,7 @@ test.describe('¿qué acorde sigue?', () => {
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [{ id: 'u:unsolo', name: 'Un solo acorde', composer: '', key: 'C', mode: 'major', chart: 'Cmaj7 | Cmaj7', tempo: 100, style: 'swing' }] })));
     await page.goto('/#/playalong?p=u:unsolo');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await quiz(page).locator('> summary').click();
     await quiz(page).getByRole('button', { name: 'Preguntar' }).click();
     await expect(quiz(page).locator('.quiz-ops button')).toHaveCount(0);

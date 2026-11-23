@@ -1,8 +1,9 @@
-import { expect, test } from './helpers';
+import { abrirEstudio, expect, test } from './helpers';
 
 // Modo de memoria: la grilla se oculta (no el número ni la sección ni el compás que suena) y «Mirar» la muestra.
 async function abrir(page: import('@playwright/test').Page, tema?: RegExp) {
   await page.goto('/#/playalong');
+  await abrirEstudio(page);
   await expect(page.locator('.board .bar').first()).toBeVisible(); // la pantalla tiene que haber terminado de cargar: si no, pisa lo elegido
   if (tema) {
     const sel = page.locator('select', { hasText: 'ii–V–I mayor' }).first();
@@ -56,6 +57,7 @@ test('el modo se guarda y vuelve al recargar', async ({ page }) => {
   await modo(page, 'Oculto').click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem('harmonyjazz:memoria'))).toContain('oculto');
   await page.reload();
+  await abrirEstudio(page);
   await expect(page.locator('.board .bar.hid').first()).toBeVisible();
   await expect(modo(page, 'Oculto')).toHaveAttribute('aria-pressed', 'true');
 });
