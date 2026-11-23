@@ -3,6 +3,7 @@ import type { DocBar, DocLayout } from '../../content/chartDoc';
 import { chordParts } from '../../theory/chordFormat';
 import { Chord, chordSymbol, qdef, transposeChord } from '../../theory/chords';
 import { compasesVisibles, type MemoriaNivel } from '../../content/memoria';
+import { barLen, pulseLen } from '../../theory/chart';
 import type { Chart } from '../../theory/chart';
 import { degreeNote, noteName, simplify, transposeNote } from '../../theory/notes';
 import { SCALES } from '../../theory/scales';
@@ -69,8 +70,11 @@ export function ChordBoard({
   const { iv } = useReading();
   const [settings] = useSettings();
   const chordStyle = settings.chordStyle;
-  const byBar: { idx: number; chord: Chord }[][] = Array.from({ length: chart.bars }, () => []);
-  chart.chords.forEach((cc, i) => byBar[cc.bar].push({ idx: i, chord: cc.chord }));
+  // por compás: cada acorde con el pulso en que entra (1-based) y cuántos pulsos dura
+  const byBar: { idx: number; chord: Chord; beat: number; dur: number }[][] = Array.from({ length: chart.bars }, () => []);
+  chart.chords.forEach((cc, i) =>
+    byBar[cc.bar].push({ idx: i, chord: cc.chord, beat: Math.round((cc.start - cc.bar * barLen(chart)) / pulseLen(chart)) + 1, dur: cc.dur / pulseLen(chart) }),
+  );
 
   const useLayout = !!layout && layout.order.length === chart.bars;
   const written: BoardBar[] = useLayout
@@ -103,6 +107,10 @@ export function ChordBoard({
         const isNow = wb.plays.includes(curBar);
         const m = wb.mark;
         const hide = !visible[i];
+        // acordes de distinta duración en un compás (2+1+1): se dibujan en proporción y se rotula el pulso en que entra cada uno
+        const prop = !hide && chords.length >= 2 && chords.some((x) => x.dur !== chords[0].dur);
+        const rotular = prop || (!hide && chords.length >= 3);
+        const total = chords.reduce((n, x) => n + x.dur, 0);
         const cls = [
           'bar',
           isNow ? 'now' : '',
@@ -116,6 +124,7 @@ export function ChordBoard({
           hide ? 'hid' : '',
           !hide && chords.length > 2 ? 'many' : '',
           !hide && chords.length === 2 ? 'two' : '',
+          prop ? 'prop' : '',
         ].filter(Boolean).join(' ');
         const showEnd = m?.ending && layout?.bars[i - 1]?.ending !== m.ending;
         return (
@@ -127,7 +136,13 @@ export function ChordBoard({
             disabled={!onBarClick}
             aria-pressed={inLoop}
             // letras del cifrado de un compás con dos acordes: el atril las achica para que entren en un solo renglón
-            style={!hide && chords.length === 2 ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties) : undefined}
+            style={
+              prop
+                ? ({ ['--cols' as string]: chords.map((x) => `${x.dur}fr`).join(' ') } as React.CSSProperties)
+                : !hide && chords.length === 2
+                  ? ({ ['--glyphs' as string]: Math.round(chords.reduce((n, x) => n + chordGlyphs(x.chord, chordStyle, iv), 0) * 10) / 10 } as React.CSSProperties)
+                  : undefined
+            }
           >
             <small className="barno"><span className="sr">Compás </span>{i + 1}</small>
             {flojos?.has(i) && <span className="flag" aria-label="Compás flojo" title="Compás flojo">⚑</span>}
@@ -137,8 +152,18 @@ export function ChordBoard({
               <span className="ph"><span aria-hidden>· · ·</span><span className="sr">Acordes ocultos</span></span>
             ) : (
               chords.map((x, j) => (
-                <span key={x.idx} className={isNow && j === curPos ? 'cur' : ''}>
+                <span
+                  key={x.idx}
+                  className={isNow && j === curPos ? 'cur' : ''}
+                  style={prop ? ({ ['--share' as string]: x.dur / total, ['--glyphs' as string]: chordGlyphs(x.chord, chordStyle, iv) } as React.CSSProperties) : undefined}
+                >
                   <ChordText chord={x.chord} />
+                  {rotular && (
+                    <i className="pulso" title={`Entra en el tiempo ${x.beat}`}>
+                      <span className="sr">Tiempo </span>
+                      {x.beat}
+                    </i>
+                  )}
                 </span>
               ))
             )}
