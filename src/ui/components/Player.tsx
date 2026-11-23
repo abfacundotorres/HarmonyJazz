@@ -19,6 +19,10 @@ export interface PlayerProps {
   /** Identificador estable para saber si este reproductor es el que suena. */
   owner?: string;
   onPlayingChange?: (playing: boolean) => void;
+  /** Con nombre, el play-along sigue sonando al cambiar de pantalla y se maneja desde la barra flotante. */
+  label?: string;
+  /** Dirección para volver a este tema desde la barra flotante. */
+  href?: string;
   /** Para que otra pantalla (el modo atril) pueda iniciar y detener este reproductor. */
   controlRef?: MutableRefObject<PlayerControl | null>;
 }
@@ -31,11 +35,14 @@ export interface PlayerControl {
   start: (choruses: number) => Promise<boolean>;
 }
 
-export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange, controlRef }: PlayerProps) {
+export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange, controlRef, label, href }: PlayerProps) {
   const autoId = useId();
   const id = owner ?? autoId;
   const [settings, setSettings] = useSettings();
-  const [playing, setPlaying] = useState(false);
+  // si ya suena (volvió de otra pantalla con el play-along de fondo), se retoma el estado en vez de arrancar de cero
+  const retoma = !!label && engine.playing && engine.options?.owner === id;
+  const [playing, setPlaying] = useState(retoma);
+  const [paused, setPaused] = useState(retoma && engine.paused);
   const [countIn, setCountIn] = useState(true);
   const [mix, setMix] = useState<Mix>({ piano: true, bass: true, drums: true, melody: false, metronome: !!defaultMetronome });
   const [style, setStyle] = useState<Style>(initialStyle);
@@ -59,7 +66,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   // límite de coros de una toma completa: se mantiene si el motor se reinicia por un cambio en vivo
   const limit = useRef<number | null>(null);
   const opts = (): PlayOptions => ({
-    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id, ramp,
+    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id, ramp, label, href,
     ...(limit.current ? { choruses: limit.current, onEnd: () => { limit.current = null; setPlaying(false); } } : {}),
   });
   const optsRef = useRef(opts);
@@ -69,6 +76,22 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   useEffect(() => engine.onPosition((p) => {
     if (p.owner !== id && playing) setPlaying(false);
   }) as () => void, [id, playing]);
+
+  // pausa, seguir o stop pedidos desde la barra flotante
+  useEffect(() => engine.onState(() => {
+    const mine = engine.playing && engine.options?.owner === id;
+    setPlaying(mine);
+    setPaused(mine && engine.paused);
+  }) as () => void, [id]);
+  const adoptado = useRef(false);
+  // al volver con el tema sonando, el tempo que suena manda sobre el que traía la pantalla
+  useEffect(() => {
+    if (retoma && engine.options && engine.options.tempo !== tempo) {
+      adoptado.current = true;
+      onTempo(engine.options.tempo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => onPlayingChange?.(playing), [playing, onPlayingChange]);
   useWakeLock(playing);
@@ -80,6 +103,11 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       first.current = false;
       return;
     }
+    if (adoptado.current) {
+      // el tempo recién retomado del motor ya es el que suena: no hay que reiniciar nada
+      adoptado.current = false;
+      return;
+    }
     if (playing) {
       const t = setTimeout(() => engine.update(optsRef.current()), 250);
       return () => clearTimeout(t);
@@ -89,7 +117,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
 
   // detener al desmontar
   useEffect(() => () => {
-    if (engine.options?.owner === id) engine.stop();
+    if (engine.options?.owner === id && !engine.enFondo) engine.stop();
   }, [id]);
 
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +147,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       limit.current = null;
       engine.stop();
       setPlaying(false);
+      setPaused(false);
       setStarting(false);
       return;
     }
@@ -167,6 +196,11 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       >
         {playing ? '■' : starting ? '…' : '▶'}
       </button>
+      {playing && (
+        <button className="pausa" onClick={() => (paused ? void engine.resume() : engine.pause())} aria-label={paused ? 'Seguir' : 'Pausa'} aria-pressed={paused}>
+          {paused ? '▶' : '⏸'}
+        </button>
+      )}
       <label className="tempo">
         <span>
           <b>{tempo}</b> bpm{live !== null && live !== tempo ? <> · sonando a <b>{live}</b></> : null}

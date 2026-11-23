@@ -57,11 +57,11 @@ export function Metronome() {
   const [tapNote, setTapNote] = useState('');
 
   const stop = () => {
-    engine.stop();
+    engine.stopLocal();
     setOn(false);
     setPos(null);
   };
-  useEffect(() => () => engine.stop(), []);
+  useEffect(() => () => engine.stopLocal(), []);
 
   const start = async () => {
     setOn(true);

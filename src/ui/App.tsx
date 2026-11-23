@@ -5,6 +5,7 @@ import { useRoute, useSettings } from './hooks';
 import { useWakeLock } from './wakeLock';
 import { pageLabel } from './nav';
 import { NavMenu } from './components/NavMenu';
+import { BarraFlotante } from './components/BarraFlotante';
 import { Today } from './pages/Today';
 
 // Cada pantalla viaja en su propio archivo: Hoy abre sin esperar al motor de audio ni a las partituras.
@@ -143,6 +144,7 @@ export function App() {
           {page === 'mas' && <More />}
         </Suspense>
       </main>
+      <BarraFlotante pantalla={page} />
     </div>
   );
 }
