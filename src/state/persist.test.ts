@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { compartirArchivo, estadoProteccion, pedirProteccion, puedeCompartirArchivo } from './persist';
+import { BASE_LIBRO_VIEJA, compartirArchivo, estadoProteccion, limpiarLibroViejo, pedirProteccion, puedeCompartirArchivo } from './persist';
 
 const file = new File(['{}'], 'copia.json', { type: 'application/json' });
 
@@ -47,5 +47,19 @@ describe('compartir un archivo', () => {
     expect(share).toHaveBeenCalledWith({ files: [file], title: 'T' });
     expect(await compartirArchivo({ share: async () => { throw Object.assign(new Error('c'), { name: 'AbortError' }); } }, file, 'T')).toBe('cancelado');
     expect(await compartirArchivo({ share: async () => { throw new Error('boom'); } }, file, 'T')).toBe('error');
+  });
+});
+
+describe('limpiarLibroViejo', () => {
+  it('borra la base del visor retirado y no rompe si el navegador no la tiene o falla', () => {
+    const deleteDatabase = vi.fn(() => ({}) as IDBOpenDBRequest);
+    vi.stubGlobal('indexedDB', { deleteDatabase });
+    limpiarLibroViejo();
+    expect(deleteDatabase).toHaveBeenCalledWith(BASE_LIBRO_VIEJA);
+    vi.stubGlobal('indexedDB', { deleteDatabase: () => { throw new Error('sin permiso'); } });
+    expect(() => limpiarLibroViejo()).not.toThrow();
+    vi.stubGlobal('indexedDB', undefined);
+    expect(() => limpiarLibroViejo()).not.toThrow();
+    vi.unstubAllGlobals();
   });
 });
