@@ -26,7 +26,7 @@ test.describe('navegación en cinco grupos', () => {
     await expect(barra(page).getByRole('link', { name: 'Estudiar' })).toHaveAttribute('aria-current', 'page');
     // se va a otro grupo y se vuelve: abre en Escalas, no en Lecciones
     await barra(page).getByRole('link', { name: 'Tocar' }).click();
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link')).toHaveText(['Play-along', 'Repertorio']);
+    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link')).toHaveText(['Play-along', 'Repertorio', 'Metrónomo']);
     await barra(page).getByRole('link', { name: 'Estudiar' }).click();
     await expect(page).toHaveURL(/#\/escalas$/);
   });
@@ -34,34 +34,15 @@ test.describe('navegación en cinco grupos', () => {
   test('los enlaces de siempre siguen funcionando y marcan su grupo', async ({ page }) => {
     for (const [ruta, grupo, titulo] of [
       ['#/vocabulario', 'Estudiar', 'Vocabulario'],
-      ['#/escucha', 'Más', 'Afinador y notas largas'],
+      ['#/escucha', 'Escuchar', 'Afinador y notas largas'],
       ['#/oido', 'Escuchar', 'Entrenamiento del oído'],
-      ['#/progreso', 'Más', 'Tu progreso'],
-      ['#/mes', 'Más', 'Elegí los focos de este mes'],
-      ['#/metronomo', 'Más', 'Metrónomo'],
+      ['#/progreso', 'Hoy', 'Tu progreso'],
       ['#/creditos', 'Más', 'Créditos y licencias'],
     ] as const) {
       await page.goto('/' + ruta);
       await expect(barra(page).getByRole('link', { name: grupo })).toHaveAttribute('aria-current', 'page');
       await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible();
     }
-  });
-
-  test('Más lista las pantallas extra con su descripción y los enlaces llevan a cada una', async ({ page }) => {
-    await page.goto('/#/mas');
-    const extras = page.locator('#extras');
-    await expect(extras.getByRole('link')).toHaveText(['Mi mes', 'Currícula', 'Progreso', 'Metrónomo', 'Afinador']);
-    await extras.getByRole('link', { name: 'Currícula' }).click();
-    await expect(page).toHaveURL(/#\/curricula$/);
-    await expect(barra(page).getByRole('link', { name: 'Más' })).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Más' }).getByRole('link')).toHaveText(['Ajustes', 'Mi mes', 'Currícula', 'Progreso', 'Metrónomo', 'Afinador', 'Créditos']);
-  });
-
-  test('Hoy no tiene sub-pestañas y lleva a Mi mes, Currícula y Progreso con un renglón', async ({ page }) => {
-    await page.goto('/#/hoy');
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Hoy' })).toHaveCount(0);
-    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
-    await expect(page).toHaveURL(/#\/mes$/);
   });
 
   test('Más reúne apariencia, sonido y copia de seguridad, y los ajustes se recuerdan', async ({ page }) => {
