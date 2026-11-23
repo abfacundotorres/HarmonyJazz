@@ -3,6 +3,7 @@ import { barLen, beatsPerBar, Chart, pulseLen } from '../theory/chart';
 import { midi, midiToFreq, mod } from '../theory/notes';
 import type { MelNote } from '../exercises/generators';
 import { registerStop } from './stopAll';
+import { registerAcciones, setSonando } from './sonando';
 import { Ramp, rampTempo } from './ramp';
 import { barPlan, type MetroOpts } from './metronomePlan';
 import { type HitKind, hasRealBase, renderHit, setRealBase, type SoundParams, splitReal, type VoiceId } from './metroVoices';
@@ -50,6 +51,10 @@ export interface PlayOptions {
   choruses?: number;
   /** Se llama cuando se detiene solo al terminar los `choruses`. */
   onEnd?: () => void;
+  /** Si está, el play-along sigue sonando al cambiar de pantalla y la barra flotante lo muestra con este nombre. */
+  label?: string;
+  /** Dirección para volver al tema desde la barra flotante. */
+  href?: string;
 }
 
 export interface Position {
@@ -384,6 +389,17 @@ export class JazzEngine {
   private pendingChart: Chart | null = null;
   private chorusStarts: { chorus: number; time: number; tempo: number }[] = [];
   playing = false;
+  /** En pausa: el reloj está quieto y se retoma donde quedó. */
+  paused = false;
+  /** Suena un play-along con nombre: sigue de fondo al cambiar de pantalla. */
+  private bg = false;
+  get enFondo() {
+    return this.playing && this.bg;
+  }
+  /** Corta lo que suena, salvo el play-along de fondo: lo usan las pantallas que cortan «lo suyo» al abrirse o cerrarse. */
+  stopLocal() {
+    if (!this.enFondo) this.stop();
+  }
   private keepAlive: HTMLAudioElement | null = null;
   /**
    * Número de reproducción. Tone no puede cancelar un aviso visual que ya pasó a requestAnimationFrame,
@@ -521,6 +537,7 @@ export class JazzEngine {
     this.stop();
     const gen = this.gen;
     this.lastOpts = opts;
+    this.bg = !!opts.label;
     this.chorusStarts = [];
     const t = Tone.getTransport();
     t.bpm.value = opts.tempo;
@@ -578,7 +595,51 @@ export class JazzEngine {
     this.repeatId = t.scheduleOnce((tm) => runChorus(tm, offset), offset);
     t.start('+0.05');
     this.playing = true;
+    this.avisarSonando();
     return true;
+  }
+
+  /** Publica (o quita) el estado para la barra flotante: sólo lo que se inició con nombre. */
+  private avisarSonando() {
+    const o = this.lastOpts;
+    setSonando(this.playing && this.bg && o?.label ? { label: o.label, href: o.href, paused: this.paused } : null);
+  }
+
+  /** Pone en pausa: se quedan quietos el reloj y las notas; `resume` sigue donde estaba. */
+  pause() {
+    if (!this.playing || this.paused) return;
+    Tone.getTransport().pause();
+    this.inst?.piano.releaseAll?.();
+    this.inst?.bass.releaseAll?.();
+    this.inst?.horn.releaseAll?.();
+    this.inst?.lead.triggerRelease();
+    this.paused = true;
+    this.avisarSonando();
+    this.stateListeners.forEach((l) => l());
+  }
+
+  async resume() {
+    if (!this.paused) return;
+    const ctx = Tone.getContext().rawContext as AudioContext;
+    if (ctx.state !== 'running') await ctx.resume();
+    if (!this.paused) return;
+    Tone.getTransport().start();
+    this.paused = false;
+    this.avisarSonando();
+    this.stateListeners.forEach((l) => l());
+  }
+
+  /** Avisos de pausa/seguir/stop pedidos desde fuera del reproductor (la barra flotante). */
+  private stateListeners = new Set<() => void>();
+  onState(l: () => void) {
+    this.stateListeners.add(l);
+    return () => void this.stateListeners.delete(l);
+  }
+
+  /** Corte pedido por el usuario desde fuera del reproductor: además de parar, avisa para que se marque detenido. */
+  halt() {
+    this.stop();
+    this.stateListeners.forEach((l) => l());
   }
 
   /** Cambia la grilla a partir del próximo chorus, sin reiniciar. Si no suena, sólo se recuerda para la próxima vez. */
@@ -611,6 +672,9 @@ export class JazzEngine {
     this.keepAlive?.pause();
     if (this.playing) this.listeners.forEach((l) => l({ owner: this.lastOpts?.owner, chorus: -1, bar: -1, chordIndex: -1, beat: -1, countIn: false }));
     this.playing = false;
+    this.paused = false;
+    this.bg = false;
+    this.avisarSonando();
   }
 
   /** Relación de la corchea larga: depende del estilo, del tempo y del ajuste del usuario. */
@@ -999,4 +1063,8 @@ export class JazzEngine {
 }
 
 export const engine = new JazzEngine();
-registerStop(() => engine.stop());
+registerAcciones({ pause: () => engine.pause(), resume: () => void engine.resume(), stop: () => engine.halt() });
+// al cambiar de pantalla se corta todo, salvo un play-along con nombre (suena de fondo y se maneja desde la barra flotante)
+registerStop(() => {
+  engine.stopLocal();
+});

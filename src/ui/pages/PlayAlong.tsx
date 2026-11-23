@@ -465,6 +465,8 @@ export function PlayAlong() {
           melody={melody}
           allowMelody={!!melody}
           owner={OWNER}
+          label={useCustom ? 'Progresión propia' : loc(selected, selected.name)}
+          href={useCustom ? undefined : `#/playalong?${new URLSearchParams({ p: selected.id, ...(baseKey ? { k: key } : {}) })}`}
           defaultMetronome={query.get('m') === '1'}
           controlRef={control}
           onPlayingChange={onPlaying}

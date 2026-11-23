@@ -1058,3 +1058,12 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .ficha-cab .sym { font-family: var(--serif); font-weight: 800; font-size: 2rem; color: var(--accent); line-height: 1.1; }
 .ficha-acorde .facts { display: grid; gap: 6px; margin-top: 6px; }
 .ficha-acorde .gt { font-size: 1.2rem; }
+
+/* Barra flotante del play-along: pausa/seguir y stop en cualquier pantalla mientras suena */
+.barra-flotante { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(10px, env(safe-area-inset-bottom)); z-index: 40; width: min(calc(100% - 20px), 520px); display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 4px 16px rgb(0 0 0 / .25); }
+.barra-flotante button { min-width: 44px; min-height: 44px; border-radius: 50%; padding: 0; font-size: 1.1rem; }
+.barra-flotante .bf-pp { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.barra-flotante .bf-nombre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.barra-flotante .bf-ir { white-space: nowrap; padding: 0 6px; font-weight: 600; }
+body:has(.barra-flotante) .app { padding-bottom: 96px; }
+.player .pausa { min-width: 44px; min-height: 44px; }

@@ -72,16 +72,16 @@ export function Scales() {
   const abc = useMemo(() => scaleAbc(scaleId, step.id, key, tempo, iv), [scaleId, step.id, key, tempo, iv]);
   const names = useMemo(() => scaleNoteNames(scaleId, key, iv), [scaleId, key, iv]);
 
-  useEffect(() => () => engine.stop(), []);
+  useEffect(() => () => engine.stopLocal(), []);
   // al cambiar lo que se muestra o el tempo, se corta lo que suena
   useEffect(() => {
-    engine.stop();
+    engine.stopLocal();
     setPlaying(false);
     setLive(null);
   }, [scaleId, step.id, key, tempo]);
 
   const stop = () => {
-    engine.stop();
+    engine.stopLocal();
     setPlaying(false);
     setLive(null);
   };
