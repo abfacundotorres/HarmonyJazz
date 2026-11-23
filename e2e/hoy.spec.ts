@@ -1,4 +1,4 @@
-import { diaTecnica, expect, openBlock, test } from './helpers';
+import { diaTecnica, expect, irA, openBlock, test } from './helpers';
 
 test.describe('Hoy', () => {
   test('abre sin cargar el motor de audio ni las partituras; la partitura llega al abrir un ejercicio', async ({ page }) => {
@@ -17,8 +17,7 @@ test.describe('Hoy', () => {
     await (await openBlock(page, 'Técnica en la tonalidad del día')).locator('details.exercise summary').first().click();
     await expect(page.locator('details.exercise[open] .paper svg').first()).toBeVisible();
     // las demás pantallas se traen de fondo: se llega a Escalas por el grupo Estudiar
-    await page.getByRole('link', { name: 'Estudiar' }).click();
-    await page.getByRole('link', { name: 'Escalas', exact: true }).click();
+    await irA(page, 'Escalas');
     await expect(page.getByRole('heading', { name: 'Estudio de escalas' })).toBeVisible();
   });
 

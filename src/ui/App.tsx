@@ -3,7 +3,8 @@ import { stopAll } from '../audio/stopAll';
 import { applyTheme } from './themes';
 import { useRoute, useSettings } from './hooks';
 import { useWakeLock } from './wakeLock';
-import { GROUPS, groupOf, pageLabel } from './nav';
+import { pageLabel } from './nav';
+import { NavMenu } from './components/NavMenu';
 import { Today } from './pages/Today';
 
 // Cada pantalla viaja en su propio archivo: Hoy abre sin esperar al motor de audio ni a las partituras.
@@ -43,10 +44,6 @@ const Metronome = lazy(PAGES.metronomo);
 export function App() {
   const { path } = useRoute();
   const page = path[0] ?? 'hoy';
-  const group = groupOf(page);
-  // cada grupo abre en la última pantalla que se vio en él
-  const [lastIn, setLastIn] = useState<Record<string, string>>({});
-  useEffect(() => setLastIn((m) => (m[group.id] === page ? m : { ...m, [group.id]: page })), [group.id, page]);
   const [settings, setSettings] = useSettings();
   // «Mantener la pantalla encendida» (Más → Ajustes): mientras la app esté abierta, suene algo o no
   useWakeLock(settings.keepAwake);
@@ -109,13 +106,7 @@ export function App() {
         <a href="#/hoy" className="brand">
           <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
-        <nav aria-label="Secciones">
-          {GROUPS.map((g) => (
-            <a key={g.id} href={`#/${lastIn[g.id] ?? g.pages[0][0]}`} className={g.id === group.id ? 'on' : ''} aria-current={g.id === group.id ? 'page' : undefined}>
-              {g.label}
-            </a>
-          ))}
-        </nav>
+        <NavMenu page={page} />
         <div className="prefs">
           <div className="seg" role="group" aria-label="Transposición">
             <button className={settings.view === 'Bb' ? 'on' : ''} onClick={() => setSettings({ view: 'Bb' })} title="Notación y cifrados escritos para trompeta en Si♭">
@@ -133,15 +124,6 @@ export function App() {
         </div>
       </header>
       <main>
-        {group.pages.length > 1 && (
-          <nav className="subnav" aria-label={`Pantallas de ${group.label}`}>
-            {group.pages.map(([id, label]) => (
-              <a key={id} href={`#/${id}`} className={id === page ? 'on' : ''} aria-current={id === page ? 'page' : undefined}>
-                {label}
-              </a>
-            ))}
-          </nav>
-        )}
         <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : pageLabel(page)}</h1>
         <Suspense fallback={<p className="muted" role="status">Cargando…</p>}>
           {page === 'hoy' && <Today />}

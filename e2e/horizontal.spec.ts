@@ -33,7 +33,7 @@ test.describe('celular apaisado', () => {
           };
         });
         expect(m.alto, 'alto del encabezado').toBeLessThanOrEqual(70);
-        expect(m.fijo).toBe('static');
+        expect(['static', 'relative'], 'no fijo (relative ancla el panel del menú)').toContain(m.fijo);
         expect(m.nombre).toBe('none');
         expect(m.fila, 'una sola fila').toBe(true);
         expect(m.orden, 'marca, pestañas, preferencias').toBe(true);

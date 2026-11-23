@@ -149,3 +149,16 @@ export async function sinAtrilAutomatico(page: Page) {
     }
   });
 }
+
+/** Abre el menú de pantallas (si no está abierto) y devuelve su contenedor. */
+export async function abrirMenu(page: Page) {
+  const boton = page.getByRole('button', { name: /\(menú de pantallas\)$/ });
+  if ((await boton.getAttribute('aria-expanded')) !== 'true') await boton.click();
+  return page.getByRole('navigation', { name: 'Secciones' });
+}
+
+/** Va a una pantalla eligiéndola en el menú (por el nombre que muestra: «Escalas», «Mi mes»…). */
+export async function irA(page: Page, nombre: string) {
+  const menu = await abrirMenu(page);
+  await menu.getByRole('link', { name: nombre, exact: true }).click();
+}

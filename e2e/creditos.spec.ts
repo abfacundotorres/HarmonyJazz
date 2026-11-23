@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { expect, irA, test } from './helpers';
 
 test.describe('créditos', () => {
   test('Créditos está en Más (y no en un pie en cada pantalla) y se abre dentro de la app, también con el service worker activo', async ({ page }) => {
@@ -9,8 +9,7 @@ test.describe('créditos', () => {
       if (!navigator.serviceWorker.controller) await new Promise<void>((r) => navigator.serviceWorker.addEventListener('controllerchange', () => r()));
     });
     await expect(page.locator('footer.credits')).toHaveCount(0);
-    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Más' }).click();
-    await page.getByRole('navigation', { name: 'Pantallas de Más' }).getByRole('link', { name: 'Créditos' }).click();
+    await irA(page, 'Créditos');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Créditos y licencias');
     await expect(page.getByRole('heading', { name: 'Sonido' })).toBeVisible();
     await expect(page.getByText('DM Serif Display').first()).toBeVisible();

@@ -12,18 +12,6 @@ export function More() {
   const size = clampAtrilSize(atril.size);
   return (
     <div className="page more">
-      <section className="card" id="extras">
-        <h2 className="h3like">Más pantallas</h2>
-        <p className="muted small">Lo que no hace falta para aprender un standard pero ayuda: están acá para que la barra quede corta.</p>
-        <ul className="extras">
-          <li><a href="#/mes">Mi mes</a> <span className="muted small">elegís pocos focos de técnica y lenguaje y los trabajás un mes; arma el plan de Hoy</span></li>
-          <li><a href="#/curricula">Currícula</a> <span className="muted small">tres años en seis semestres, un tema por mes con cierre y autoevaluación</span></li>
-          <li><a href="#/progreso">Progreso</a> <span className="muted small">lo que marcaste como logrado y qué conviene repasar</span></li>
-          <li><a href="#/metronomo">Metrónomo</a> <span className="muted small">péndulo y pulsos para practicar con tempo</span></li>
-          <li><a href="#/escucha">Afinador</a> <span className="muted small">afinación, bordón y notas largas guardadas</span></li>
-        </ul>
-      </section>
-
       <ThemeCard />
 
       <section className="card" id="sonido">

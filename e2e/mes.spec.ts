@@ -1,4 +1,4 @@
-import { expect, openBlock, test } from './helpers';
+import { abrirMenu, expect, irA, openBlock, test } from './helpers';
 
 /** Pasa al día siguiente del mes recién empezado (sesión 2: toca el foco de lenguaje). */
 async function alSegundoDia(page: import('@playwright/test').Page) {
@@ -22,9 +22,9 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('.notice.monthbar')).toHaveCount(0);
     await expect(page.locator('.hero')).toContainText('Tema de la semana');
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
-    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
+    await irA(page, 'Mi mes');
     await expect(page).toHaveURL(/#\/mes$/);
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Más' }).getByRole('link', { name: 'Mi mes' })).toHaveAttribute('aria-current', 'page');
+    await expect((await abrirMenu(page)).getByRole('link', { name: 'Mi mes', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('hay focos nuevos para elegir (tríadas menores, mayores y menores, acordes de cuatro notas, células) y el plan de Hoy los trabaja', async ({ page }) => {
@@ -156,7 +156,7 @@ test.describe('el mes con focos', () => {
     await expect(page.locator('.notice.monthbar')).toHaveCount(0);
     await expect(page.locator('.hero')).toContainText('Tema de la semana'); // vuelve al plan de siempre mientras tanto
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
-    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
+    await irA(page, 'Mi mes');
     await expect(page.getByText(/¿Seguís con los mismos focos \(Flexibilidad y ligaduras, Guide tones/)).toBeVisible();
     await page.getByRole('button', { name: 'Seguir con los mismos' }).click();
     await expect(page.locator('.hero')).toContainText('Tu mes');

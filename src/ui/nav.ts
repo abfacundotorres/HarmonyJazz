@@ -1,5 +1,5 @@
 /**
- * Navegación: cinco grupos con sus pantallas; el núcleo (Hoy, Estudiar, Tocar, Escuchar) es lo que sirve para aprender standards y «Más» reúne el resto. Cada pantalla conserva su dirección (`#/lecciones`, `#/escalas`…), así que
+ * Navegación: cinco grupos con sus pantallas. Cada pantalla conserva su dirección (`#/lecciones`, `#/escalas`…), así que
  * los enlaces guardados y los del plan de Hoy siguen funcionando; los grupos sólo ordenan la barra.
  */
 export interface Group {
@@ -10,12 +10,11 @@ export interface Group {
 }
 
 export const GROUPS: readonly Group[] = [
-  { id: 'hoy', label: 'Hoy', pages: [['hoy', 'Plan']] },
+  { id: 'hoy', label: 'Hoy', pages: [['hoy', 'Plan'], ['mes', 'Mi mes'], ['curricula', 'Currícula'], ['progreso', 'Progreso']] },
   { id: 'estudiar', label: 'Estudiar', pages: [['lecciones', 'Lecciones'], ['escalas', 'Escalas'], ['vocabulario', 'Vocabulario']] },
-  { id: 'tocar', label: 'Tocar', pages: [['playalong', 'Play-along'], ['repertorio', 'Repertorio']] },
-  { id: 'escuchar', label: 'Escuchar', pages: [['transcribir', 'Transcribir'], ['oido', 'Oído']] },
-  // lo que no es el núcleo de aprender standards (planes largos, herramientas sueltas y ajustes) vive en «Más»
-  { id: 'mas', label: 'Más', pages: [['mas', 'Ajustes'], ['mes', 'Mi mes'], ['curricula', 'Currícula'], ['progreso', 'Progreso'], ['metronomo', 'Metrónomo'], ['escucha', 'Afinador'], ['creditos', 'Créditos']] },
+  { id: 'tocar', label: 'Tocar', pages: [['playalong', 'Play-along'], ['repertorio', 'Repertorio'], ['metronomo', 'Metrónomo']] },
+  { id: 'escuchar', label: 'Escuchar', pages: [['transcribir', 'Transcribir'], ['oido', 'Oído'], ['escucha', 'Afinador']] },
+  { id: 'mas', label: 'Más', pages: [['mas', 'Ajustes'], ['creditos', 'Créditos']] },
 ];
 
 /** Grupo al que pertenece una pantalla (Hoy si no se reconoce). */

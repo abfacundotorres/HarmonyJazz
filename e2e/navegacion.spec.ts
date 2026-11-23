@@ -1,67 +1,85 @@
-import { expect, openBlock, test } from './helpers';
+import { abrirMenu, expect, irA, openBlock, test } from './helpers';
 
 const barra = (page: import('@playwright/test').Page) => page.getByRole('navigation', { name: 'Secciones' });
 
-test.describe('navegación en cinco grupos', () => {
-  test('la barra tiene cinco grupos y cada grupo abre su primera pantalla', async ({ page }) => {
+test.describe('menú de pantallas', () => {
+  test('cerrado muestra sólo la pantalla actual; abierto lista las catorce, agrupadas', async ({ page }) => {
     await page.goto('/#/hoy');
-    await expect(barra(page).getByRole('link')).toHaveText(['Hoy', 'Estudiar', 'Tocar', 'Escuchar', 'Más']);
-    await expect(barra(page).getByRole('link', { name: 'Hoy' })).toHaveAttribute('aria-current', 'page');
-    await barra(page).getByRole('link', { name: 'Estudiar' }).click();
-    await expect(page).toHaveURL(/#\/lecciones$/);
-    await barra(page).getByRole('link', { name: 'Tocar' }).click();
-    await expect(page).toHaveURL(/#\/playalong$/);
-    await barra(page).getByRole('link', { name: 'Escuchar' }).click();
-    await expect(page).toHaveURL(/#\/transcribir$/);
-    await barra(page).getByRole('link', { name: 'Más' }).click();
-    await expect(page).toHaveURL(/#\/mas$/);
+    const boton = page.getByRole('button', { name: /\(menú de pantallas\)$/ });
+    await expect(boton).toHaveText(/Plan/);
+    await expect(boton).toHaveAttribute('aria-expanded', 'false');
+    await expect(barra(page).getByRole('link')).toHaveCount(0);
+    await boton.click();
+    await expect(boton).toHaveAttribute('aria-expanded', 'true');
+    await expect(barra(page).getByRole('link')).toHaveText([
+      'Plan', 'Mi mes', 'Currícula', 'Progreso',
+      'Lecciones', 'Escalas', 'Vocabulario',
+      'Play-along', 'Repertorio', 'Metrónomo',
+      'Transcribir', 'Oído', 'Afinador',
+      'Ajustes', 'Créditos',
+    ]);
+    await expect(barra(page).getByRole('link', { name: 'Plan', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(barra(page).locator('.menutit')).toHaveText(['Hoy', 'Estudiar', 'Tocar', 'Escuchar', 'Más']);
   });
 
-  test('las pantallas del grupo aparecen como sub-pestañas y el grupo recuerda la última que se vio', async ({ page }) => {
-    await page.goto('/#/lecciones');
-    const sub = page.getByRole('navigation', { name: 'Pantallas de Estudiar' });
-    await expect(sub.getByRole('link')).toHaveText(['Lecciones', 'Escalas', 'Vocabulario']);
-    await sub.getByRole('link', { name: 'Escalas' }).click();
-    await expect(page.getByRole('heading', { name: 'Estudio de escalas' })).toBeVisible();
-    await expect(barra(page).getByRole('link', { name: 'Estudiar' })).toHaveAttribute('aria-current', 'page');
-    // se va a otro grupo y se vuelve: abre en Escalas, no en Lecciones
-    await barra(page).getByRole('link', { name: 'Tocar' }).click();
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link')).toHaveText(['Play-along', 'Repertorio']);
-    await barra(page).getByRole('link', { name: 'Estudiar' }).click();
+  test('elegir una pantalla la abre, cierra el menú y el botón pasa a mostrar su nombre', async ({ page }) => {
+    await page.goto('/#/hoy');
+    await irA(page, 'Escalas');
     await expect(page).toHaveURL(/#\/escalas$/);
+    await expect(page.getByRole('heading', { name: 'Estudio de escalas' })).toBeVisible();
+    await expect(barra(page).getByRole('link')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Escalas \(menú de pantallas\)$/ })).toHaveText(/Escalas/);
+    // y no hay pestañas ni sub-pestañas
+    await expect(page.getByRole('navigation', { name: /Pantallas de/ })).toHaveCount(0);
   });
 
-  test('los enlaces de siempre siguen funcionando y marcan su grupo', async ({ page }) => {
-    for (const [ruta, grupo, titulo] of [
-      ['#/vocabulario', 'Estudiar', 'Vocabulario'],
-      ['#/escucha', 'Más', 'Afinador y notas largas'],
-      ['#/oido', 'Escuchar', 'Entrenamiento del oído'],
-      ['#/progreso', 'Más', 'Tu progreso'],
-      ['#/mes', 'Más', 'Elegí los focos de este mes'],
-      ['#/metronomo', 'Más', 'Metrónomo'],
-      ['#/creditos', 'Más', 'Créditos y licencias'],
+  test('se cierra con Escape (y el foco vuelve al botón), tocando afuera y volviendo a tocar el botón', async ({ page }) => {
+    await page.goto('/#/hoy');
+    const boton = page.getByRole('button', { name: /\(menú de pantallas\)$/ });
+    await boton.click();
+    await expect(barra(page).getByRole('link').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(barra(page).getByRole('link')).toHaveCount(0);
+    await expect(boton).toBeFocused();
+    await boton.click();
+    await page.mouse.click(200, 830); // abajo, fuera del panel
+    await expect(barra(page).getByRole('link')).toHaveCount(0);
+    await boton.click();
+    await boton.click();
+    await expect(barra(page).getByRole('link')).toHaveCount(0);
+  });
+
+  test('un enlace de siempre (de adentro de la app o guardado) abre su pantalla y el menú lo marca como actual', async ({ page }) => {
+    for (const [ruta, actual, titulo] of [
+      ['#/vocabulario', 'Vocabulario', 'Vocabulario'],
+      ['#/escucha', 'Afinador', 'Afinador y notas largas'],
+      ['#/oido', 'Oído', 'Entrenamiento del oído'],
+      ['#/progreso', 'Progreso', 'Tu progreso'],
+      ['#/creditos', 'Créditos', 'Créditos y licencias'],
     ] as const) {
       await page.goto('/' + ruta);
-      await expect(barra(page).getByRole('link', { name: grupo })).toHaveAttribute('aria-current', 'page');
       await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: /\(menú de pantallas\)$/ })).toHaveText(new RegExp(actual));
+      const menu = await abrirMenu(page);
+      await expect(menu.getByRole('link', { name: actual, exact: true })).toHaveAttribute('aria-current', 'page');
     }
   });
 
-  test('Más lista las pantallas extra con su descripción y los enlaces llevan a cada una', async ({ page }) => {
-    await page.goto('/#/mas');
-    const extras = page.locator('#extras');
-    await expect(extras.getByRole('link')).toHaveText(['Mi mes', 'Currícula', 'Progreso', 'Metrónomo', 'Afinador']);
-    await extras.getByRole('link', { name: 'Currícula' }).click();
-    await expect(page).toHaveURL(/#\/curricula$/);
-    await expect(barra(page).getByRole('link', { name: 'Más' })).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Más' }).getByRole('link')).toHaveText(['Ajustes', 'Mi mes', 'Currícula', 'Progreso', 'Metrónomo', 'Afinador', 'Créditos']);
-  });
-
-  test('Hoy no tiene sub-pestañas y lleva a Mi mes, Currícula y Progreso con un renglón', async ({ page }) => {
-    await page.goto('/#/hoy');
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Hoy' })).toHaveCount(0);
-    await page.locator('.hoymas').getByRole('link', { name: 'Mi mes' }).click();
-    await expect(page).toHaveURL(/#\/mes$/);
+  test('el panel cabe en el celular, también apaisado, y todos sus enlaces se pueden tocar', async ({ page }) => {
+    await page.goto('/#/playalong');
+    for (const tam of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(tam);
+      const menu = await abrirMenu(page);
+      const panel = menu.locator('.menupanel');
+      const caja = (await panel.boundingBox())!;
+      expect(caja.x).toBeGreaterThanOrEqual(0);
+      expect(caja.x + caja.width).toBeLessThanOrEqual(tam.width + 1);
+      expect(caja.y + caja.height).toBeLessThanOrEqual(tam.height + 1);
+      // con poco alto el panel se desplaza adentro: el último enlace se alcanza
+      await menu.getByRole('link', { name: 'Créditos', exact: true }).scrollIntoViewIfNeeded();
+      await expect(menu.getByRole('link', { name: 'Créditos', exact: true })).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
   });
 
   test('Más reúne apariencia, sonido y copia de seguridad, y los ajustes se recuerdan', async ({ page }) => {

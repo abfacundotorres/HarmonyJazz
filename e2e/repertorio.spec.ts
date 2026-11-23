@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirMenu, expect, test } from './helpers';
 
 const TEMA = { id: 'u:hoja', name: 'Hojas de otoño', composer: '', key: 'G', mode: 'minor', chart: 'Cm7 | F7 | Bbmaj7 | Ebmaj7', tempo: 120, style: 'swing' };
 const conTema = (page: import('@playwright/test').Page) => page.addInitScript((t) => localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] })), TEMA);
@@ -10,8 +10,9 @@ test.describe('mi repertorio', () => {
     await expect(page.getByRole('heading', { name: 'Mi repertorio' })).toBeVisible();
     await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ir a Play-along' })).toBeVisible();
-    // Repertorio está en el grupo Tocar
-    await expect(page.getByRole('navigation', { name: 'Pantallas de Tocar' }).getByRole('link', { name: 'Repertorio' })).toHaveAttribute('aria-current', 'page');
+    // Repertorio está en el grupo Tocar del menú y es la pantalla actual
+    const menu = await abrirMenu(page);
+    await expect(menu.getByRole('link', { name: 'Repertorio', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('cada tema propio tiene sus siete pasos: se tildan, avanzan el progreso y se recuerdan', async ({ page }) => {
