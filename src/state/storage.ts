@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ThemeId } from '../ui/themes';
+import { defaultMixer, type Mixer } from '../audio/mixer';
 import { sanitizeKey } from './sanitize';
 
 const PREFIX = 'harmonyjazz:';
@@ -64,6 +65,8 @@ export interface Settings {
   focusLesson: string;
   /** Volumen general en dB respecto del nivel base (−14…+2). */
   volume: number;
+  /** Volumen y ecualizador de cada instrumento y de la mezcla general. */
+  mixer: Mixer;
   /** Salida: 'auto' = altavoz del celular si la pantalla es táctil. */
   output: 'auto' | 'phone' | 'normal';
   /** Cifrado en la grilla: estilo iReal Pro (Δ7, -7, ø7) o completo (maj7, m7, m7♭5). */
@@ -78,7 +81,7 @@ export interface Settings {
   autoAtril: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false, autoAtril: true };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, mixer: defaultMixer(), output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false, autoAtril: true };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

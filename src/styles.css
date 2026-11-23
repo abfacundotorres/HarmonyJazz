@@ -1067,3 +1067,11 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .barra-flotante .bf-ir { white-space: nowrap; padding: 0 6px; font-weight: 600; }
 body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .player .pausa { min-width: 44px; min-height: 44px; }
+
+/* Mezcla y ecualizador */
+.eq { margin: 8px 0; }
+.eq > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.eq .seg { flex-wrap: wrap; margin-bottom: 6px; }
+.eq-fila { display: grid; grid-template-columns: 5.5em 1fr 4.2em; align-items: center; gap: 8px; min-height: 44px; }
+.eq-fila input[type='range'] { width: 100%; }
+.eq-valor { text-align: right; font-variant-numeric: tabular-nums; }

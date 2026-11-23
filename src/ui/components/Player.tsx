@@ -3,6 +3,7 @@ import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine
 import type { MelNote } from '../../exercises/generators';
 import { beatsPerBar, type Chart } from '../../theory/chart';
 import { useSettings } from '../hooks';
+import { Ecualizador } from './Ecualizador';
 import { NumberField } from './NumberField';
 import { usePosition } from '../usePosition';
 import { useWakeLock } from '../wakeLock';
@@ -127,6 +128,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
     engine.preload();
   }, []);
   useEffect(() => engine.setVolume(settings.volume), [settings.volume]);
+  useEffect(() => engine.setMixer(settings.mixer), [settings.mixer]);
   useEffect(() => {
     const touch = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
     const mode = settings.output === 'auto' ? (touch ? 'phone' : 'normal') : settings.output;
@@ -252,6 +254,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
           />{' '}
           {settings.volume > 0 ? '+' : ''}{settings.volume} dB
         </label>
+        <Ecualizador />
         <label>
           Salida{' '}
           <select value={settings.output} onChange={(e) => setSettings({ output: e.target.value as typeof settings.output })}>
