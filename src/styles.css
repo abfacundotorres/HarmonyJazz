@@ -1057,3 +1057,17 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .etapa { margin: 6px 0; border-top: 1px solid var(--line); }
 .estudio .colecc-lista .nota { display: block; }
 .estudio a.button { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* ¿qué acorde sigue? */
+.quiz { margin-top: 10px; }
+.quiz > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.quiz-ctx { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 1.15rem; }
+.quiz-chip { padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; font-weight: 600; }
+.quiz-pregunta { border-style: dashed; color: var(--accent); }
+.quiz-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.quiz-ops button { min-height: 56px; font-size: 1.2rem; font-weight: 600; }
+.quiz-ops button.ok { background: var(--good); color: #10190f; border-color: var(--good); }
+.quiz-ops button.mal { background: var(--bad); color: #1d0a07; border-color: var(--bad); }
+.quiz-ok b:first-child { color: var(--good); }
+.quiz-mal b:first-child { color: var(--bad); }
+.quiz .row button { min-height: 44px; }
