@@ -65,6 +65,7 @@ export function PlayAlong() {
 
   // progresión propia sin guardar ("probar")
   const [custom, setCustom] = useState('');
+  const [estudioAbierto, setEstudioAbierto] = useState(false);
   // grilla del editor (null = el usuario eligió escribir texto); `custom` es siempre lo que se toca
   const [doc, setDocState] = useState<ChartDoc | null>({ bars: [emptyBar()] });
   const [docError, setDocError] = useState<string | null>(null);
@@ -470,31 +471,25 @@ export function PlayAlong() {
         <p>
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
         </p>
-        <div className="memoria" role="group" aria-label="Modo de memoria">
-          <span className="muted small">🧠 De memoria</span>
-          <div className="seg">
-            {MEMORIA_MODOS.map((m) => (
-              <button key={m.id} className={memoModo === m.id ? 'on' : ''} aria-pressed={memoModo === m.id} onClick={() => setModo(m.id)}>{m.label}</button>
-            ))}
-          </div>
-          {memoModo !== 'off' && <button className={mirar ? 'on' : ''} aria-pressed={mirar} onClick={() => setMirar((v) => !v)}>👁 Mirar</button>}
-        </div>
-        {memoModo !== 'off' && <p className="muted small">{MEMORIA_MODOS.find((m) => m.id === memoModo)?.texto}</p>}
       </section>
 
-      <TomaCompleta
-        activa={tomaActiva}
-        coros={corosToma}
-        onCoros={setCorosToma}
-        coro={mine ? (mine.countIn ? -1 : mine.chorus) : -1}
-        compases={playChart.bars}
-        pulsosPorCompas={beatsPerBar(playChart)}
-        tempo={tempo}
-        abierta={query.get('toma') === '1'}
-        mensaje={tomaMsg}
-        onEmpezar={() => void empezarToma()}
-        onCortar={cortarToma}
-      />
+      <section className="card tablero">
+        <div className="loopbar" role="status">
+          {loopValid ? (
+            <>
+              <b>Loop: compases {loopValid[0] + 1}–{loopValid[1] + 1}</b>
+              <button onClick={() => { setLoop(null); setPending(null); }}>Quitar loop</button>
+            </>
+          ) : pending !== null ? (
+            <span className="muted small">Inicio en el compás {pending + 1}. Tocá el compás final (puede ser el mismo).</span>
+          ) : (
+            <span className="muted small">Tocá un compás para marcar el inicio de un loop y otro para el final.</span>
+          )}
+          {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
+        </div>
+        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} flojos={flojosSet} />
+        {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
+      </section>
 
       {!useCustom && selected.category === 'Mis temas' && (() => {
         const tune = tunes.find((t) => t.id === selected.id);
@@ -568,7 +563,23 @@ export function PlayAlong() {
         />
       )}
 
-      <section className="card">
+      <details className="card estudio" open={estudioAbierto} onToggle={(e) => e.target === e.currentTarget && setEstudioAbierto((e.target as HTMLDetailsElement).open)}>
+        <summary>
+          <h3>
+            📖 Estudiar este tema
+            {memoModo !== 'off' && <span className="muted small"> · de memoria: {MEMORIA_MODOS.find((m) => m.id === memoModo)?.label}</span>}
+          </h3>
+        </summary>
+        <div className="memoria" role="group" aria-label="Modo de memoria">
+          <span className="muted small">🧠 De memoria</span>
+          <div className="seg">
+            {MEMORIA_MODOS.map((m) => (
+              <button key={m.id} className={memoModo === m.id ? 'on' : ''} aria-pressed={memoModo === m.id} onClick={() => setModo(m.id)}>{m.label}</button>
+            ))}
+          </div>
+          {memoModo !== 'off' && <button className={mirar ? 'on' : ''} aria-pressed={mirar} onClick={() => setMirar((v) => !v)}>👁 Mirar</button>}
+        </div>
+        {memoModo !== 'off' && <p className="muted small">{MEMORIA_MODOS.find((m) => m.id === memoModo)?.texto}</p>}
         <PracticaTramos
           secciones={secciones}
           loop={loopValid}
@@ -592,21 +603,6 @@ export function PlayAlong() {
           }}
           tramoActual={tramoFloja}
         />
-        <div className="loopbar" role="status">
-          {loopValid ? (
-            <>
-              <b>Loop: compases {loopValid[0] + 1}–{loopValid[1] + 1}</b>
-              <button onClick={() => { setLoop(null); setPending(null); }}>Quitar loop</button>
-            </>
-          ) : pending !== null ? (
-            <span className="muted small">Inicio en el compás {pending + 1}. Tocá el compás final (puede ser el mismo).</span>
-          ) : (
-            <span className="muted small">Tocá un compás para marcar el inicio de un loop y otro para el final.</span>
-          )}
-          {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
-        </div>
-        <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} flojos={flojosSet} />
-        {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
         <MapaArmonico
           chart={chart}
           layout={layout}
@@ -623,7 +619,21 @@ export function PlayAlong() {
             setFlojosTodos((f) => (f[selected.id]?.includes(w) ? f : { ...f, [selected.id]: alternarFloja(f[selected.id], w) }));
           }}
         />
-      </section>
+      </details>
+
+      <TomaCompleta
+        activa={tomaActiva}
+        coros={corosToma}
+        onCoros={setCorosToma}
+        coro={mine ? (mine.countIn ? -1 : mine.chorus) : -1}
+        compases={playChart.bars}
+        pulsosPorCompas={beatsPerBar(playChart)}
+        tempo={tempo}
+        abierta={query.get('toma') === '1'}
+        mensaje={tomaMsg}
+        onEmpezar={() => void empezarToma()}
+        onCortar={cortarToma}
+      />
 
       <TuneLibrary
         draft={draft}

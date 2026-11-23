@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirEstudio, expect, test } from './helpers';
 import type { Page } from '@playwright/test';
 
 // Mapa armónico: los patrones del tema con sus compases, el centro tonal y un botón para dejarlos en loop. Temas inventados.
@@ -11,6 +11,7 @@ test.describe('mapa armónico', () => {
     await conTema(page);
     await page.goto('/#/playalong?p=u:mapatema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await expect(mapa(page).locator('.mapa-lista')).toHaveCount(0); // cerrado: no calcula
     await mapa(page).locator('summary').click();
     // se lee como se ve: en Si♭ (por defecto) la tonalidad de concierto C se escribe D
@@ -27,6 +28,7 @@ test.describe('mapa armónico', () => {
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:settings', JSON.stringify({ view: 'C' })));
     await page.goto('/#/playalong?p=u:mapatema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await mapa(page).locator('summary').click();
     await expect(mapa(page).locator('.mapa-lista li').first()).toContainText('ii–V–I mayor en C');
   });
@@ -35,6 +37,7 @@ test.describe('mapa armónico', () => {
     await conTema(page);
     await page.goto('/#/playalong?p=u:mapatema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await mapa(page).locator('summary').click();
     await mapa(page).getByRole('button', { name: /Repetir en bucle/ }).nth(1).click();
     await expect(page.locator('.loopbar')).toContainText('compases 5–7');
@@ -43,6 +46,7 @@ test.describe('mapa armónico', () => {
   test('un tema modal sin patrones lo dice sin inventar', async ({ page }) => {
     await page.goto('/#/playalong?p=modal');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await mapa(page).locator('summary').click();
     await expect(mapa(page)).toContainText('No se reconoció ningún patrón');
   });

@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirEstudio, expect, test } from './helpers';
 import type { Page } from '@playwright/test';
 
 // Loop por sección y compases flojos del Play-along, con un tema inventado de dos secciones.
@@ -22,6 +22,7 @@ test.describe('loop por sección y compases flojos', () => {
     await conTema(page);
     await page.goto('/#/playalong?p=u:flojotema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await page.getByRole('button', { name: /Loop de la sección B/ }).click();
     await expect(page.locator('.loopbar')).toContainText('compases 3–6');
     await page.getByRole('button', { name: /Loop de la sección A/ }).click();
@@ -31,6 +32,7 @@ test.describe('loop por sección y compases flojos', () => {
   test('un tema sin secciones no muestra el loop por sección', async ({ page }) => {
     await page.goto('/#/playalong?p=ii-v-i');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await expect(page.getByRole('group', { name: 'Loop por sección' })).toHaveCount(0);
   });
 
@@ -38,6 +40,7 @@ test.describe('loop por sección y compases flojos', () => {
     await conTema(page);
     await page.goto('/#/playalong?p=u:flojotema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await page.getByRole('button', { name: 'Marcar compases flojos' }).click();
     await compas(page, 2).click();
     await compas(page, 3).click();
@@ -57,6 +60,7 @@ test.describe('loop por sección y compases flojos', () => {
     // al volver, las marcas siguen ahí
     await page.reload();
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await expect(page.locator('.board .bar.floja')).toHaveCount(3);
 
     // volver a tocar un compás marcado lo desmarca
@@ -71,6 +75,7 @@ test.describe('loop por sección y compases flojos', () => {
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:flojos', JSON.stringify({ 'u:flojotema': [0, 1] })));
     await page.goto('/#/playalong?p=u:flojotema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await expect(page.locator('.board .bar.floja')).toHaveCount(2);
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Borrar marcas' }).click();
@@ -83,6 +88,7 @@ test.describe('loop por sección y compases flojos', () => {
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:flojos', '{"u:flojotema":"x","otro":[1.5,-3,999]}'));
     await page.goto('/#/playalong?p=u:flojotema');
     await page.waitForSelector('.board');
+    await abrirEstudio(page);
     await expect(page.locator('.board .bar.floja')).toHaveCount(0);
   });
 });
