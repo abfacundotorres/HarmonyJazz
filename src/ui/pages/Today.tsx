@@ -126,6 +126,10 @@ export function Today() {
           />
         ))}
       </div>
+
+      <p className="muted small hoymas">
+        Planes largos y seguimiento (en Más): <a href="#/mes">Mi mes</a> · <a href="#/curricula">Currícula</a> · <a href="#/progreso">Progreso</a>
+      </p>
     </div>
   );
 }
