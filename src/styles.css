@@ -1071,3 +1071,11 @@ details.info summary { cursor: pointer; color: var(--muted); }
 .quiz-ok b:first-child { color: var(--good); }
 .quiz-mal b:first-child { color: var(--bad); }
 .quiz .row button { min-height: 44px; }
+
+/* acordes de distinta duración en un compás (2+1+1): el pulso en que entra cada uno, y en el atril un ancho proporcional a su duración */
+.board .bar .pulso { display: block; font-size: max(.62rem, .5em); font-style: normal; font-weight: 500; line-height: 1.2; color: var(--muted); }
+.atril .board .bar .pulso { font-size: max(.72rem, .38em); }
+.atril .board .bar.now .cur .pulso { color: inherit; }
+.atril .board .bar.prop { display: grid; grid-template-columns: var(--cols); container-type: inline-size; flex-wrap: nowrap; justify-items: center; align-items: center; column-gap: 0; }
+.atril .board .bar.prop > span { white-space: nowrap; min-width: 0; text-align: center; font-size: min(var(--asz), calc(var(--share, .5) * 92cqw / (var(--glyphs, 4) * .6 + .8))); }
+.atril .board .bar.prop > span + span { border-left: 1px solid var(--line); padding-left: .15em; }
