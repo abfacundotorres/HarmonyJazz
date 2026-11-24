@@ -1,4 +1,4 @@
-import { expect, testLoose as test } from './helpers';
+import { abrirMenu, expect, testLoose as test } from './helpers';
 
 /** Datos guardados dañados (copia ajena, otra versión, edición a mano) no deben dejar la app en blanco. */
 const BAD: Record<string, string[]> = {
@@ -37,18 +37,18 @@ test('ningún dato guardado dañado rompe una pantalla', async ({ page }) => {
 });
 
 test('si una pantalla falla, se muestra un recuadro de recuperación en lugar de la pantalla en blanco', async ({ page }) => {
-  await page.goto('/#/hoy');
+  await page.goto('/#/mas');
   await page.evaluate(() => localStorage.setItem('harmonyjazz:mastery', JSON.stringify({ 'lesson:x': { C: 130 } })));
   await page.reload();
-  const vista = page.getByRole('button', { name: 'Concierto' });
-  await expect(vista).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Transposición' })).toBeVisible();
   // se provoca un error de dibujado: una función que usa la pantalla empieza a fallar
   await page.evaluate(() => {
     Date.prototype.getFullYear = function () {
       throw new Error('falla de prueba');
     };
   });
-  await vista.click();
+  // Hoy usa esa función al dibujarse (no se espera el cierre del menú: la pantalla en blanco se lo lleva)
+  await (await abrirMenu(page)).getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(page.getByText('Algo falló en esta pantalla')).toBeVisible();
   await expect(page.getByText('falla de prueba')).toBeVisible();
   // la copia de rescate conserva los datos
@@ -70,7 +70,7 @@ test('si el almacenamiento está lleno, se avisa que lo último no quedó guarda
       return orig.call(this, k, v);
     };
   });
-  await page.goto('/#/hoy');
+  await page.goto('/#/mas'); // «Cómo se lee» vive en Ajustes
   const vista = (n: string) => page.getByRole('button', { name: n, exact: true });
   await vista('Concierto').click();
   await expect(page.locator('.updatebar.warn')).toHaveCount(0);

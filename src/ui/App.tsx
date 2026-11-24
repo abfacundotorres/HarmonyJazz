@@ -45,7 +45,7 @@ const Metronome = lazy(PAGES.metronomo);
 export function App() {
   const { path } = useRoute();
   const page = path[0] ?? 'hoy';
-  const [settings, setSettings] = useSettings();
+  const [settings] = useSettings();
   // «Mantener la pantalla encendida» (Más → Ajustes): mientras la app esté abierta, suene algo o no
   useWakeLock(settings.keepAwake);
   const [updated, setUpdated] = useState(false);
@@ -107,21 +107,6 @@ export function App() {
         <a href="#/hoy" className="brand">
           <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
-        <div className="prefs">
-          <div className="seg" role="group" aria-label="Transposición">
-            <button className={settings.view === 'Bb' ? 'on' : ''} onClick={() => setSettings({ view: 'Bb' })} title="Notación y cifrados escritos para trompeta en Si♭">
-              Si♭
-            </button>
-            <button className={settings.view === 'C' ? 'on' : ''} onClick={() => setSettings({ view: 'C' })} title="Notación y cifrados en concierto">
-              Concierto
-            </button>
-          </div>
-          <select value={settings.register} onChange={(e) => setSettings({ register: e.target.value as typeof settings.register })} aria-label="Registro">
-            <option value="grave">Reg. grave</option>
-            <option value="medio">Reg. medio</option>
-            <option value="agudo">Reg. agudo</option>
-          </select>
-        </div>
         <NavMenu page={page} />
       </header>
       <main>

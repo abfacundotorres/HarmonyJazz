@@ -1,4 +1,4 @@
-import { diaTecnica, expect, openBlock, openExercises, test } from './helpers';
+import { cambiarVista, diaTecnica, expect, openBlock, openExercises, test } from './helpers';
 
 // 2026-11-14: calentamiento con notas largas, flexibilidad y bending (día % 5 = 1)
 const DIA = new Date(2026, 10, 14, 12, 0, 0);
@@ -31,7 +31,8 @@ test.describe('ejercicios de práctica con explicación completa', () => {
       await expect(e.locator('.paper svg')).toBeVisible();
     }
     // en concierto se transpone el pentagrama
-    await page.getByRole('button', { name: 'Concierto' }).click();
+    await cambiarVista(page, 'Concierto');
+    await ex.locator('summary').click(); // la pantalla se dibujó de nuevo
     await expect(ex.getByText(/en concierto/)).toBeVisible();
   });
 
@@ -52,7 +53,9 @@ test.describe('técnica del día: el pentagrama sale en la tonalidad del día', 
     await expect(ex.getByText(/negra = 120/).first()).toBeVisible();
     const notes = await ex.locator('.paper svg .abcjs-note').count();
     expect(notes).toBeGreaterThanOrEqual(40);
-    await page.getByRole('button', { name: 'Concierto' }).click();
+    await cambiarVista(page, 'Concierto');
+    await openBlock(page, 'Técnica en la tonalidad del día');
+    await ex.locator('summary').click(); // la pantalla se dibujó de nuevo
     await expect(ex.locator('.paper svg')).toBeVisible();
     expect(await ex.locator('.paper svg .abcjs-note').count()).toBe(notes);
   });
