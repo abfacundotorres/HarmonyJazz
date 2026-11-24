@@ -19,6 +19,8 @@ export interface MonthPlan {
   startDay: number;
   /** Semestre de la currícula (1 a 6) si el mes sale de ella: el recorrido del tema se exige según el semestre. */
   nivel?: number;
+  /** Corrección a mano de la sesión (se suma a la que se cuenta sola; −50 a +50). Se pone desde Mi mes y se borra al elegir focos de nuevo. */
+  ajuste?: number;
 }
 
 export const EMPTY_MONTH: MonthPlan = { month: '', tech: '', lang: '', rep: '', startDay: 0 };
@@ -45,6 +47,11 @@ export function sessionNumber(log: Log, startDay: number, today: number): number
     if (d !== null && d >= startDay && d < today && v.done.length > 0) n++;
   }
   return n;
+}
+
+/** Sesión del plan en que se está hoy, con la corrección a mano de Mi mes (nunca menos de 1). */
+export function sesionDelMes(log: Log, mp: { startDay: number; ajuste?: number }, today: number): number {
+  return Math.max(1, sessionNumber(log, mp.startDay, today) + (mp.ajuste ?? 0));
 }
 
 export interface Pick {

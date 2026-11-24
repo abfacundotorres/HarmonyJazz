@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { sanitizeMonth } from '../state/sanitize';
 import { dayOfIso } from '../state/progress';
 import { REPERTOIRE_WEEKS } from './focus';
-import { buildMonthPlan, EMPTY_MONTH, focusPick, monthActive, monthName, monthOf, pickFor, repertoireName, sessionNumber } from './monthPlan';
+import { buildMonthPlan, EMPTY_MONTH, focusPick, monthActive, monthName, monthOf, pickFor, repertoireName, sesionDelMes, sessionNumber } from './monthPlan';
 
 const MP = { month: '2026-12', tech: 't-largas-artic', lang: 'l-triadas-mayores', rep: 'ii-v-i', startDay: dayOfIso('2026-12-01')! };
 const TUNES = [{ id: 'u:abcd', name: 'Autumn Leaves' }];
@@ -105,5 +105,27 @@ describe('plan del mes', () => {
     expect(sanitizeMonth(MP)).toEqual(MP);
     expect(sanitizeMonth({ month: 'diciembre', tech: 'x', lang: 7, rep: 'ok', startDay: -4 })).toEqual({ rep: 'ok', startDay: 0 });
     expect(sanitizeMonth([])).toBeNull();
+  });
+});
+
+describe('sesión corregida a mano', () => {
+  const log = { '2026-12-04': { done: ['hoy'], minutes: 0 }, '2026-12-05': { done: ['hoy'], minutes: 0 } };
+  const base = { startDay: MP.startDay };
+  it('sin ajuste es la que se cuenta sola', () => {
+    expect(sesionDelMes(log, base, D('2026-12-06'))).toBe(sessionNumber(log, MP.startDay, D('2026-12-06')));
+  });
+  it('el ajuste se suma, y nunca baja de la sesión 1', () => {
+    const auto = sessionNumber(log, MP.startDay, D('2026-12-06'));
+    expect(sesionDelMes(log, { ...base, ajuste: 2 }, D('2026-12-06'))).toBe(auto + 2);
+    expect(sesionDelMes(log, { ...base, ajuste: -50 }, D('2026-12-06'))).toBe(1);
+  });
+});
+
+describe('ajuste guardado', () => {
+  it('se limita a ±50, se redondea y el 0 o lo dañado se descarta', () => {
+    expect((sanitizeMonth({ ...MP, ajuste: 3.4 }) as { ajuste?: number }).ajuste).toBe(3);
+    expect((sanitizeMonth({ ...MP, ajuste: 999 }) as { ajuste?: number }).ajuste).toBe(50);
+    expect((sanitizeMonth({ ...MP, ajuste: 0 }) as { ajuste?: number }).ajuste).toBeUndefined();
+    expect((sanitizeMonth({ ...MP, ajuste: 'x' }) as { ajuste?: number }).ajuste).toBeUndefined();
   });
 });

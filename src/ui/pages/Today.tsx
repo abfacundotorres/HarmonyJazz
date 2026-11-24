@@ -12,7 +12,7 @@ import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioR
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
 import { useLog, useMastery, useMonth, usePersistentLibrary, useReading, useSeen, useSettings, useTemasDeRepertorio } from '../hooks';
-import { buildMonthPlan, monthActive, repertoireName, sessionNumber } from '../../content/monthPlan';
+import { buildMonthPlan, monthActive, repertoireName, sesionDelMes } from '../../content/monthPlan';
 
 /** La fecha de hoy. La app instalada puede quedar abierta varios días: al volver a ella o al pasar la medianoche, cambia. */
 function useToday(): Date {
@@ -60,7 +60,7 @@ export function Today() {
   const [lib] = usePersistentLibrary();
   const tunes = useMemo(() => phraseNames(lib.tunes as unknown[] | undefined), [lib]);
   const monthOn = monthActive(mp, today, tunes);
-  const session = useMemo(() => sessionNumber(log, mp.startDay, dayNum(today)), [log, mp.startDay, today]);
+  const session = useMemo(() => sesionDelMes(log, mp, dayNum(today)), [log, mp, today]);
   const plan = useMemo(
     () => (monthOn ? buildMonthPlan(today, mp, session, repertoireName(mp.rep, tunes)!) : buildPlan(today, settings.focusLesson, pl.phrases ?? [], scale)),
     [monthOn, today, settings.focusLesson, pl, scale, mp, session, tunes],
@@ -89,13 +89,7 @@ export function Today() {
           <div className="big">{keyLabel(plan.key)}</div>
           <span className="muted small">{view === 'Bb' ? `concierto ${plan.key}` : ''}</span>
         </div>
-        {monthOn && plan.month ? (
-          <div>
-            <span className="lbl">Tu mes</span>
-            <div className="mid">Semana {plan.month.week + 1} de 4</div>
-            <span className="muted small">sesión {plan.month.session}</span>
-          </div>
-        ) : (
+        {!(monthOn && plan.month) && (
           <div>
             <span className="lbl">Tema de la semana</span>
             <div className="mid">{localizeNotes(tuneOfWeek(today).name, 'C', 'C', iv)}</div>

@@ -3,7 +3,7 @@ import { missingBefore, nextFocus, stagesOf, stepOf } from '../../content/camino
 import { siguiente } from '../../content/curricula';
 import { formaDe, nivelDe, nombreForma } from '../../content/standards';
 import { focusById, type Focus, LANG_FOCI, TECH_FOCI, WEEKS } from '../../content/focus';
-import { monthActive, monthName, monthOf, repertoireName, sessionNumber } from '../../content/monthPlan';
+import { monthActive, monthName, monthOf, pickFor, repertoireName, sesionDelMes, sessionNumber } from '../../content/monthPlan';
 import { repertoireWeeks } from '../../content/standards';
 import { PROGRESSIONS } from '../../content/progressions';
 import { dayNum } from '../../state/progress';
@@ -119,13 +119,19 @@ export function Month() {
   const [rep, setRep] = useState(repertoireName(mp.rep, tunes) !== null ? mp.rep : (sig ? formaDe(sig.n) : (tunes[0]?.id ?? 'ii-v-i')));
   const repName = repertoireName(rep, tunes) ?? '';
   const weeksRep = useMemo(() => repertoireWeeks(repName || 'el tema', sig && sig.tech === tech && sig.lang === lang ? sig.sem : undefined), [repName, sig, tech, lang]);
-  const session = active ? sessionNumber(log, mp.startDay, dayNum(today)) : 0;
+  const session = active ? sesionDelMes(log, mp, dayNum(today)) : 0;
+  const automatica = active ? sessionNumber(log, mp.startDay, dayNum(today)) : 0;
+  /** Corrige a mano en qué sesión se está (la sesión nunca baja de 1). */
+  const moverSesion = (paso: number) => {
+    const ajuste = Math.max(-50, Math.min(50, session + paso - automatica));
+    setMp({ ...mp, ajuste: ajuste === 0 ? undefined : ajuste });
+  };
   // un mes anterior con focos válidos: se puede seguir con los mismos
   const lastMonth = !active && mp.month !== '' && mp.month !== monthOf(today);
 
   const start = (t = tech, l = lang, r = rep) => {
     // un mes anterior con ocho sesiones o más cuenta como foco trabajado en el camino
-    if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && sessionNumber(log, mp.startDay, dayNum(today)) >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
+    if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && sesionDelMes(log, mp, dayNum(today)) >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
       setCamino((c) => ({ done: [...new Set([...c.done, mp.tech, mp.lang])] }));
     }
     setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today), nivel: sig && sig.tech === t && sig.lang === l ? sig.sem : undefined });
@@ -146,7 +152,16 @@ export function Month() {
             <li><span className="lbl">Lenguaje</span><b>{LANG_FOCI.find((f) => f.id === mp.lang)?.title}</b></li>
             <li><span className="lbl">Repertorio</span><b>{repertoireName(mp.rep, tunes)}</b></li>
           </ul>
-          <p className="muted">Vas por la sesión {session}. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
+          <div className="sesionmes">
+            <span className="lbl">Dónde vas</span>
+            <b>Semana {pickFor(session).week + 1} de 4 · sesión {session}</b>
+            <span className="row" role="group" aria-label="Corregir la sesión">
+              <button onClick={() => moverSesion(-1)} disabled={session <= 1} aria-label="Una sesión antes">− sesión</button>
+              <button onClick={() => moverSesion(1)} aria-label="Una sesión después">+ sesión</button>
+              {mp.ajuste ? <button onClick={() => setMp({ ...mp, ajuste: undefined })}>Volver al cálculo automático (sesión {automatica})</button> : null}
+            </span>
+          </div>
+          <p className="muted">La sesión se cuenta sola: un día cuenta si abriste Hoy. Si te saltaste días o querés repetir, corregila acá. Cada sesión trabaja un solo foco, técnica o lenguaje alternando, y cada semana trae tres tareas por foco; el repertorio acompaña todos los días. Después de 24 sesiones se repite la última semana para consolidar.</p>
           <div className="row">
             <a className="button primary" href="#/hoy">Ir al plan</a>
             <a className="button" href="#/curricula">Currícula</a>

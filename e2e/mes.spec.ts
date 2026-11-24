@@ -94,8 +94,9 @@ test.describe('el mes con focos', () => {
     await expect(page).toHaveURL(/#\/hoy$/);
 
     await expect(page.locator('.notice.monthbar')).toHaveCount(0);
-    await expect(page.locator('.hero')).toContainText('Semana 1 de 4');
-    await expect(page.locator('.hero')).toContainText('sesión 1');
+    // Hoy ya no muestra semana ni sesión (se ven y se corrigen en Mi mes)
+    await expect(page.locator('.hero')).not.toContainText('Semana 1 de 4');
+    await expect(page.locator('.hero')).not.toContainText('sesión');
     const heads = page.locator('article.block .bhead');
     await expect(heads).toHaveCount(3);
     await expect(heads.nth(0)).toContainText('Calentamiento');
@@ -111,7 +112,6 @@ test.describe('el mes con focos', () => {
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:month')!))).toMatchObject({ tech: 't-largas-artic', lang: 'l-triadas-mayores' });
     // la sesión 2 trae el foco de lenguaje
     await alSegundoDia(page);
-    await expect(page.locator('.hero')).toContainText('sesión 2');
     await expect(heads.nth(1)).toContainText('Lenguaje: Tríadas mayores');
   });
 
@@ -142,7 +142,6 @@ test.describe('el mes con focos', () => {
       localStorage.setItem('harmonyjazz:log', JSON.stringify({ [iso(antes)]: { done: ['hoy'], minutes: 0 }, [iso(ayer)]: { done: ['hoy'], minutes: 0 } }));
     });
     await page.goto('/#/hoy');
-    await expect(page.locator('.hero')).toContainText('sesión 3');
     const tecnica = await openBlock(page, 'Técnica: Nota larga y articulación');
     // la sesión 3 es la segunda vez que toca técnica: la segunda tarea del foco (ataques suaves)
     await expect(tecnica.locator('details.exercise summary')).toContainText('Ataques suaves');
@@ -159,9 +158,32 @@ test.describe('el mes con focos', () => {
     await irA(page, 'Mi mes');
     await expect(page.getByText(/¿Seguís con los mismos focos \(Flexibilidad y ligaduras, Guide tones/)).toBeVisible();
     await page.getByRole('button', { name: 'Seguir con los mismos' }).click();
-    await expect(page.locator('.hero')).toContainText('Tu mes');
+    await expect(page.locator('.hero')).not.toContainText('Tema de la semana');
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Flexibilidad y ligaduras');
     await expect(page.locator('article.block .bhead')).toHaveCount(3);
+  });
+
+  test('la sesión se corrige a mano en Mi mes, Hoy la sigue y se puede volver al cálculo automático', async ({ page }) => {
+    await page.goto('/#/mes');
+    await page.locator('#f-t-largas-artic').check();
+    await page.locator('#f-l-triadas-mayores').check();
+    await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
+    await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Nota larga y articulación'); // sesión 1
+    await irA(page, 'Mi mes');
+    await expect(page.getByText('Semana 1 de 4 · sesión 1')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Una sesión antes' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /Volver al cálculo automático/ })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Una sesión después' }).click();
+    await expect(page.getByText('Semana 1 de 4 · sesión 2')).toBeVisible();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:month')!).ajuste)).toBe(1);
+    await page.getByRole('link', { name: 'Ir al plan' }).click();
+    await expect(page.locator('article.block .bhead').nth(1)).toContainText('Lenguaje: Tríadas mayores'); // la sesión 2 es de lenguaje
+
+    await irA(page, 'Mi mes');
+    await page.getByRole('button', { name: /Volver al cálculo automático \(sesión 1\)/ }).click();
+    await expect(page.getByText('Semana 1 de 4 · sesión 1')).toBeVisible();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:month')!).ajuste)).toBeUndefined();
   });
 
   test('con el mes en marcha, Mi mes muestra el resumen y deja cambiar los focos', async ({ page }) => {
@@ -169,7 +191,7 @@ test.describe('el mes con focos', () => {
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: /^Tu mes:/ })).toBeVisible();
-    await expect(page.getByText(/Vas por la sesión 1/)).toBeVisible();
+    await expect(page.getByText('Semana 1 de 4 · sesión 1')).toBeVisible();
     await page.getByRole('button', { name: 'Cambiar los focos' }).click();
     await page.locator('#f-t-flexibilidad').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
