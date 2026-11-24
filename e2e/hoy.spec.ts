@@ -1,4 +1,4 @@
-import { diaTecnica, expect, irA, openBlock, test } from './helpers';
+import { cambiarVista, diaTecnica, expect, irA, openBlock, test } from './helpers';
 
 test.describe('Hoy', () => {
   test('abre sin cargar el motor de audio ni las partituras; la partitura llega al abrir un ejercicio', async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe('Hoy', () => {
     const tema = page.getByLabel('Tema');
     await expect(tema.locator('option:checked')).toHaveText('Blues de jazz en G');
     await expect(page.getByText(/Tocás en G \(escrito para Si♭\); en concierto suena en F\./)).toBeVisible();
-    await page.getByRole('button', { name: 'Concierto' }).click();
+    await cambiarVista(page, 'Concierto');
     await expect(tema.locator('option:checked')).toHaveText('Blues de jazz en F');
     await expect(page.getByText('Tocás en F (concierto).')).toBeVisible();
   });

@@ -12,6 +12,37 @@ export function More() {
   const size = clampAtrilSize(atril.size);
   return (
     <div className="page more">
+      <section className="card" id="lectura">
+        <h2 className="h3like">Cómo se lee</h2>
+        <div className="settingslist">
+          <div>
+            <div className="seg" role="group" aria-label="Transposición">
+              <button className={settings.view === 'Bb' ? 'on' : ''} aria-pressed={settings.view === 'Bb'} onClick={() => setSettings({ view: 'Bb' })}>
+                Si♭
+              </button>
+              <button className={settings.view === 'C' ? 'on' : ''} aria-pressed={settings.view === 'C'} onClick={() => setSettings({ view: 'C' })}>
+                Concierto
+              </button>
+            </div>
+            <p className="muted small">
+              {view === 'Bb'
+                ? 'Acordes, notas, escalas y partitura escritos para tu trompeta en Si♭ (un tono más arriba de lo que suena). Es lo que tocás.'
+                : 'Todo en la altura real que suena (concierto). Útil para tocar con otros instrumentos o comparar con un cifrado de concierto.'}{' '}
+              El acompañamiento suena igual en los dos casos: cambia sólo cómo se escribe.
+            </p>
+          </div>
+          <label>
+            Registro{' '}
+            <select value={settings.register} onChange={(e) => setSettings({ register: e.target.value as typeof settings.register })} aria-label="Registro">
+              <option value="grave">Grave</option>
+              <option value="medio">Medio</option>
+              <option value="agudo">Agudo</option>
+            </select>
+          </label>
+          <p className="muted small">Zona de la trompeta en la que se arman las frases y los ejercicios (Lecciones, Vocabulario y los ejercicios de cada tema). No cambia el Play-along.</p>
+        </div>
+      </section>
+
       <ThemeCard />
 
       <section className="card" id="sonido">
@@ -54,7 +85,7 @@ export function More() {
           Esto lo extiende a toda la app (por ejemplo, al leer una lección o escribir una grilla); gasta más batería. Si tu teléfono está en ahorro de batería, puede que el navegador no lo conceda.
         </p>
         <p className="muted small">
-          Todo se lee {view === 'Bb' ? 'escrito para trompeta en Si♭' : 'en concierto'} (se cambia arriba, junto al registro).
+          Todo se lee {view === 'Bb' ? 'escrito para trompeta en Si♭' : 'en concierto'} (se cambia en «Cómo se lee», arriba).
           El volumen, el swing y la salida valen para todo el audio de la app.
         </p>
       </section>

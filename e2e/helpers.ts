@@ -171,3 +171,11 @@ export async function abrirEstudio(page: Page) {
   await det.waitFor();
   if (!(await det.evaluate((d) => (d as HTMLDetailsElement).open))) await det.locator('> summary').click();
 }
+
+/** Cambia «Si♭ / Concierto» (vive en Ajustes → «Cómo se lee») y vuelve a la pantalla donde se estaba: ésta se dibuja de nuevo. */
+export async function cambiarVista(page: Page, vista: 'Si♭' | 'Concierto') {
+  const volver = await page.evaluate(() => window.location.hash);
+  await page.goto('/#/mas');
+  await page.getByRole('group', { name: 'Transposición' }).getByRole('button', { name: vista, exact: true }).click();
+  await page.goto('/' + volver);
+}

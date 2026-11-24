@@ -1,4 +1,4 @@
-import { abrirEstudio, expect, test } from './helpers';
+import { abrirEstudio, cambiarVista, expect, test } from './helpers';
 import type { Page } from '@playwright/test';
 
 // Ayuda memoria quieta: todos los acordes distintos del tema con guide tones, tensiones y escala. Tema inventado.
@@ -20,6 +20,9 @@ test('la ayuda memoria lista cada acorde una vez, con sus compases y sus notas, 
   await expect(items.first().locator('.ficha-cab .sym')).toContainText('E');
   await expect(items.first()).toContainText('Guide tones');
   await expect(items.first()).toContainText('Tensiones');
-  await page.getByRole('button', { name: 'Concierto' }).click();
+  await cambiarVista(page, 'Concierto'); // la pantalla se dibuja de nuevo: se vuelve a abrir
+  await page.waitForSelector('.board');
+  await abrirEstudio(page);
+  await page.locator('details.ficha > summary').click();
   await expect(items.first().locator('.ficha-cab .sym')).toContainText('D');
 });
