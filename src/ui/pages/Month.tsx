@@ -131,7 +131,7 @@ export function Month() {
 
   const start = (t = tech, l = lang, r = rep) => {
     // un mes anterior con ocho sesiones o más cuenta como foco trabajado en el camino
-    if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && session >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
+    if (mp.month !== '' && focusById(mp.tech) && focusById(mp.lang) && sesionDelMes(log, mp, dayNum(today)) >= 9 && (mp.month !== monthOf(today) || mp.tech !== t || mp.lang !== l)) {
       setCamino((c) => ({ done: [...new Set([...c.done, mp.tech, mp.lang])] }));
     }
     setMp({ month: monthOf(today), tech: t, lang: l, rep: r, startDay: dayNum(today), nivel: sig && sig.tech === t && sig.lang === l ? sig.sem : undefined });
