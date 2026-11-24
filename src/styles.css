@@ -403,12 +403,12 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
   .blocks { grid-template-columns: 1fr; }
 }
 
-/* celular: el encabezado no queda fijo (ocupaba casi un cuarto de la pantalla); marca, menú y preferencias en una sola fila */
+/* celular: el encabezado no queda fijo (ocupaba casi un cuarto de la pantalla); marca y menú (a la derecha) en una fila, preferencias abajo */
 @media (max-width: 820px) {
   .top { position: relative; gap: 6px 10px; padding: 8px 0 6px; margin-bottom: 12px; }
-  .brand { order: 2; font-size: 1.2rem; gap: 8px; }
+  .brand { order: 1; font-size: 1.2rem; gap: 8px; }
   .brand img { width: 30px; height: 30px; }
-  .menuwrap { order: 1; }
+  .menuwrap { order: 2; margin-left: auto; }
   .prefs { order: 3; margin-left: auto; }
   .prefs select { max-width: 9.5rem; }
 }
@@ -934,11 +934,11 @@ details.info summary { cursor: pointer; color: var(--muted); }
 @media (orientation: landscape) and (max-height: 520px) {
   .app { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); padding-bottom: 32px; }
   .top { position: relative; flex-wrap: nowrap; gap: 8px 12px; padding: 4px 0; margin-bottom: 6px; }
-  .brand { order: 2; }
+  .brand { order: 0; }
   .brandname { display: none; }
   .brand img { width: 32px; height: 32px; }
-  .menuwrap { order: 0; }
-  .prefs { order: 3; margin-left: auto; flex: 0 0 auto; }
+  .prefs { order: 1; margin-left: auto; flex: 0 0 auto; }
+  .menuwrap { order: 2; }
   .menupanel { max-height: calc(100vh - 56px); }
   .page { gap: 8px; }
   .card { padding: 10px; }

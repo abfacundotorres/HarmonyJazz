@@ -104,7 +104,6 @@ export function App() {
         </div>
       )}
       <header className="top">
-        <NavMenu page={page} />
         <a href="#/hoy" className="brand">
           <img src="./icon.svg" alt="" width="38" height="38" /> <span className="brandname">HarmonyJazz</span>
         </a>
@@ -123,6 +122,7 @@ export function App() {
             <option value="agudo">Reg. agudo</option>
           </select>
         </div>
+        <NavMenu page={page} />
       </header>
       <main>
         <h1 className="sr">{page === 'creditos' ? 'Créditos y licencias' : pageLabel(page)}</h1>
