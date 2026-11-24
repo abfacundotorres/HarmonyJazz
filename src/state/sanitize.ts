@@ -96,6 +96,8 @@ export const sanitizeMonth: Sanitizer = (raw) => {
   if (rep !== undefined) out.rep = rep;
   const day = num(raw.startDay, 0, 100000);
   if (day !== undefined) out.startDay = Math.round(day);
+  const ajuste = num(raw.ajuste, -50, 50);
+  if (ajuste !== undefined && Math.round(ajuste) !== 0) out.ajuste = Math.round(ajuste);
   const nivel = num(raw.nivel, 1, 6);
   if (nivel !== undefined) out.nivel = Math.round(nivel);
   return out;
