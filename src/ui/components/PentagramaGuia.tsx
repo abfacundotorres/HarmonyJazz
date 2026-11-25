@@ -31,7 +31,7 @@ export function PentagramaGuia({
   minor: boolean;
   /** Compás que suena (de la grilla que se toca, 0-based); -1 si no suena. */
   compasActual?: number;
-  /** Nota de la línea que suena (cuando se oye la línea y no hay loop); -1 si ninguna. */
+  /** Nota de la línea que corresponde al acorde que suena (posición del acorde en la grilla); -1 si no suena. */
   notaActual?: number;
 }) {
   const { iv } = useReading();

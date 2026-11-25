@@ -46,7 +46,6 @@ export function Atril({
   minor,
   oirGuia,
   onOirGuia,
-  notaGuia,
 }: {
   title: string;
   keyLabel: string | null;
@@ -78,8 +77,6 @@ export function Atril({
   /** ¿Suena la línea de guide tones sobre el acompañamiento? */
   oirGuia: boolean;
   onOirGuia: () => void;
-  /** Nota de la línea que suena (−1 si ninguna o hay loop). */
-  notaGuia: number;
 }) {
   const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(cfg.size);
@@ -167,7 +164,7 @@ export function Atril({
 
       {verGuia && (
         <div className="atril-guia">
-          <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={oirGuia ? notaGuia : -1} />
+          <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={current} />
         </div>
       )}
 

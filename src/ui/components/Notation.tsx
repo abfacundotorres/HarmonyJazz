@@ -60,10 +60,26 @@ export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { 
     const el = ref.current;
     if (!el) return;
     el.querySelectorAll('.hj-note').forEach((n) => n.classList.remove('hj-note'));
+    el.querySelectorAll('.hj-chord').forEach((n) => n.classList.remove('hj-chord'));
     if (highlightNote === undefined || highlightNote < 0) return;
     const note = el.querySelectorAll('.abcjs-note')[highlightNote];
     if (!note) return;
     note.classList.add('hj-note');
+    // el nombre del acorde de esa nota (el más cercano a ella, en el mismo compás y línea) también se marca
+    const mismo = [...note.classList].filter((c) => /^abcjs-(l|m)\d+$/.test(c)).map((c) => '.' + c).join('');
+    if (mismo) {
+      const x = note.getBoundingClientRect().left;
+      let mejor: Element | null = null;
+      let dist = Infinity;
+      el.querySelectorAll(`.abcjs-chord${mismo}`).forEach((t) => {
+        const d = Math.abs(t.getBoundingClientRect().left - x);
+        if (d < dist) {
+          dist = d;
+          mejor = t;
+        }
+      });
+      (mejor as Element | null)?.classList.add('hj-chord');
+    }
     // en una partitura larga, la línea que suena queda a la vista
     const r = note.getBoundingClientRect();
     if (r.top < 60 || r.bottom > window.innerHeight - 60) note.scrollIntoView({ block: 'center', behavior: 'smooth' });

@@ -24,7 +24,8 @@ test('el atril muestra la línea de guide tones en pentagrama, resalta el compá
   // dar play resalta el compás que suena
   await atril(page).getByRole('button', { name: 'Reproducir' }).click();
   await expect(guia.locator('.hj-current').first()).toBeAttached({ timeout: 20_000 });
-  await expect(guia.locator('.hj-note')).toHaveCount(0); // sin «oír la línea» no se marca la nota
+  await expect(guia.locator('.hj-note').first()).toBeAttached(); // el marcador pasa por las notas aunque no se oiga la línea
+  await expect(guia.locator('.hj-chord').first()).toBeAttached(); // y marca el nombre de su acorde
 
   // oír la línea: el motor avisa cada nota y se resalta
   await atril(page).getByRole('button', { name: '🔊 Oír la línea de guide tones' }).click();

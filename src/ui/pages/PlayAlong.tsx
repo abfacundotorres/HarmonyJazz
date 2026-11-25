@@ -160,13 +160,6 @@ export function PlayAlong() {
   }, [oirGuia, chart, loopValid, layout]);
 
   const pos = usePosition();
-  // la nota de la línea que suena: se recuerda entre aviso y aviso de tiempo y se borra al parar
-  const [notaGuia, setNotaGuia] = useState(-1);
-  useEffect(() => {
-    if (!pos || pos.owner !== OWNER) return;
-    if (pos.note !== undefined) setNotaGuia(pos.note);
-    else if (pos.countIn || pos.chorus < 0) setNotaGuia(-1);
-  }, [pos]);
   const control = useRef<PlayerControl | null>(null);
   // el paso «Grabado completo» de Mi repertorio se puede marcar desde la toma, si el tema está en el repertorio
   const [rep, setRep] = useRepertorio();
@@ -557,7 +550,6 @@ export function PlayAlong() {
           minor={base.mode === 'minor'}
           oirGuia={oirGuia}
           onOirGuia={() => setOirGuia((v) => !v)}
-          notaGuia={!loopValid ? notaGuia : -1}
         />
       )}
 
@@ -645,7 +637,7 @@ export function PlayAlong() {
           }}
           tramoActual={tramoFloja}
         />
-        <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} notaActual={oirGuia && !loopValid ? notaGuia : -1} oir={oirGuia} onOir={() => setOirGuia((v) => !v)} />
+        <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} notaActual={ci >= 0 ? ci + offset : -1} oir={oirGuia} onOir={() => setOirGuia((v) => !v)} />
         <FichaAcordes chart={chart} layout={layout} />
         <TemasParecidos chart={chart} titulo={useCustom ? '' : selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
         <MapaArmonico
