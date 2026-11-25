@@ -203,6 +203,11 @@ export function PlayAlong() {
   const [marcando, setMarcando] = useState(false);
   const [tramoFloja, setTramoFloja] = useState<[number, number] | null>(null);
   const orden = layout && layout.order.length === chart.bars ? layout.order : undefined;
+  // la forma que suena, para el reto de guide tones del micrófono: cada acorde con su compás escrito y su duración
+  const acordesReto = useMemo(
+    () => playChart.chords.map((c) => { const b = c.bar + (loopValid ? loopValid[0] : 0); return { chord: c.chord, compas: (orden ? orden[b] : b) + 1, dur: c.dur }; }),
+    [playChart, loopValid, orden],
+  );
   const flojosTema = useMemo(() => (useCustom ? [] : flojosDentro(flojosTodos[selected.id] ?? [], orden ? Math.max(...orden) + 1 : chart.bars)), [useCustom, flojosTodos, selected.id, orden, chart.bars]);
   const flojosSet = useMemo(() => new Set(flojosTema), [flojosTema]);
   const tramos = useMemo(() => tramosFlojos(flojosTema), [flojosTema]);
@@ -566,6 +571,7 @@ export function PlayAlong() {
           </div>
         )}
         <ListenPanel
+          acordes={acordesReto}
           chord={chord}
           chordIndex={ci}
           chorus={mine?.chorus ?? 0}

@@ -1,8 +1,10 @@
 import { type MutableRefObject, useEffect, useRef, useState } from 'react';
-import { analyzePc, Chord, NoteRole, prettyDegree } from '../../theory/chords';
+import { cerrar, cuenta, dondeFallo, nota, retoNuevo, ventanaNueva, type Ventana } from '../../content/retoGuideTones';
+import { analyzePc, Chord, chordSymbol, NoteRole, prettyDegree, transposeChord } from '../../theory/chords';
 import { BB_TRUMPET, midiName, mod } from '../../theory/notes';
 import { listen, MicListener } from '../../pitch/mic';
 import { useReading } from '../hooks';
+import { ChordText } from './ChordInfo';
 
 interface Played {
   id: number;
@@ -19,18 +21,28 @@ const ROLE_LABEL: Record<NoteRole, string> = {
   chromatic: 'cromática',
 };
 
+/** Un acorde de la forma que suena, para el reto de guide tones: el acorde, su compás escrito y cuánto dura (corcheas). */
+export interface AcordeReto {
+  chord: Chord;
+  compas: number;
+  dur: number;
+}
+
 /**
  * Escucha al trompetista mientras suena el play-along:
- * clasifica cada nota contra el acorde actual y lleva el reto de guide tones.
+ * clasifica cada nota contra el acorde actual y lleva el reto de guide tones (la 3.ª o la 7.ª de cada acorde, antes de que cambie).
  */
 export function ListenPanel({
   chord,
   chordIndex,
   chorus,
   tempo,
+  acordes,
   recorder,
   micRef,
 }: {
+  /** La forma que suena, en orden: da el resultado del reto acorde por acorde. */
+  acordes: AcordeReto[];
   chord: Chord | null;
   chordIndex: number;
   chorus: number;
@@ -45,23 +57,34 @@ export function ListenPanel({
   const [error, setError] = useState<string | null>(null);
   const [feed, setFeed] = useState<Played[]>([]);
   const [counts, setCounts] = useState<Record<NoteRole, number>>({ chord: 0, tension: 0, scale: 0, chromatic: 0 });
-  const [challenge, setChallenge] = useState({ hits: 0, total: 0 });
+  const [reto, setReto] = useState(() => retoNuevo(acordes.length));
   const mic = useRef<MicListener | null>(null);
   const chordRef = useRef<Chord | null>(chord);
   const recRef = useRef(recorder);
   recRef.current = recorder;
-  const windowRef = useRef<{ until: number; judged: boolean; played: boolean }>({ until: 0, judged: true, played: false });
+  const windowRef = useRef<Ventana | null>(null);
+  const tempoRef = useRef(tempo);
+  tempoRef.current = tempo;
+  const acordesRef = useRef(acordes);
+  acordesRef.current = acordes;
   const idRef = useRef(0);
 
   chordRef.current = chord;
 
-  // cada cambio de acorde abre una ventana de 1 tiempo para "aterrizar" en un guide tone
+  // otra forma (otro tema, otra tonalidad, otro tramo en loop): el reto empieza de nuevo
   useEffect(() => {
+    windowRef.current = null;
+    setReto(retoNuevo(acordes.length));
+  }, [acordes]);
+
+  // cada cambio de acorde cierra la ventana del anterior (acierto, fallo o silencio) y abre la del nuevo: dura lo que dura el acorde
+  useEffect(() => {
+    const anterior = windowRef.current;
+    windowRef.current = null;
+    if (anterior) setReto((r) => cerrar(r, anterior));
     if (!on || chordIndex < 0) return;
-    const w = windowRef.current;
-    if (!w.judged && w.played) setChallenge((c) => ({ ...c, total: c.total + 1 }));
-    windowRef.current = { until: performance.now() + (60 / tempo) * 1000 + 80, judged: false, played: false };
-  }, [chordIndex, chorus, on, tempo]);
+    windowRef.current = ventanaNueva(chordIndex, performance.now(), acordesRef.current[chordIndex]?.dur ?? 8, tempoRef.current);
+  }, [chordIndex, chorus, on]);
 
   useEffect(() => () => mic.current?.stop(), []);
 
@@ -88,14 +111,8 @@ export function ListenPanel({
           const written = m + (iv.semis === BB_TRUMPET.semis ? 2 : 0);
           setFeed((f) => [{ id: idRef.current++, name: midiName(written, false), role: a.role, degree: a.degree, guide: a.guide }, ...f].slice(0, 14));
           setCounts((c0) => ({ ...c0, [a.role]: c0[a.role] + 1 }));
-          const w = windowRef.current;
-          if (!w.judged && time <= w.until) {
-            w.played = true;
-            if (a.guide) {
-              w.judged = true;
-              setChallenge((ch) => ({ hits: ch.hits + 1, total: ch.total + 1 }));
-            }
-          }
+          const nombre = midiName(written, false);
+          setReto((r) => nota(r, windowRef.current, time, nombre, a.guide));
         },
       );
       setOn(true);
@@ -116,11 +133,14 @@ export function ListenPanel({
   const reset = () => {
     setFeed([]);
     setCounts({ chord: 0, tension: 0, scale: 0, chromatic: 0 });
-    setChallenge({ hits: 0, total: 0 });
+    windowRef.current = null;
+    setReto(retoNuevo(acordesRef.current.length));
   };
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
-  const pct = challenge.total ? Math.round((challenge.hits / challenge.total) * 100) : 0;
+  const c = cuenta(reto);
+  const etiquetas = acordes.map((a) => ({ compas: a.compas, acorde: chordSymbol(transposeChord(a.chord, iv), true) }));
+  const fallos = dondeFallo(reto, etiquetas);
 
   return (
     <section className="card listen">
@@ -147,9 +167,20 @@ export function ListenPanel({
           <div className="challenge">
             <div>
               <span className="lbl">Reto guide tones</span>
-              <b>{challenge.hits}</b> / {challenge.total} cambios <span className="muted">({pct}%)</span>
+              <b>{c.aciertos}</b> / {c.aciertos + c.fallos} acordes <span className="muted">({c.porcentaje}%)</span>
+              {c.silencios > 0 && <span className="muted small"> · {c.silencios} sin tocar</span>}
             </div>
-            <p className="muted small">Tocá la 3ª o la 7ª dentro del primer tiempo de cada acorde.</p>
+            <p className="muted small">Tocá la 3.ª o la 7.ª de cada acorde (la que quieras) antes de que cambie.</p>
+            <ol className="reto-mapa" aria-label="Resultado por acorde">
+              {acordes.map((a, i) => (
+                <li key={i} className={`reto ${reto.estados[i]}${i === chordIndex ? ' ahora' : ''}`}>
+                  <span className="n">{a.compas}</span>
+                  <span className="s"><ChordText chord={a.chord} /></span>
+                  <span className="m">{reto.estados[i] === 'acierto' ? `✓ ${reto.notas[i] ?? ''}` : reto.estados[i] === 'fallo' ? `✗ ${reto.notas[i] ?? ''}` : reto.estados[i] === 'silencio' ? '–' : ''}</span>
+                </li>
+              ))}
+            </ol>
+            {fallos.length > 0 && <p className="small" role="status">Te trabaste en: {fallos.join('; ')}.</p>}
           </div>
           <div className="bars">
             {(Object.keys(counts) as NoteRole[]).map((r) => (
