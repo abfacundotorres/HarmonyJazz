@@ -7,7 +7,21 @@ import abcjs from 'abcjs';
  * (Se probó meter 4 compases por línea en el celular para las líneas de blancas y redondas: abcjs no achica
  * el espaciado por debajo de su mínimo y el dibujo se sale; sólo entraría reduciendo el tamaño de las notas.)
  */
-export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { abc: string; highlightBar?: number; /** Índice de la nota que suena (sin contar silencios). */ highlightNote?: number; transpose?: number }) {
+export function Notation({
+  abc,
+  highlightBar,
+  highlightNote,
+  transpose = 0,
+  tira = false,
+}: {
+  abc: string;
+  highlightBar?: number;
+  /** Índice de la nota que suena (sin contar silencios). */
+  highlightNote?: number;
+  transpose?: number;
+  /** Una sola línea larga que se desplaza para dejar la nota que suena en un lugar fijo (tipo teleprompter). El abc debe venir en una línea. */
+  tira?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -31,7 +45,17 @@ export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { 
   useEffect(() => {
     if (!ref.current || width <= 0) return;
     const inner = Math.max(240, width - 18);
-    abcjs.renderAbc(ref.current, abc, {
+    const compases = (abc.match(/\|/g) ?? []).length || 1;
+    abcjs.renderAbc(ref.current, abc, tira ? {
+      add_classes: true,
+      visualTranspose: transpose,
+      paddingtop: 4,
+      paddingbottom: 10,
+      paddingleft: 4,
+      paddingright: 4,
+      staffwidth: Math.max(inner, compases * 170),
+      scale: 1,
+    } as any : {
       add_classes: true,
       visualTranspose: transpose,
       paddingtop: 4,
@@ -46,7 +70,7 @@ export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { 
         preferredMeasuresPerLine: inner < 460 ? 2 : inner < 760 ? 3 : 4,
       },
     } as any);
-  }, [abc, width, transpose]);
+  }, [abc, width, transpose, tira]);
 
   useEffect(() => {
     const el = ref.current;
@@ -82,8 +106,19 @@ export function Notation({ abc, highlightBar, highlightNote, transpose = 0 }: { 
     }
     // en una partitura larga, la línea que suena queda a la vista
     const r = note.getBoundingClientRect();
-    if (r.top < 60 || r.bottom > window.innerHeight - 60) note.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [highlightNote, abc, width]);
+    if (!tira && (r.top < 60 || r.bottom > window.innerHeight - 60)) note.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [highlightNote, abc, width, tira]);
 
-  return <div className="paper" ref={ref} />;
+  // tira: la nota que suena queda fija a ~30 % del ancho y la partitura pasa por debajo
+  useEffect(() => {
+    const el = ref.current;
+    const svg = el?.querySelector('svg');
+    if (!el || !svg || !tira) return;
+    const note = highlightNote !== undefined && highlightNote >= 0 ? el.querySelectorAll('.abcjs-note')[highlightNote] : undefined;
+    const x = note ? note.getBoundingClientRect().left - svg.getBoundingClientRect().left : 0;
+    const dx = note ? Math.max(0, x - width * 0.3) : 0;
+    svg.style.transform = `translateX(${-dx}px)`;
+  }, [highlightNote, abc, width, tira]);
+
+  return <div className={`paper ${tira ? 'tira' : ''}`} ref={ref} />;
 }

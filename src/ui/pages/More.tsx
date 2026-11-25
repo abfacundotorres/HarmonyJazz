@@ -8,7 +8,7 @@ import { useReading, useSettings } from '../hooks';
 export function More() {
   const [settings, setSettings] = useSettings();
   const { view } = useReading();
-  const [atril, setAtril] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
+  const [atril, setAtril] = usePersistent<{ size: number; tira?: boolean }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(atril.size);
   return (
     <div className="page more">
@@ -96,6 +96,10 @@ export function More() {
           <label>
             Tamaño de la letra del atril: {size.toFixed(1)}
             <input type="range" min={ATRIL_SIZE.min} max={ATRIL_SIZE.max} step={ATRIL_SIZE.step} value={size} onChange={(e) => setAtril({ size: Number(e.target.value) })} aria-label="Tamaño de la letra del atril" />
+          </label>
+          <label>
+            <input type="checkbox" checked={atril.tira === true} onChange={(e) => setAtril({ tira: e.target.checked })} />
+            {' '}Guide tones en una tira que se desplaza (la nota que suena queda fija)
           </label>
         </div>
         <div className="atril-preview" aria-hidden style={{ fontSize: `${size}rem` }}>

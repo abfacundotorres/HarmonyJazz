@@ -340,6 +340,7 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
 /* partitura */
 .paper { background: var(--paper); color: var(--paper-ink); border-radius: 10px; padding: 6px; margin-top: 10px; overflow: hidden; }
 .paper svg { display: block; }
+.paper.tira svg { transition: transform .25s linear; max-width: none; }
 .paper .hj-current { fill: #905e15; }
 .paper .hj-note { fill: #c0392b; }
 .paper .hj-chord { fill: #c0392b; font-weight: 800; }

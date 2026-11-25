@@ -78,7 +78,7 @@ export function Atril({
   oirGuia: boolean;
   onOirGuia: () => void;
 }) {
-  const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
+  const [cfg] = usePersistent<{ size: number; tira?: boolean }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(cfg.size);
   const { keyLabel: label, view } = useReading();
   const [keysOpen, setKeysOpen] = useState(false);
@@ -164,7 +164,7 @@ export function Atril({
 
       {verGuia && (
         <div className="atril-guia">
-          <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={current} />
+          <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={current} tira={cfg.tira === true} />
         </div>
       )}
 

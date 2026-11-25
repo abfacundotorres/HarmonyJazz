@@ -114,7 +114,7 @@ export const sanitizePhrases = listOf('phrases', 400);
 export const sanitizeAtril: Sanitizer = (raw) => {
   if (!isObj(raw)) return null;
   const size = num(raw.size, 1.2, 5);
-  return size === undefined ? {} : { size };
+  return { ...(size === undefined ? {} : { size }), ...(raw.tira === true ? { tira: true } : {}) };
 };
 
 export const sanitizeMemoria: Sanitizer = (raw) => (isObj(raw) ? (isMemoriaModo(raw.modo) ? { modo: raw.modo } : {}) : null);
