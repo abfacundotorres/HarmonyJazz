@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from '../../audio/engine';
 import {
-  Library, MAX_TUNES, normalizeChartText, parseImport, tuneToProgression, UserTune, validateTune,
+  Library, MAX_TUNES, normalizeChartText, parseImport, UserTune, validateTune,
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
 import { lineaGuideTones, melodiaGuideTones } from '../../content/guideTones';
 import { melodyNotes, sliceMelody } from '../../content/melody';
-import { PROGRESIONES_DOMINIO_PUBLICO } from '../../content/dominioPublico';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
 import { localizeNotes } from '../../exercises/localize';
 import { ChorusTranscription, RawEvent, transcribe } from '../../pitch/transcribe';
@@ -31,7 +30,8 @@ import { MelodyPanel } from '../components/MelodyPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
 import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
-import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useSettings, useTemasDeRepertorio } from '../hooks';
+import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useSettings, useTemaEstudio, useTemasDeRepertorio } from '../hooks';
+import { todosLosTemas } from '../todosLosTemas';
 import { consignaToma } from '../../content/toma';
 import { detalleDe, logrado, PASO_GRABADO } from '../../content/repertorio';
 import { COROS_TOMA_INICIAL } from '../../content/toma';
@@ -64,12 +64,15 @@ export function PlayAlong() {
     () => (library.tunes ?? []).map((t) => validateTune(t)).filter((t): t is UserTune => typeof t !== 'string'),
     [library],
   );
-  const all: Progression[] = useMemo(() => [...PROGRESSIONS, ...PROGRESIONES_DOMINIO_PUBLICO, ...tunes.map(tuneToProgression)], [tunes]);
-  const selected = all.find((p) => p.id === query.get('p')) ?? PROGRESSIONS[0];
+  const all: Progression[] = useMemo(() => todosLosTemas(tunes), [tunes]);
+  // sin un tema pedido en la dirección, se abre el que se está estudiando ahora (si hay)
+  const [temaEstudio, setTemaEstudio] = useTemaEstudio();
+  const selected = all.find((p) => p.id === (query.get('p') ?? temaEstudio.id)) ?? PROGRESSIONS[0];
+  const esEstudio = temaEstudio.id === selected.id;
 
   // progresión propia sin guardar ("probar")
   const [custom, setCustom] = useState('');
-  const [estudioAbierto, setEstudioAbierto] = useState(false);
+  const [estudioAbierto, setEstudioAbierto] = useState(query.get('estudio') === '1');
   // grilla del editor (null = el usuario eligió escribir texto); `custom` es siempre lo que se toca
   const [doc, setDocState] = useState<ChartDoc | null>({ bars: [emptyBar()] });
   const [docError, setDocError] = useState<string | null>(null);
@@ -492,6 +495,13 @@ export function PlayAlong() {
         <p>
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
         </p>
+        {!useCustom && (
+          <p>
+            <button className={esEstudio ? 'on' : ''} aria-pressed={esEstudio} onClick={() => setTemaEstudio(() => (esEstudio ? {} : { id: selected.id }))}>
+              📌 {esEstudio ? 'Es tu tema en estudio · dejar de estudiarlo' : 'Estudiar este tema ahora'}
+            </button>
+          </p>
+        )}
       </section>
 
       <section className="card tablero">
