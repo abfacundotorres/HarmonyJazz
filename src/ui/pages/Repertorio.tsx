@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { alternarTonalidad, type Avance, BPM, detalleDe, fijarBpm, llegoAlTempo, logrados, marcar, PASOS, resumenAvance, siguientePaso, tocado } from '../../content/repertorio';
+import { alternarTonalidad, type Avance, BPM, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from '../../content/repertorio';
 import { dayNum } from '../../state/progress';
 import { CONCERT_KEYS } from '../../theory/chart';
-import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute } from '../hooks';
+import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute, useTemaEstudio } from '../hooks';
 import { QueEstudiar } from '../components/QueEstudiar';
 import { TemaEjercicios } from '../components/TemaEjercicios';
 import { progresionDeTema } from '../progresionDeTema';
@@ -10,29 +10,46 @@ import { temasDeRepertorio } from '../repertorioTemas';
 
 const hace = (d: number) => (d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`);
 
-/** Mi repertorio: la escalera de siete pasos de cada tema que estás aprendiendo, con la fecha de la última vez que lo tocaste. */
+const ESTADO_TXT = { sin: 'Sin empezar', aprendiendo: 'Aprendiendo', terminado: '✓ Terminado' } as const;
+
+/**
+ * Temas: todos los temas que estás aprendiendo en un solo lugar. Arriba el tema en estudio; después la lista (aprendiendo, sin
+ * empezar, terminados) con su estado, y de cada uno la escalera de siete pasos plegada. «Terminado» = los siete pasos tildados.
+ */
 export function Repertorio() {
   const [rep, setRep] = useRepertorio();
   const [lib] = usePersistentLibrary();
   const [mp] = useMonth();
+  const [estudio, setEstudio] = useTemaEstudio();
   const hoy = dayNum();
   const today = useMemo(() => new Date(), []);
   const { temas, delMes } = useMemo(() => temasDeRepertorio(lib, mp, today), [lib, mp, today]);
   const { query } = useRoute();
-  const { keyLabel } = useReading();
+  // el orden se fija al abrir la pantalla: si no, un tema saltaría de lugar cada vez que se tilda un paso
+  const [repInicial] = useState(rep);
+  const lista = useMemo(() => ordenarTemas(temas, repInicial, estudio.id), [temas, repInicial, estudio.id]);
   // el tempo de cada tema (el de la forma o el que se cargó), para saber si «de memoria» ya llegó
   const tempos = useMemo(() => new Map(temas.map((t) => [t.id, progresionDeTema(t.id, lib)?.tempo])), [temas, lib]);
+  const repaso = useMemo(() => new Map(repasoRepertorio(rep, temas.map((t) => t.id), hoy).map((p) => [p.id, p.dias])), [rep, temas, hoy]);
+  const resumen = useMemo(() => {
+    const c = { aprendiendo: 0, sin: 0, terminado: 0 };
+    for (const t of temas) c[estadoTema(rep[t.id])]++;
+    return c;
+  }, [temas, rep]);
 
   return (
     <div className="page repertorio">
       <section className="card">
-        <h2>Mi repertorio</h2>
+        <h2>Temas</h2>
         <p className="muted">
-          Cada tema que estás aprendiendo tiene siete pasos, de saber la forma a tenerlo grabado. Tildá lo que ya te sale; la app te avisa cuando hace una semana que no lo tocás. Los temas son los de Play-along → Mis temas, y el tema del mes de la currícula.
+          Todos tus temas en un solo lugar; el que marcás «Estudiar este» queda arriba y en Hoy. Cada uno tiene siete pasos, de saber la forma a tenerlo grabado; cuando están los siete queda <b>terminado</b> y la app te avisa cuándo repasarlo. Para cargar o importar temas: Play-along → Mis temas y Mi colección.
         </p>
+        {temas.length > 0 && (
+          <p className="small" role="status">
+            {resumen.aprendiendo} aprendiendo · {resumen.sin} sin empezar · {resumen.terminado} {resumen.terminado === 1 ? 'terminado' : 'terminados'}
+          </p>
+        )}
       </section>
-
-      <QueEstudiar tunes={lib.tunes} />
 
       {temas.length === 0 && (
         <section className="card">
@@ -43,61 +60,113 @@ export function Repertorio() {
         </section>
       )}
 
-      {temas.map((t) => {
-        const a = rep[t.id];
-        const n = logrados(a);
-        const sig = siguientePaso(a);
-        const res = resumenAvance(a);
-        return (
-          <section key={t.id} className="card tema" aria-label={t.name}>
-            <header>
-              <h3>{t.name}</h3>
-              {t.id === delMes && <span className="muted small">Tema del mes</span>}
-            </header>
-            <progress max={PASOS.length} value={n} aria-label={`Pasos logrados de ${t.name}`} />
-            <p className="small">
-              {n} de {PASOS.length} pasos · {a && a.ultimo > 0 ? `lo tocaste ${hace(hoy - a.ultimo)}` : 'todavía no lo tocaste'}
-              {sig !== null ? ` · sigue: ${PASOS[sig].titulo}` : ' · ¡completo!'}
-            </p>
-            {(res.mejorBpm !== null || res.tonalidades.length > 0) && (
-              <p className="small" data-testid="resumen-tema">
-                {res.mejorBpm !== null && <>Mejor tempo anotado: <b>{res.mejorBpm} bpm</b></>}
-                {res.mejorBpm !== null && res.tonalidades.length > 0 && ' · '}
-                {res.tonalidades.length > 0 && <>Tonalidades tocadas: <b>{res.tonalidades.length} de 12</b> ({res.tonalidades.map(keyLabel).join(', ')})</>}
-              </p>
-            )}
-            <ol className="pasos">
-              {PASOS.map((p, i) => (
-                <li key={p.id} className={sig === i ? 'next' : ''}>
-                  <label>
-                    <input type="checkbox" checked={!!a?.hechos.includes(i)} onChange={() => setRep((r) => marcar(r, t.id, i, dayNum()))} aria-label={`${t.name}: ${p.titulo}`} /> <b>{p.titulo}</b>
-                  </label>
-                  <small className="muted">{p.ayuda}</small>
-                  {p.id === 'grabado' && (
-                    <a className="small" href={`#/playalong?p=${encodeURIComponent(t.id)}&toma=1`}>● Grabar una toma completa de este tema →</a>
-                  )}
-                  <PasoDetalle
-                    paso={p.titulo}
-                    tema={t.name}
-                    avance={a}
-                    indice={i}
-                    visible={!!a?.hechos.includes(i) || sig === i}
-                    tempoTema={p.id === 'memoria' ? tempos.get(t.id) : undefined}
-                    onBpm={(v) => setRep((r) => fijarBpm(r, t.id, i, v, dayNum()))}
-                    onKey={(k) => setRep((r) => alternarTonalidad(r, t.id, i, k, dayNum()))}
-                  />
-                </li>
-              ))}
-            </ol>
-            <div className="row">
-              <button onClick={() => setRep((r) => tocado(r, t.id, dayNum()))}>Lo toqué hoy</button>
-              <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}`}>Abrir en el play-along</a>
-            </div>
-            <Ejercicios id={t.id} lib={lib} abrir={query.get('t') === t.id} ex={query.get('t') === t.id ? query.get('ex') : null} k={query.get('t') === t.id ? query.get('k') : null} />
-          </section>
-        );
-      })}
+      {lista.map((t) => (
+        <TemaCard
+          key={t.id}
+          t={t}
+          avance={rep[t.id]}
+          hoy={hoy}
+          delMes={t.id === delMes}
+          enEstudio={t.id === estudio.id}
+          inicial={t.id === estudio.id || estadoTema(repInicial[t.id]) === 'aprendiendo'}
+          diasSinTocar={repaso.get(t.id)}
+          tempoTema={tempos.get(t.id)}
+          setRep={setRep}
+          onEstudiar={() => setEstudio(() => ({ id: t.id }))}
+          onDejar={() => setEstudio(() => ({}))}
+          query={query}
+          lib={lib}
+        />
+      ))}
+
+      <QueEstudiar tunes={lib.tunes} />
     </div>
+  );
+}
+
+/** Un tema: nombre, estado, avance y atajos; los siete pasos (con tempo, tonalidades y ejercicios) van plegados. */
+function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, setRep, onEstudiar, onDejar, query, lib }: {
+  t: { id: string; name: string };
+  avance: Avance | undefined;
+  hoy: number;
+  delMes: boolean;
+  enEstudio: boolean;
+  /** Si los pasos arrancan abiertos (el tema en estudio y los que se están aprendiendo). */
+  inicial: boolean;
+  diasSinTocar: number | undefined;
+  tempoTema: number | undefined;
+  setRep: ReturnType<typeof useRepertorio>[1];
+  onEstudiar: () => void;
+  onDejar: () => void;
+  query: URLSearchParams;
+  lib: { tunes?: unknown[] };
+}) {
+  const { keyLabel } = useReading();
+  const [abierto, setAbierto] = useState(inicial || query.get('t') === t.id);
+  const n = logrados(a);
+  const sig = siguientePaso(a);
+  const res = resumenAvance(a);
+  const estado = estadoTema(a);
+  return (
+    <section className="card tema" aria-label={t.name}>
+      <header>
+        <h3>{t.name}</h3>
+        <span className={`estado estado-${estado}`}>{ESTADO_TXT[estado]}</span>
+        {delMes && <span className="muted small">Tema del mes</span>}
+        {enEstudio && <span className="muted small">En estudio</span>}
+      </header>
+      <progress max={PASOS.length} value={n} aria-label={`Pasos logrados de ${t.name}`} />
+      <p className="small">
+        {n} de {PASOS.length} pasos · {a && a.ultimo > 0 ? `lo tocaste ${hace(hoy - a.ultimo)}` : 'todavía no lo tocaste'}
+        {sig !== null ? ` · sigue: ${PASOS[sig].titulo}` : ' · ¡completo!'}
+      </p>
+      {diasSinTocar !== undefined && (
+        <p className="small" role="status">
+          ⏰ Toca repasarlo: hace {diasSinTocar} días que no lo tocás (cada {estado === 'terminado' ? UMBRAL.completo : UMBRAL.aprendiendo} días).
+        </p>
+      )}
+      <div className="row">
+        <a className="button primary" href={`#/playalong?p=${encodeURIComponent(t.id)}`}>Abrir en el play-along</a>
+        {enEstudio && <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&estudio=1`}>Estudiarlo</a>}
+        {!enEstudio && estado !== 'terminado' && <button onClick={onEstudiar}>Estudiar este</button>}
+        {enEstudio && <button onClick={onDejar}>Dejar de estudiarlo</button>}
+        <button onClick={() => setRep((r) => tocado(r, t.id, dayNum()))}>Lo toqué hoy</button>
+      </div>
+      <details className="pasos-det" open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)}>
+        <summary>Los {PASOS.length} pasos{estado === 'terminado' ? ' (completos)' : ''}</summary>
+        {(res.mejorBpm !== null || res.tonalidades.length > 0) && (
+          <p className="small" data-testid="resumen-tema">
+            {res.mejorBpm !== null && <>Mejor tempo anotado: <b>{res.mejorBpm} bpm</b></>}
+            {res.mejorBpm !== null && res.tonalidades.length > 0 && ' · '}
+            {res.tonalidades.length > 0 && <>Tonalidades tocadas: <b>{res.tonalidades.length} de 12</b> ({res.tonalidades.map(keyLabel).join(', ')})</>}
+          </p>
+        )}
+        <ol className="pasos">
+          {PASOS.map((p, i) => (
+            <li key={p.id} className={sig === i ? 'next' : ''}>
+              <label>
+                <input type="checkbox" checked={!!a?.hechos.includes(i)} onChange={() => setRep((r) => marcar(r, t.id, i, dayNum()))} aria-label={`${t.name}: ${p.titulo}`} /> <b>{p.titulo}</b>
+              </label>
+              <small className="muted">{p.ayuda}</small>
+              {p.id === 'grabado' && (
+                <a className="small" href={`#/playalong?p=${encodeURIComponent(t.id)}&toma=1`}>● Grabar una toma completa de este tema →</a>
+              )}
+              <PasoDetalle
+                paso={p.titulo}
+                tema={t.name}
+                avance={a}
+                indice={i}
+                visible={!!a?.hechos.includes(i) || sig === i}
+                tempoTema={p.id === 'memoria' ? tempoTema : undefined}
+                onBpm={(v) => setRep((r) => fijarBpm(r, t.id, i, v, dayNum()))}
+                onKey={(k) => setRep((r) => alternarTonalidad(r, t.id, i, k, dayNum()))}
+              />
+            </li>
+          ))}
+        </ol>
+        <Ejercicios id={t.id} lib={lib} abrir={query.get('t') === t.id} ex={query.get('t') === t.id ? query.get('ex') : null} k={query.get('t') === t.id ? query.get('k') : null} />
+      </details>
+    </section>
   );
 }
 

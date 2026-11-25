@@ -14,7 +14,7 @@ test.describe('menú de pantallas', () => {
     await expect(barra(page).getByRole('link')).toHaveText([
       'Plan', 'Mi mes', 'Currícula', 'Progreso',
       'Lecciones', 'Escalas', 'Vocabulario',
-      'Play-along', 'Repertorio', 'Metrónomo',
+      'Play-along', 'Temas', 'Metrónomo',
       'Transcribir', 'Oído', 'Afinador',
       'Ajustes', 'Créditos',
     ]);

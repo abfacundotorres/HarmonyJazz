@@ -1,4 +1,4 @@
-import { abrirMenu, expect, test } from './helpers';
+import { abrirMenu, abrirPasos, expect, test } from './helpers';
 
 const TEMA = { id: 'u:hoja', name: 'Hojas de otoño', composer: '', key: 'G', mode: 'minor', chart: 'Cm7 | F7 | Bbmaj7 | Ebmaj7', tempo: 120, style: 'swing' };
 const conTema = (page: import('@playwright/test').Page) => page.addInitScript((t) => localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] })), TEMA);
@@ -7,17 +7,18 @@ const guardado = (page: import('@playwright/test').Page) => page.evaluate(() => 
 test.describe('mi repertorio', () => {
   test('sin temas explica cómo cargar uno', async ({ page }) => {
     await page.goto('/#/repertorio');
-    await expect(page.getByRole('heading', { name: 'Mi repertorio' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Temas', exact: true })).toBeVisible();
     await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ir a Play-along' })).toBeVisible();
     // Repertorio está en el grupo Tocar del menú y es la pantalla actual
     const menu = await abrirMenu(page);
-    await expect(menu.getByRole('link', { name: 'Repertorio', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(menu.getByRole('link', { name: 'Temas', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('cada tema propio tiene sus siete pasos: se tildan, avanzan el progreso y se recuerdan', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = page.getByRole('region', { name: 'Hojas de otoño' });
     await expect(tema.locator('ol.pasos li')).toHaveCount(7);
     await expect(tema).toContainText('0 de 7 pasos');
@@ -30,6 +31,7 @@ test.describe('mi repertorio', () => {
     await expect(tema).toContainText('sigue: Fundamentales');
     expect((await guardado(page))['u:hoja'].hechos).toEqual([0, 2]);
     await page.reload();
+    await abrirPasos(page);
     await expect(page.getByRole('region', { name: 'Hojas de otoño' })).toContainText('2 de 7 pasos');
     // destildar
     await page.getByLabel('Hojas de otoño: Guide tones').uncheck();
@@ -42,6 +44,7 @@ test.describe('mi repertorio', () => {
   test('completar los siete pasos lo marca completo y «Lo toqué hoy» anota el día', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = page.getByRole('region', { name: 'Hojas de otoño' });
     await expect(tema.locator('ol.pasos input[type="checkbox"]')).toHaveCount(7); // las casillas de los pasos (cada uno tiene además su campo de tempo)
     for (const c of await tema.locator('ol.pasos input[type="checkbox"]').all()) await c.check();
@@ -55,6 +58,7 @@ test.describe('mi repertorio', () => {
     await page.goto('/#/mes');
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = page.locator('section.tema').first();
     await expect(tema).toContainText('Tema del mes');
     await expect(tema).toContainText('ii–V–I mayor');
@@ -92,6 +96,7 @@ test.describe('mi repertorio', () => {
     await conTema(page);
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [1, 'x', 99], ultimo: 'no' }, basura: 5 })));
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     await expect(page.getByRole('region', { name: 'Hojas de otoño' })).toContainText('1 de 7 pasos');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
@@ -109,6 +114,7 @@ test.describe('ejercicios sobre un tema', () => {
   test('un tema ofrece guide tones, arpegios, aproximaciones y 1-2-3-5; arma la partitura del elegido y marca el avance en su tonalidad', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = await abrirEjercicios(page);
     const botones = tema.getByRole('group', { name: 'Ejercicio' }).getByRole('button');
     await expect(botones).toHaveCount(6);
@@ -133,21 +139,26 @@ test.describe('ejercicios sobre un tema', () => {
   test('un enlace de repaso abre ese ejercicio en esa tonalidad; una tonalidad inválida no rompe', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio?t=u%3Ahoja&ex=arp3&k=Eb');
+    await abrirPasos(page);
     const ej = page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise');
     await expect(ej.getByRole('heading')).toContainText('Arpegios desde la 3ª');
     // k=Eb es de concierto; en la vista Si♭ la tecla marcada se lee «F»
     await expect(ej.getByRole('radio', { checked: true })).toHaveCount(1);
     await expect(ej.getByRole('radio', { checked: true })).toHaveAccessibleName(/^F/);
     await page.goto('/#/repertorio?t=u%3Ahoja&ex=guide&k=ZZ');
+    await abrirPasos(page);
     await page.reload();
+    await abrirPasos(page);
     await expect(page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise').getByRole('heading')).toContainText('Guide tones del tema');
     await page.goto('/#/repertorio?t=u%3Ahoja&ex=nada');
+    await abrirPasos(page);
     await expect(page.getByRole('region', { name: 'Hojas de otoño' }).locator('.exercise')).toHaveCount(0);
   });
 
   test('un tema en 3/4 explica que los ejercicios son de 4/4 y no los ofrece', async ({ page }) => {
     await page.addInitScript((t) => localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] })), TEMA_3_4);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = page.getByRole('region', { name: 'Vals de prueba' });
     await expect(tema).toContainText('Los ejercicios generados son de 4/4');
     await expect(tema.getByText('Ejercicios sobre este tema')).toHaveCount(0);
@@ -191,6 +202,7 @@ test.describe('tempo y tonalidades de cada paso', () => {
   test('«De memoria, a tempo»: se anota el tempo y dice si llegó al del tema', async ({ page }) => {
     await conTema(page); // el tema se carga a 120 bpm
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const memoria = paso(page, 'De memoria, a tempo');
     // sin tildar el paso (ni ser el que sigue) no se ofrece anotar nada
     await expect(memoria.getByText('Tempo y tonalidades')).toHaveCount(0);
@@ -222,6 +234,7 @@ test.describe('tempo y tonalidades de cada paso', () => {
   test('el tempo se lleva a 40–320 y se recuerda al recargar', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const guide = paso(page, 'Guide tones');
     await tema(page).getByLabel('Hojas de otoño: Guide tones').check();
     await guide.getByText('Tempo y tonalidades').click();
@@ -233,12 +246,14 @@ test.describe('tempo y tonalidades de cada paso', () => {
     await bpm.press('Enter');
     await expect(guide.locator('.paso-resumen')).toContainText('♩ 40 bpm');
     await page.reload();
+    await abrirPasos(page);
     await expect(paso(page, 'Guide tones').locator('.paso-resumen')).toContainText('♩ 40 bpm');
   });
 
   test('«La melodía»: se marcan las tonalidades en que la tocaste, se leen como el resto de la app y se guardan en concierto', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const melodia = paso(page, 'La melodía');
     await tema(page).getByLabel('Hojas de otoño: La melodía').check();
     await melodia.getByText('Tempo y tonalidades').click();
@@ -259,6 +274,7 @@ test.describe('tempo y tonalidades de cada paso', () => {
     await page.goto('/#/mas');
     await page.getByRole('button', { name: 'Concierto', exact: true }).first().click();
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     await expect(paso(page, 'La melodía').locator('.paso-resumen')).toContainText('en B♭');
   });
 
@@ -268,6 +284,7 @@ test.describe('tempo y tonalidades de cada paso', () => {
       localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [0, 1], ultimo: 1, inicio: 1 } })); // formato anterior
     }, TEMA);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     await expect(tema(page)).toContainText('2 de 7 pasos');
     await expect(tema(page).locator('.paso-resumen')).toHaveCount(0);
     const forma = paso(page, 'La forma');
@@ -286,8 +303,58 @@ test.describe('tempo y tonalidades de cada paso', () => {
       localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [1], ultimo: 1, inicio: 1, detalle: { 3: { bpm: 'x', keys: [1, 'H'] }, 99: 5, 5: { bpm: 140, keys: ['F'] } } } }));
     }, TEMA);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     await expect(tema(page)).toContainText('1 de 7 pasos');
     await expect(paso(page, 'De memoria, a tempo').locator('.paso-resumen')).toContainText('♩ 140 bpm');
     await expect(paso(page, 'La melodía').locator('.paso-resumen')).toHaveCount(0);
+  });
+});
+
+test.describe('Temas: estados, orden y tema en estudio', () => {
+  const T = (id: string, name: string) => ({ id, name, composer: '', key: 'C', mode: 'major', chart: 'Dm7 | G7 | Cmaj7 | Cmaj7', tempo: 120, style: 'swing' });
+  const SIETE = [0, 1, 2, 3, 4, 5, 6];
+  const preparar = (page: import('@playwright/test').Page) =>
+    page.addInitScript(
+      ([tunes, rep]) => {
+        localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes }));
+        localStorage.setItem('harmonyjazz:repertorio', JSON.stringify(rep));
+      },
+      [
+        [T('u:nuevo', 'Tema nuevo'), T('u:listo', 'Tema listo'), T('u:medio', 'Tema a medias')],
+        { 'u:listo': { hechos: SIETE, ultimo: 1, inicio: 1 }, 'u:medio': { hechos: [0], ultimo: 1, inicio: 1 } },
+      ] as const,
+    );
+
+  test('cada tema muestra su estado y la lista va: aprendiendo, sin empezar, terminados', async ({ page }) => {
+    await preparar(page);
+    await page.goto('/#/repertorio');
+    await expect(page.getByRole('status').first()).toContainText('1 aprendiendo · 1 sin empezar · 1 terminado');
+    await expect(page.locator('section.tema h3')).toHaveText(['Tema a medias', 'Tema nuevo', 'Tema listo']);
+    await expect(page.getByRole('region', { name: 'Tema a medias' })).toContainText('Aprendiendo');
+    await expect(page.getByRole('region', { name: 'Tema nuevo' })).toContainText('Sin empezar');
+    await expect(page.getByRole('region', { name: 'Tema listo' })).toContainText('✓ Terminado');
+    // el que se está aprendiendo arranca con los pasos abiertos; los demás, plegados
+    await expect(page.getByRole('region', { name: 'Tema a medias' }).locator('details.pasos-det')).toHaveAttribute('open', '');
+    await expect(page.getByRole('region', { name: 'Tema nuevo' }).locator('details.pasos-det')).not.toHaveAttribute('open', '');
+  });
+
+  test('un tema terminado hace tiempo avisa que toca repasarlo', async ({ page }) => {
+    await preparar(page);
+    await page.goto('/#/repertorio');
+    await expect(page.getByRole('region', { name: 'Tema listo' })).toContainText('Toca repasarlo');
+  });
+
+  test('«Estudiar este» lo pasa a tema en estudio, arriba de todo, y se ve en Hoy', async ({ page }) => {
+    await preparar(page);
+    await page.goto('/#/repertorio');
+    await page.getByRole('region', { name: 'Tema nuevo' }).getByRole('button', { name: 'Estudiar este' }).click();
+    await expect(page.locator('section.tema h3').first()).toHaveText('Tema nuevo'); // pasa arriba de todo
+    await expect(page.getByRole('region', { name: 'Tema nuevo' })).toContainText('En estudio');
+    await expect(page.getByRole('region', { name: 'Tema nuevo' }).getByRole('button', { name: 'Estudiar este' })).toHaveCount(0);
+    await page.goto('/#/hoy');
+    await expect(page.getByRole('region', { name: 'Tema en estudio' })).toContainText('Tema nuevo');
+    await page.goto('/#/repertorio');
+    await page.getByRole('region', { name: 'Tema nuevo' }).getByRole('button', { name: 'Dejar de estudiarlo' }).click();
+    await expect(page.getByRole('region', { name: 'Tema nuevo' })).not.toContainText('En estudio');
   });
 });

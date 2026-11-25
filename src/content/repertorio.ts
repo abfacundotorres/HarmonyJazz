@@ -148,3 +148,18 @@ export function repasoRepertorio(rep: Repertorio, ids: readonly string[], today:
   }
   return out.sort((x, y) => y.dias - x.dias || x.id.localeCompare(y.id));
 }
+
+/** Dónde está un tema: sin empezar (ningún paso y nunca tocado), aprendiendo o terminado (los siete pasos). */
+export type EstadoTema = 'sin' | 'aprendiendo' | 'terminado';
+export function estadoTema(a: Avance | undefined): EstadoTema {
+  if (completo(a)) return 'terminado';
+  return logrados(a) === 0 && !(a && a.ultimo > 0) ? 'sin' : 'aprendiendo';
+}
+
+const RANGO: Record<EstadoTema, number> = { aprendiendo: 1, sin: 2, terminado: 3 };
+
+/** Orden de la lista de temas: el que está en estudio, los que se están aprendiendo, los que no se empezaron y los terminados (estable dentro de cada grupo). */
+export function ordenarTemas<T extends { id: string }>(temas: readonly T[], rep: Repertorio, enEstudio?: string): T[] {
+  const rango = (t: T) => (t.id === enEstudio ? 0 : RANGO[estadoTema(rep[t.id])]);
+  return temas.map((t, i) => ({ t, i })).sort((x, y) => rango(x.t) - rango(y.t) || x.i - y.i).map((x) => x.t);
+}

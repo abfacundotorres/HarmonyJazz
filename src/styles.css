@@ -1119,3 +1119,8 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .reto.fallo { border-color: var(--bad); }
 .reto.silencio { border-style: dashed; color: var(--muted); }
 .reto.ahora { box-shadow: 0 0 0 2px var(--accent); }
+.tema header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.tema .estado { font-size: .78rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line, currentColor); }
+.tema .estado-terminado { background: var(--accent, #7a4a0a); color: var(--accent-ink, #fff); border-color: transparent; }
+.tema .pasos-det { margin-top: 8px; }
+.tema .pasos-det > summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
