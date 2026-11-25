@@ -1089,3 +1089,6 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .parecidos-lista li { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .parecidos-lista .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .parecidos-lista button { min-height: 44px; }
+.linea-pentagrama { margin: 8px 0 4px; }
+.linea-detalle { margin-top: 6px; }
+.linea-detalle > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }

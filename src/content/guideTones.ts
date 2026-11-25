@@ -1,6 +1,7 @@
 import type { Chart } from '../theory/chart';
 import { chordSymbol, qdef, type Chord } from '../theory/chords';
-import { degreeNote, degreePc, mod, pc, type Note } from '../theory/notes';
+import type { MelNote } from '../exercises/generators';
+import { degreeNote, degreePc, mod, pc, placeNear, type Note } from '../theory/notes';
 
 /** Un acorde de la línea: la nota guía elegida (3.ª, 7.ª…) y cuánto se mueve desde la anterior. */
 export interface PasoGuia {
@@ -13,6 +14,10 @@ export interface PasoGuia {
   nota: Note;
   /** Semitonos respecto de la nota anterior (negativo = baja); null en el primer acorde. */
   mov: number | null;
+  /** Altura elegida (MIDI, concierto). */
+  midi: number;
+  /** Posiciones, en `chart.chords`, de los acordes que cubre este paso (los repetidos seguidos se juntan). */
+  acordes: number[];
 }
 
 /** Zona en la que se arma la línea (MIDI): se mantiene cerca del centro para que sea una sola línea, no saltos. */
@@ -27,14 +32,14 @@ const CENTRO = 64;
  * quedarse cerca del centro. `orden` traduce el compás que suena al compás escrito (repeticiones y finales).
  */
 export function lineaGuideTones(chart: Chart, orden?: readonly number[]): PasoGuia[] {
-  const acordes: { chord: Chord; compas: number }[] = [];
+  const acordes: { chord: Chord; compas: number; idx: number[] }[] = [];
   let previo = '';
-  for (const c of chart.chords) {
+  chart.chords.forEach((c, i) => {
     const sym = chordSymbol(c.chord);
-    if (sym === previo) continue;
+    if (sym === previo) return acordes[acordes.length - 1].idx.push(i);
     previo = sym;
-    acordes.push({ chord: c.chord, compas: (orden ? orden[c.bar] : c.bar) + 1 });
-  }
+    acordes.push({ chord: c.chord, compas: (orden ? orden[c.bar] : c.bar) + 1, idx: [i] });
+  });
   if (!acordes.length) return [];
 
   // candidatos de cada acorde: (grado, altura MIDI) para cada octava en la zona
@@ -82,11 +87,26 @@ export function lineaGuideTones(chart: Chart, orden?: readonly number[]): PasoGu
     j = desde[i][j];
   }
 
-  return acordes.map(({ chord, compas }, i) => {
+  return acordes.map(({ chord, compas, idx }, i) => {
     const c = cand[i][elegido[i]];
     const anterior = i > 0 ? cand[i - 1][elegido[i - 1]].m : null;
-    return { chord, compas, grado: c.grado, nota: degreeNote(chord.root, c.grado), mov: anterior === null ? null : c.m - anterior };
+    return { chord, compas, grado: c.grado, nota: degreeNote(chord.root, c.grado), mov: anterior === null ? null : c.m - anterior, midi: c.m, acordes: idx };
   });
+}
+
+/**
+ * La línea como melodía para el pentagrama: una nota por acorde de la progresión (en concierto), con la duración del acorde. Los
+ * acordes repetidos seguidos repiten la misma nota, así cada compás tiene la suya.
+ */
+export function melodiaGuideTones(chart: Chart, pasos: PasoGuia[]): MelNote[] {
+  const out: MelNote[] = [];
+  for (const p of pasos) {
+    for (const i of p.acordes) {
+      const c = chart.chords[i];
+      out.push({ start: c.start, dur: c.dur, pitch: placeNear(p.nota, p.midi) });
+    }
+  }
+  return out.sort((a, b) => a.start - b.start);
 }
 
 /** «↓ 1 semitono», «↑ 2 semitonos», «= misma nota». */
