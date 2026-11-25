@@ -342,6 +342,8 @@ textarea { width: 100%; font-family: ui-monospace, monospace; cursor: text; }
 .paper svg { display: block; }
 .paper .hj-current { fill: #905e15; }
 .paper .hj-note { fill: #c0392b; }
+.paper .hj-chord { fill: #c0392b; font-weight: 800; }
+.linea-pentagrama .hj-note, .atril-guia .hj-note { stroke: #c0392b; stroke-width: 1.4px; }
 
 /* lecciones */
 .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
