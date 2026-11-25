@@ -153,7 +153,7 @@ test('atril: un título larguísimo no parte la barra de arriba en dos renglones
 
 test.describe('formas de práctica', () => {
   test('la app no trae temas con nombre propio y un enlace viejo no rompe nada', async ({ page }) => {
-    await page.goto('/#/repertorio');
+    await page.goto('/#/playalong');
     await page.waitForSelector('.player');
     const names = await page.locator('select[aria-label="Tema"] option').allInnerTexts();
     expect(names.join(' | ')).not.toMatch(/Autumn|Bossa|Solar|Giant|Monk|Parker|Freeloader|Billie|All of Me|Ipanema|Stella/);
