@@ -37,3 +37,29 @@ test('el atril muestra la línea de guide tones en pentagrama, resalta el compá
   await atril(page).getByRole('button', { name: 'Guide tones (pentagrama)' }).click();
   await expect(atril(page).locator('.atril-guia')).toHaveCount(0);
 });
+
+test('con la opción de tira, los guide tones van en una sola línea y la nota que suena queda quieta mientras la partitura pasa', async ({ page }) => {
+  const largo = { ...TEMA, chart: Array.from({ length: 6 }, () => 'Dm7 | G7 | Cmaj7 | A7').join(' | '), tempo: 200 };
+  await page.addInitScript((t) => {
+    localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] }));
+    localStorage.setItem('harmonyjazz:atril', JSON.stringify({ size: 2, tira: true }));
+  }, largo);
+  await page.goto('/#/playalong?p=u:atrilguia');
+  await page.waitForSelector('.player');
+  await page.getByRole('button', { name: 'Modo atril (pantalla grande)' }).click();
+  await atril(page).getByRole('button', { name: 'Guide tones (pentagrama)' }).click();
+  const guia = atril(page).locator('.atril-guia');
+  await expect(guia.locator('.abcjs-note')).toHaveCount(24);
+  // una sola línea: todas las notas dentro del mismo renglón (el svg tiene un solo pentagrama)
+  await expect(guia.locator('.abcjs-staff')).toHaveCount(1);
+
+  await atril(page).getByRole('button', { name: 'Reproducir' }).click();
+  const x = () => guia.locator('.hj-note').first().evaluate((n) => n.getBoundingClientRect().left);
+  await expect(guia.locator('.hj-note').first()).toBeAttached({ timeout: 20_000 });
+  // avanza a una nota de la segunda mitad: sigue en el mismo lugar de la pantalla (±2 px) y la partitura se movió
+  await expect.poll(async () => guia.locator('svg').evaluate((s) => (s as SVGElement).style.transform), { timeout: 30_000 }).not.toBe('translateX(0px)');
+  // una vez asentado el desplazamiento, la nota que suena está siempre cerca del 30 % del ancho (se espera a que termine la transición)
+  const caja = (await guia.boundingBox())!;
+  await expect.poll(async () => Math.abs((await x()) - caja.x - caja.width * 0.3), { timeout: 10_000 }).toBeLessThan(25);
+  await atril(page).getByRole('button', { name: 'Detener' }).click();
+});

@@ -23,6 +23,7 @@ export function PentagramaGuia({
   minor,
   compasActual = -1,
   notaActual = -1,
+  tira = false,
 }: {
   chart: Chart;
   linea: PasoGuia[];
@@ -33,12 +34,14 @@ export function PentagramaGuia({
   compasActual?: number;
   /** Nota de la línea que corresponde al acorde que suena (posición del acorde en la grilla); -1 si no suena. */
   notaActual?: number;
+  /** Una sola línea que se desplaza con la nota actual fija. */
+  tira?: boolean;
 }) {
   const { iv } = useReading();
   const { abc, firstPiece } = useMemo(
-    () => (linea.length ? toAbcMap(chart, melodiaGuideTones(chart, linea), { transpose: iv, key: keyValue, mode: minor ? 'minor' : 'major', barsPerLine: 4 }) : { abc: '', firstPiece: [] as number[] }),
-    [linea, chart, iv, keyValue, minor],
+    () => (linea.length ? toAbcMap(chart, melodiaGuideTones(chart, linea), { transpose: iv, key: keyValue, mode: minor ? 'minor' : 'major', barsPerLine: tira ? 999 : 4 }) : { abc: '', firstPiece: [] as number[] }),
+    [linea, chart, iv, keyValue, minor, tira],
   );
   if (!linea.length) return null;
-  return <Notation abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />;
+  return <Notation tira={tira} abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />;
 }
