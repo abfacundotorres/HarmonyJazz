@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { DocLayout } from '../../content/chartDoc';
-import { lineaGuideTones, melodiaGuideTones, textoGrado, textoMovimiento } from '../../content/guideTones';
-import { toAbcMap } from '../../exercises/abc';
+import { textoGrado, textoMovimiento } from '../../content/guideTones';
 import type { Chart } from '../../theory/chart';
 import { noteName, simplify, transposeNote } from '../../theory/notes';
 import { useReading } from '../hooks';
 import { ChordText } from './ChordInfo';
-import { Notation } from './Notation';
+import { PentagramaGuia, useLineaGuia } from './PentagramaGuia';
 
 /**
  * Línea de guide tones del tema, en pentagrama y con los acordes arriba: una sola línea que pasa por la 3.ª o la 7.ª de cada acorde
@@ -38,12 +37,7 @@ export function LineaGuiaTones({
 }) {
   const { iv } = useReading();
   const [open, setOpen] = useState(false);
-  const orden = layout && layout.order.length === chart.bars ? layout.order : undefined;
-  const linea = useMemo(() => (open ? lineaGuideTones(chart, orden) : []), [open, chart, orden]);
-  const { abc, firstPiece } = useMemo(
-    () => (linea.length ? toAbcMap(chart, melodiaGuideTones(chart, linea), { transpose: iv, key: keyValue, mode: minor ? 'minor' : 'major', barsPerLine: 4 }) : { abc: '', firstPiece: [] as number[] }),
-    [linea, chart, iv, keyValue, minor],
-  );
+  const linea = useLineaGuia(chart, layout, open);
   const nombre = (n: Parameters<typeof transposeNote>[0]) => noteName(simplify(transposeNote(n, iv)), true);
   return (
     <details className="linea" open={open} onToggle={(e) => e.target === e.currentTarget && setOpen((e.target as HTMLDetailsElement).open)}>
@@ -55,7 +49,7 @@ export function LineaGuiaTones({
       {linea.length > 0 && (
         <>
           <div className="linea-pentagrama">
-            <Notation abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />
+            <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={notaActual} />
           </div>
           <p>
             <button className={oir ? 'on' : ''} aria-pressed={oir} onClick={onOir}>

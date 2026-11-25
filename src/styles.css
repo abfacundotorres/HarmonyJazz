@@ -1092,3 +1092,8 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .linea-pentagrama { margin: 8px 0 4px; }
 .linea-detalle { margin-top: 6px; }
 .linea-detalle > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+
+/* Atril con la línea de guide tones */
+.atril-sub { display: flex; gap: 8px; flex-wrap: wrap; padding: 2px 0 4px; }
+.atril-sub button { min-height: 44px; }
+.atril-guia { margin: 4px 0; padding: 2px 0; }

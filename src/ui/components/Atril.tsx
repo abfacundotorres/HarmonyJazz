@@ -10,6 +10,7 @@ import { MEMORIA_MODOS, type MemoriaModo, type MemoriaNivel } from '../../conten
 import { useReading } from '../hooks';
 import { ChordBoard } from './ChordInfo';
 import { KeySelect } from './KeySelect';
+import { PentagramaGuia, useLineaGuia } from './PentagramaGuia';
 
 /** Cómo se cambia la tonalidad desde el atril: elegir una de las 12 (temas con tonalidad) o subir y bajar medio tono (sin ella). */
 export type AtrilTranspose =
@@ -41,6 +42,11 @@ export function Atril({
   onPeek,
   transpose,
   consigna,
+  keyValue,
+  minor,
+  oirGuia,
+  onOirGuia,
+  notaGuia,
 }: {
   title: string;
   keyLabel: string | null;
@@ -66,11 +72,23 @@ export function Atril({
   transpose?: AtrilTranspose;
   /** Lo que hay que hacer ahora (la toma completa: «Coro 2 de 3: Improvisá»). */
   consigna?: string | null;
+  /** Tonalidad (concierto) del tema, si tiene una sola, y si es menor: para la armadura del pentagrama de guide tones. */
+  keyValue: string | null;
+  minor: boolean;
+  /** ¿Suena la línea de guide tones sobre el acompañamiento? */
+  oirGuia: boolean;
+  onOirGuia: () => void;
+  /** Nota de la línea que suena (−1 si ninguna o hay loop). */
+  notaGuia: number;
 }) {
   const [cfg] = usePersistent<{ size: number }>('atril', { size: ATRIL_SIZE.default });
   const size = clampAtrilSize(cfg.size);
   const { keyLabel: label, view } = useReading();
   const [keysOpen, setKeysOpen] = useState(false);
+  // la línea de guide tones en pentagrama, arriba de la grilla
+  const [verGuia, setVerGuia] = useState(false);
+  const linea = useLineaGuia(chart, layout, verGuia);
+  const compasActual = pos && !pos.countIn && pos.bar >= 0 ? pos.bar + (loop ? loop[0] : 0) : -1;
   useWakeLock(true);
 
   // pantalla completa (si el navegador lo permite) y Escape para salir. Una sola vez: `onClose` cambia en cada actualización del
@@ -117,6 +135,12 @@ export function Atril({
           </div>
           <button onClick={onClose} aria-label="Cerrar el modo atril">✕ Cerrar</button>
         </div>
+        <div className="atril-sub" role="group" aria-label="Guide tones">
+          <button className={verGuia ? 'on' : ''} aria-pressed={verGuia} onClick={() => setVerGuia((v) => !v)}>𝄞 Guide tones</button>
+          {verGuia && (
+            <button className={oirGuia ? 'on' : ''} aria-pressed={oirGuia} onClick={onOirGuia}>🔊 {oirGuia ? 'Dejar de oírla' : 'Oír la línea'}</button>
+          )}
+        </div>
         {consigna && <p className="atril-consigna" role="status">{consigna}</p>}
         {keysOpen && transpose && (
           <div className="atril-keys" role="group" aria-label="Tonalidad">
@@ -140,6 +164,12 @@ export function Atril({
           </div>
         )}
       </div>
+
+      {verGuia && (
+        <div className="atril-guia">
+          <PentagramaGuia chart={chart} linea={linea} keyValue={keyValue} minor={minor} compasActual={compasActual} notaActual={oirGuia ? notaGuia : -1} />
+        </div>
+      )}
 
       <ChordBoard chart={chart} current={current} loop={loop} layout={layout} memory={memory} />
 
