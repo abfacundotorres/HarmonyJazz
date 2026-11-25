@@ -20,7 +20,7 @@ const relleno = Array.from({ length: 1500 }, (_, i) => ({
 const COLECCION = Buffer.from(JSON.stringify([FINALES, VALS, CINCO, ARBOL, ...relleno]));
 
 const abrir = async (page: Page) => {
-  await page.goto('/#/playalong');
+  await page.goto('/#/repertorio');
   await page.waitForSelector('.player');
   if (!(await page.locator('details.coleccion[open]').count())) await page.getByText('Mi colección (archivo JSON)').click();
 };

@@ -69,7 +69,7 @@ test.describe('currícula de tres años', () => {
     const m1 = page.locator('li.materia').first();
     await m1.locator('summary').click();
     await expect(m1).toContainText('Tema sugerido:');
-    await expect(m1).toContainText('Play-along → Mis temas');
+    await expect(m1).toContainText('Temas → Mis temas');
     await expect(m1).toContainText('Now’s the Time');
     await page.locator('details.semester').nth(5).locator(':scope > summary').click();
     await expect(page.locator('li.materia').nth(30)).toContainText('Modal');

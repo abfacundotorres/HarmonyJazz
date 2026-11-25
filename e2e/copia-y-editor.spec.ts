@@ -43,8 +43,8 @@ test.describe('copia de seguridad', () => {
 
 test.describe('editor de grilla', () => {
   test('atajos: plantillas, acordes de la tonalidad y transposición reversible', async ({ page }) => {
-    await page.goto('/#/playalong');
-    await page.getByText(/Mis temas/).first().click();
+    await page.goto('/#/repertorio');
+    await page.locator('.library > details > summary').click();
     await page.getByText('Atajos: acordes de la tonalidad y plantillas').click();
     await page.getByLabel('Tonalidad de los atajos').selectOption('Bb');
     await page.getByRole('button', { name: 'Blues de jazz (12 compases)' }).click();
@@ -153,7 +153,7 @@ test('atril: un título larguísimo no parte la barra de arriba en dos renglones
 
 test.describe('formas de práctica', () => {
   test('la app no trae temas con nombre propio y un enlace viejo no rompe nada', async ({ page }) => {
-    await page.goto('/#/playalong');
+    await page.goto('/#/repertorio');
     await page.waitForSelector('.player');
     const names = await page.locator('select[aria-label="Tema"] option').allInnerTexts();
     expect(names.join(' | ')).not.toMatch(/Autumn|Bossa|Solar|Giant|Monk|Parker|Freeloader|Billie|All of Me|Ipanema|Stella/);

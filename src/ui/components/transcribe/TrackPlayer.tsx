@@ -910,7 +910,7 @@ function Loaded({
           <fieldset className="totune">
             <legend>Pasar a la melodía de un tema</legend>
             {userTunes.length === 0 ? (
-              <p className="muted small">Todavía no cargaste ningún tema: cargá su cifrado en Play-along → Mis temas y después pasá la frase acá.</p>
+              <p className="muted small">Todavía no cargaste ningún tema: cargá su cifrado en Temas → Mis temas y después pasá la frase acá.</p>
             ) : (
               <>
                 <div className="formgrid">

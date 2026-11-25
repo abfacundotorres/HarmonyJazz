@@ -4,8 +4,8 @@ const chords = (page: import('@playwright/test').Page) =>
   page.locator('.ced-bar:not(.add) .ced-chords').allInnerTexts().then((a) => a.map((t) => t.replace(/\s+/g, ' ').trim()));
 
 async function openWithBlues(page: import('@playwright/test').Page) {
-  await page.goto('/#/playalong');
-  await page.getByText(/Mis temas/).first().click();
+  await page.goto('/#/repertorio');
+  await page.locator('.library > details > summary').click();
   await page.getByText('Atajos: acordes de la tonalidad y plantillas').click();
   await page.getByLabel('Tonalidad de los atajos').selectOption('C');
   await page.getByRole('button', { name: 'Blues de jazz (12 compases)' }).click();
@@ -42,8 +42,8 @@ test.describe('editor de grilla: comodidad', () => {
   });
 
   test('avanzar solo: al elegir raíz y calidad pasa al acorde siguiente; se puede apagar', async ({ page }) => {
-    await page.goto('/#/playalong');
-    await page.getByText(/Mis temas/).first().click();
+    await page.goto('/#/repertorio');
+    await page.locator('.library > details > summary').click();
     await page.getByRole('button', { name: 'Agregar compás al final' }).click();
     await page.locator('.ced-bar:not(.add)').first().click();
     await page.getByRole('group', { name: 'Raíz' }).getByRole('button', { name: 'D', exact: true }).click();
@@ -71,8 +71,8 @@ test.describe('editor de grilla: comodidad', () => {
 
 test.describe('editor de grilla: escuchar mientras se edita', () => {
   test('suena, resalta el compás que toca y una edición entra en la vuelta siguiente sin cortar', async ({ page }) => {
-    await page.goto('/#/playalong');
-    await page.getByText(/Mis temas/).first().click();
+    await page.goto('/#/repertorio');
+    await page.locator('.library > details > summary').click();
     await page.getByLabel('Tempo').fill('320');
     const slot = (n: number) => page.getByLabel(`Acorde 1 del compás ${n}`);
     await slot(1).fill('Dm7');
@@ -93,8 +93,8 @@ test.describe('editor de grilla: escuchar mientras se edita', () => {
   });
 
   test('con acordes vacíos avisa y no empieza; volver a tocar después de detener funciona', async ({ page }) => {
-    await page.goto('/#/playalong');
-    await page.getByText(/Mis temas/).first().click();
+    await page.goto('/#/repertorio');
+    await page.locator('.library > details > summary').click();
     await page.getByRole('button', { name: 'Escuchar la grilla' }).click();
     await expect(page.getByRole('alert')).toContainText('acordes válidos');
     await page.getByLabel('Tempo').fill('320');

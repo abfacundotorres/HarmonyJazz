@@ -58,8 +58,8 @@ test('una progresión de 4/4 no cambia: cuatro tiempos, todos los estilos y "Só
 });
 
 test('el editor arma temas en 3/4: límite de acordes, aviso al volver a 4/4 y se guarda y se reabre en 3/4', async ({ page }) => {
-  await page.goto('/#/playalong');
-  await page.getByText(/Mis temas/).first().click();
+  await page.goto('/#/repertorio');
+  await page.locator('.library > details > summary').click();
   const meter = page.getByLabel('Tipo de compás');
   await expect(meter).toHaveValue('4/4');
   const add = page.getByRole('button', { name: 'Agregar acorde al compás' });
@@ -91,7 +91,7 @@ test('el editor arma temas en 3/4: límite de acordes, aviso al volver a 4/4 y s
   expect(saved.doc.meter).toBe('3/4');
   // al editarlo de nuevo, vuelve en 3/4
   await page.reload();
-  await page.getByText(/Mis temas/).first().click();
+  await page.locator('.library > details > summary').click();
   await page.getByRole('button', { name: 'Editar' }).click();
   await expect(page.getByLabel('Tipo de compás')).toHaveValue('3/4');
   // y toca en el play-along con su compás
@@ -100,8 +100,8 @@ test('el editor arma temas en 3/4: límite de acordes, aviso al volver a 4/4 y s
 });
 
 test('la carga de texto acepta "compás: 3/4"', async ({ page }) => {
-  await page.goto('/#/playalong');
-  await page.getByText(/Mis temas/).first().click();
+  await page.goto('/#/repertorio');
+  await page.locator('.library > details > summary').click();
   await page.getByText('Carga masiva: muchos temas de una vez').click();
   await page.getByLabel('Texto con varios temas').fill('# Vals de prueba\ncompás: 3/4\nDm7 | G7 | Cmaj7 | Cmaj7');
   await page.getByRole('button', { name: 'Revisar' }).click();
@@ -111,8 +111,8 @@ test('la carga de texto acepta "compás: 3/4"', async ({ page }) => {
 });
 
 test('la carga de texto trae la melodía y pasa de Si♭ a concierto con "lectura: Bb"', async ({ page }) => {
-  await page.goto('/#/playalong');
-  await page.getByText(/Mis temas/).first().click();
+  await page.goto('/#/repertorio');
+  await page.locator('.library > details > summary').click();
   await page.getByText('Carga masiva: muchos temas de una vez').click();
   await page.getByText('Ver un ejemplo').click();
   await page.getByRole('button', { name: 'Usar este ejemplo' }).click();

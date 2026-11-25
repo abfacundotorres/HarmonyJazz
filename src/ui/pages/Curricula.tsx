@@ -85,7 +85,7 @@ function MateriaRow({ m, prog, esSig, actual, onTildar, onAprobar, onReabrir, on
           Lenguaje: <b>{focusById(m.lang)?.title}</b> · Técnica: <b>{focusById(m.tech)?.title}</b>
         </p>
         <p className="small">
-          Tema sugerido: <b>{nombreForma(m.n)}</b>. Para llevarlo a un standard ({nivelDe(m.sem)?.tipo.toLowerCase()}), cargá el cifrado de tu libro en Play-along → Mis temas; por ejemplo {nivelDe(m.sem)?.ejemplos.join(', ')}.
+          Tema sugerido: <b>{nombreForma(m.n)}</b>. Para llevarlo a un standard ({nivelDe(m.sem)?.tipo.toLowerCase()}), cargá el cifrado de tu libro en Temas → Mis temas; por ejemplo {nivelDe(m.sem)?.ejemplos.join(', ')}.
         </p>
         {correlativas(m).length > 0 && (
           <p className="small">

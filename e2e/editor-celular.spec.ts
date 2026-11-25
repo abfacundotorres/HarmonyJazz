@@ -4,8 +4,8 @@ import type { Page } from '@playwright/test';
 // Cargar un tema en el celular (390 px): el teclado sin desplazamiento lateral, lo poco usado plegado y el
 // formulario compacto. Con ancho (compu) todo sigue a la vista.
 const abrir = async (page: Page) => {
-  await page.goto('/#/playalong');
-  if (!(await page.locator('.library > details[open]').count())) await page.getByText(/Mis temas/).first().click();
+  await page.goto('/#/repertorio');
+  if (!(await page.locator('.library > details[open]').count())) await page.locator('.library > details > summary').click();
   await expect(page.locator('.ced-grid')).toBeVisible();
 };
 const raiz = (page: Page) => page.getByRole('group', { name: 'Raíz' });
@@ -84,8 +84,16 @@ test.describe('cargar un tema en el celular', () => {
     await expect(page.locator('.library p', { hasText: 'Tonalidad: la del cifrado' })).toContainText('la del cifrado que escribís (en concierto)');
   });
 
-  test('«＋ Cargar un tema» abre la sección y la deja a la vista', async ({ page }) => {
+  test('desde el Play-along, «＋ Cargar un tema» lleva a Temas con la sección abierta', async ({ page }) => {
     await page.goto('/#/playalong');
+    await page.getByRole('link', { name: '＋ Cargar un tema' }).click();
+    await expect(page).toHaveURL(/#\/repertorio\?cargar=1/);
+    await expect(page.locator('.library > details')).toHaveAttribute('open', '');
+    await expect(page.getByLabel('Nombre')).toBeVisible();
+  });
+
+  test('«＋ Cargar un tema» abre la sección y la deja a la vista', async ({ page }) => {
+    await page.goto('/#/repertorio');
     await expect(page.locator('.library > details')).not.toHaveAttribute('open', '');
     await page.getByRole('button', { name: '＋ Cargar un tema' }).click();
     await expect(page.locator('.library > details')).toHaveAttribute('open', '');

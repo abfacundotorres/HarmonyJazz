@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from '../../audio/engine';
-import {
-  Library, MAX_TUNES, normalizeChartText, parseImport, UserTune, validateTune,
-} from '../../content/library';
-import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
+import { MAX_TUNES, UserTune, validateTune } from '../../content/library';
+import { docLayout } from '../../content/chartDoc';
 import { lineaGuideTones, melodiaGuideTones } from '../../content/guideTones';
 import { melodyNotes, sliceMelody } from '../../content/melody';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
@@ -29,7 +27,6 @@ import { ListenPanel } from '../components/ListenPanel';
 import { MelodyPanel } from '../components/MelodyPanel';
 import { Player } from '../components/Player';
 import { Transcription } from '../components/Transcription';
-import { Draft, EMPTY_DRAFT, TuneLibrary } from '../components/TuneLibrary';
 import { navigate, useReading, usePersistentLibrary, useRepertorio, useRoute, useSettings, useTemaEstudio, useTemasDeRepertorio } from '../hooks';
 import { todosLosTemas } from '../todosLosTemas';
 import { consignaToma } from '../../content/toma';
@@ -37,7 +34,7 @@ import { detalleDe, logrado, PASO_GRABADO } from '../../content/repertorio';
 import { COROS_TOMA_INICIAL } from '../../content/toma';
 import { dayNum } from '../../state/progress';
 import { TomaCompleta } from '../components/TomaCompleta';
-import { ColeccionPanel } from '../components/ColeccionPanel';
+import { agregarTema } from '../components/MisTemas';
 import type { PlayerControl } from '../components/Player';
 import { usePersistent } from '../../state/storage';
 import { usePosition } from '../usePosition';
@@ -70,39 +67,14 @@ export function PlayAlong() {
   const selected = all.find((p) => p.id === (query.get('p') ?? temaEstudio.id)) ?? PROGRESSIONS[0];
   const esEstudio = temaEstudio.id === selected.id;
 
-  // progresión propia sin guardar ("probar")
-  const [custom, setCustom] = useState('');
   const [estudioAbierto, setEstudioAbierto] = useState(query.get('estudio') === '1');
-  // grilla del editor (null = el usuario eligió escribir texto); `custom` es siempre lo que se toca
-  const [doc, setDocState] = useState<ChartDoc | null>({ bars: [emptyBar()] });
-  const [docError, setDocError] = useState<string | null>(null);
-  const [editorKey, setEditorKey] = useState(0);
-  const setDoc = (d: ChartDoc | null) => {
-    setDocState(d);
-    if (!d) return setDocError(null);
-    try {
-      setCustom(compileDoc(d));
-      setDocError(null);
-    } catch (e) {
-      setCustom('');
-      setDocError((e as Error).message);
-    }
-  };
-  const [useCustom, setUseCustom] = useState(false);
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [libMsg, setLibMsg] = useState<string | null>(null);
   // aviso de «Copiar a Mis temas» (aparte del de la biblioteca, para no repetirlo ni abrir esa sección)
   const [dpMsg, setDpMsg] = useState<string | null>(null);
-  // «＋ Cargar un tema»: abre Mis temas y lo lleva a la vista
-  const [cargarSenal, setCargarSenal] = useState(0);
-  const [customKey, setCustomKey] = useState<string | null>(null);
   const [shift, setShift] = useState(0);
 
-  const base: Pick<Progression, 'id' | 'chart' | 'key' | 'mode' | 'style' | 'tempo'> = useCustom
-    ? { id: 'custom', chart: normalizeChartText(custom), key: draft.key || null, mode: draft.mode, style: draft.style, tempo: draft.tempo }
-    : selected;
+  const base: Pick<Progression, 'id' | 'chart' | 'key' | 'mode' | 'style' | 'tempo'> = selected;
   const baseKey = base.key;
-  const key = useCustom ? customKey ?? baseKey ?? 'C' : query.get('k') ?? baseKey ?? 'C';
+  const key = query.get('k') ?? baseKey ?? 'C';
 
   const [tempo, setTempo] = useState(selected.tempo);
   const [loop, setLoop] = useState<[number, number] | null>(null);
@@ -116,22 +88,20 @@ export function PlayAlong() {
     setLoop(null);
     setPending(null);
     setShift(0);
-    setCustomKey(null);
     setTempo(base.tempo);
   }, [base.id, base.tempo]);
 
-  const { chart, customError } = useMemo(() => {
+  const chart = useMemo(() => {
     try {
       let c = parseChart(base.chart);
       if (baseKey) c = transposeChart(c, keyInterval(baseKey, key));
       else if (shift) c = transposeChart(c, semitoneInterval(shift));
-      return { chart: c, customError: null as string | null };
-    } catch (e) {
-      // un cifrado propio inválido no debe romper la pantalla: se vuelve a una progresión conocida
-      const fallback = parseChart(PROGRESSIONS[0].chart);
-      return { chart: fallback, customError: useCustom ? (e as Error).message : 'No se pudo leer este tema' };
+      return c;
+    } catch {
+      // un cifrado inválido no debe romper la pantalla: se vuelve a una progresión conocida
+      return parseChart(PROGRESSIONS[0].chart);
     }
-  }, [base.chart, baseKey, key, shift, useCustom]);
+  }, [base.chart, baseKey, key, shift]);
 
   // el loop se descarta si queda fuera de la forma
   const loopValid = loop && loop[1] < chart.bars ? loop : null;
@@ -140,17 +110,17 @@ export function PlayAlong() {
 
   // melodía de un tema propio: se transpone con el mismo intervalo que el cifrado y se recorta al tramo en loop
   const melody = useMemo(() => {
-    if (useCustom || !selected.melody) return undefined;
+    if (!selected.melody) return undefined;
     const iv = baseKey ? keyInterval(baseKey, key) : shift ? semitoneInterval(shift) : undefined;
     const notes = melodyNotes(selected.melody, iv);
     if (!notes.length) return undefined;
     return loopValid ? sliceMelody(notes, loopValid[0], loopValid[1], barLen(chart)) : notes;
-  }, [useCustom, selected.melody, baseKey, key, shift, loopValid, chart]);
+  }, [selected.melody, baseKey, key, shift, loopValid, chart]);
 
   const layout = useMemo(() => {
-    const d = useCustom ? doc : selected.doc;
+    const d = selected.doc;
     return d ? docLayout(d) : null;
-  }, [useCustom, doc, selected]);
+  }, [selected]);
   // «Oír la línea de guide tones»: la línea suena con la trompeta sobre el acompañamiento (en lugar de la melodía del tema, si la hay)
   const [oirGuia, setOirGuia] = useState(false);
   const guiaMel = useMemo(() => {
@@ -164,7 +134,7 @@ export function PlayAlong() {
   // el paso «Grabado completo» de Mi repertorio se puede marcar desde la toma, si el tema está en el repertorio
   const [rep, setRep] = useRepertorio();
   const temasRep = useTemasDeRepertorio();
-  const esTemaRep = !useCustom && temasRep.some((t) => t.id === selected.id);
+  const esTemaRep = temasRep.some((t) => t.id === selected.id);
   const grabadoHecho = !!rep[selected.id]?.hechos.includes(PASO_GRABADO);
   // llegar desde Mi repertorio (?toma=1) deja la tarjeta de la toma a la vista
   useEffect(() => {
@@ -201,14 +171,14 @@ export function PlayAlong() {
     () => playChart.chords.map((c) => { const b = c.bar + (loopValid ? loopValid[0] : 0); return { chord: c.chord, compas: (orden ? orden[b] : b) + 1, dur: c.dur }; }),
     [playChart, loopValid, orden],
   );
-  const flojosTema = useMemo(() => (useCustom ? [] : flojosDentro(flojosTodos[selected.id] ?? [], orden ? Math.max(...orden) + 1 : chart.bars)), [useCustom, flojosTodos, selected.id, orden, chart.bars]);
+  const flojosTema = useMemo(() => flojosDentro(flojosTodos[selected.id] ?? [], orden ? Math.max(...orden) + 1 : chart.bars), [flojosTodos, selected.id, orden, chart.bars]);
   const flojosSet = useMemo(() => new Set(flojosTema), [flojosTema]);
   const tramos = useMemo(() => tramosFlojos(flojosTema), [flojosTema]);
   const secciones = useMemo(() => seccionesDe(layout), [layout]);
   useEffect(() => {
     setMarcando(false);
     setTramoFloja(null);
-  }, [selected.id, useCustom]);
+  }, [selected.id]);
   const loopDe = (desde: number, hasta: number) => {
     const r = sonados(desde, hasta, orden);
     if (!r) return;
@@ -217,7 +187,7 @@ export function PlayAlong() {
   };
 
   const onBarClick = (bar: number) => {
-    if (marcando && !useCustom) {
+    if (marcando) {
       const w = orden ? orden[bar] : bar;
       setFlojosTodos((f) => {
         const l = alternarFloja(f[selected.id], w);
@@ -328,25 +298,9 @@ export function PlayAlong() {
     if (k) q.set('k', k);
     navigate(`/playalong?${q}`);
   };
-  const changeKey = (k: string) => (useCustom ? setCustomKey(k) : setQuery(selected.id, k));
+  const changeKey = (k: string) => setQuery(selected.id, k);
 
   // ---- biblioteca ----
-  const saveTune = () => {
-    const r = validateTune({ ...draft, key: draft.key || null, chart: custom, doc: doc ?? undefined, melody: tunes.find((t) => t.id === draft.id)?.melody });
-    if (typeof r === 'string') return setLibMsg(r);
-    const exists = tunes.some((t) => t.id === draft.id);
-    if (!exists && tunes.length >= MAX_TUNES) return setLibMsg(`Llegaste al máximo de ${MAX_TUNES} temas`);
-    const tune: UserTune = exists ? { ...r, id: draft.id! } : r;
-    setLibrary({ tunes: exists ? tunes.map((t) => (t.id === tune.id ? tune : t)) : [...tunes, tune] });
-    setLibMsg(`"${tune.name}" guardado`);
-    setUseCustom(false);
-    setDraft(EMPTY_DRAFT);
-    setCustom('');
-    setDoc({ bars: [emptyBar()] });
-    setEditorKey((k) => k + 1);
-    setQuery(tune.id);
-  };
-
   /** Un tema de dominio público pasa a ser tuyo: se puede corregir, sumarle la melodía y llevarlo por la escalera de repertorio. */
   const copiarAMisTemas = (p: Progression) => {
     if (tunes.some((t) => t.name === p.name && t.chart === p.chart)) return setDpMsg(`«${p.name}» ya está en Mis temas.`);
@@ -359,11 +313,10 @@ export function PlayAlong() {
 
   /** Un tema de la colección pasa a Mis temas (sin repetir el nombre y respetando el máximo); con `tocar`, queda elegido en el Play-along. */
   const agregarDeColeccion = (t: UserTune, tocar: boolean): { ok: boolean; mensaje: string } => {
-    if (tunes.some((x) => x.name.toLowerCase() === t.name.toLowerCase())) return { ok: false, mensaje: `«${t.name}» ya está en Mis temas.` };
-    if (tunes.length >= MAX_TUNES) return { ok: false, mensaje: `Llegaste al máximo de ${MAX_TUNES} temas en Mis temas.` };
+    const v = agregarTema(tunes, t);
+    if (!v.ok) return v;
     setLibrary({ tunes: [...tunes, t] });
     if (tocar) {
-      setUseCustom(false);
       setTempo(t.tempo);
       setQuery(t.id);
     }
@@ -373,66 +326,30 @@ export function PlayAlong() {
   const tocarExistente = (id: string) => {
     const t = tunes.find((x) => x.id === id);
     if (!t) return;
-    setUseCustom(false);
     setTempo(t.tempo);
     setQuery(t.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const exportTunes = () => {
-    const blob = new Blob([JSON.stringify({ app: 'harmonyjazz', version: 1, tunes }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'harmonyjazz-temas.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  /** Carga masiva desde texto: ya vienen validadas y sin repetidos. */
-  const bulkImport = (incoming: UserTune[]) => {
-    const room = Math.max(0, MAX_TUNES - tunes.length);
-    const fresh = incoming.slice(0, room);
-    if (fresh.length) setLibrary({ tunes: [...tunes, ...fresh] } as Library);
-    setLibMsg(
-      `Importados ${fresh.length} tema(s)` + (incoming.length > fresh.length ? `. Se omitieron ${incoming.length - fresh.length} por el máximo de ${MAX_TUNES} temas` : ''),
-    );
-  };
-
-  const importTunes = async (file: File) => {
-    if (file.size > 5_000_000) return setLibMsg('El archivo es demasiado grande');
-    const { tunes: incoming, errors } = parseImport(await file.text());
-    const seen = new Set(tunes.map((t) => t.name + '\u0000' + t.chart));
-    const fresh = incoming.filter((t) => !seen.has(t.name + '\u0000' + t.chart)).slice(0, Math.max(0, MAX_TUNES - tunes.length));
-    if (fresh.length) setLibrary({ tunes: [...tunes, ...fresh] } as Library);
-    setLibMsg(
-      `Importados ${fresh.length} tema(s)` +
-        (incoming.length - fresh.length > 0 ? `, ${incoming.length - fresh.length} repetidos u omitidos` : '') +
-        (errors.length ? `. Avisos: ${errors.slice(0, 3).join('; ')}` : ''),
-    );
-  };
-
-  const showKeys = !!baseKey && (!useCustom || !customError);
+  const showKeys = !!baseKey;
 
   return (
     <div className="page playalong">
       <section className="card">
         <header>
           <h2>Play-along</h2>
-          <button onClick={() => setCargarSenal((n) => n + 1)}>＋ Cargar un tema</button>
+          <a className="button" href="#/repertorio?cargar=1">＋ Cargar un tema</a>
           <select
-            value={useCustom ? '' : selected.id}
+            value={selected.id}
             onChange={(e) => {
               const p = all.find((x) => x.id === e.target.value);
               if (!p) return;
-              setUseCustom(false);
               setDpMsg(null);
               setTempo(p.tempo);
               setQuery(p.id);
             }}
             aria-label="Tema"
           >
-            {useCustom && <option value="">Progresión propia (sin guardar)</option>}
             {(['Fundamentos', 'Blues', 'Formas', 'Avanzado', 'Dominio público', 'Mis temas'] as const).map((cat) => {
               const items = all.filter((p) => p.category === cat);
               return items.length ? (
@@ -447,14 +364,13 @@ export function PlayAlong() {
             })}
           </select>
         </header>
-        {!useCustom && <p className="muted">{loc(selected, selected.notes)}</p>}
-        {!useCustom && selected.category === 'Dominio público' && (
+        <p className="muted">{loc(selected, selected.notes)}</p>
+        {selected.category === 'Dominio público' && (
           <p>
             <button onClick={() => copiarAMisTemas(selected)}>Copiar a Mis temas</button>
             {dpMsg && <span className="muted small" role="status"> {dpMsg}</span>}
           </p>
         )}
-        {useCustom && <p className="muted">Estás tocando una progresión propia sin guardar. Guardala en "Mis temas" para conservarla.</p>}
 
         {showKeys ? (
           <>
@@ -484,8 +400,8 @@ export function PlayAlong() {
           allowMelody={!oirGuia && !!melody}
           oirLinea={oirGuia ? true : undefined}
           owner={OWNER}
-          label={useCustom ? 'Progresión propia' : loc(selected, selected.name)}
-          href={useCustom ? undefined : `#/playalong?${new URLSearchParams({ p: selected.id, ...(baseKey ? { k: key } : {}) })}`}
+          label={loc(selected, selected.name)}
+          href={`#/playalong?${new URLSearchParams({ p: selected.id, ...(baseKey ? { k: key } : {}) })}`}
           defaultMetronome={query.get('m') === '1'}
           controlRef={control}
           onPlayingChange={onPlaying}
@@ -493,13 +409,11 @@ export function PlayAlong() {
         <p>
           <button onClick={() => setAtril(true)}>🎼 Modo atril (pantalla grande)</button>
         </p>
-        {!useCustom && (
-          <p>
-            <button className={esEstudio ? 'on' : ''} aria-pressed={esEstudio} onClick={() => setTemaEstudio(() => (esEstudio ? {} : { id: selected.id }))}>
-              📌 {esEstudio ? 'Es tu tema en estudio · dejar de estudiarlo' : 'Estudiar este tema ahora'}
-            </button>
-          </p>
-        )}
+        <p>
+          <button className={esEstudio ? 'on' : ''} aria-pressed={esEstudio} onClick={() => setTemaEstudio(() => (esEstudio ? {} : { id: selected.id }))}>
+            📌 {esEstudio ? 'Es tu tema en estudio · dejar de estudiarlo' : 'Estudiar este tema ahora'}
+          </button>
+        </p>
       </section>
 
       <section className="card tablero">
@@ -517,17 +431,17 @@ export function PlayAlong() {
           {pending !== null && <button onClick={() => setPending(null)}>Cancelar</button>}
         </div>
         <ChordBoard chart={chart} current={ci >= 0 ? ci + offset : -1} loop={loopValid} pending={pending} onBarClick={onBarClick} layout={layout} memory={nivel} flojos={flojosSet} />
-        {!useCustom && selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
+        {selected.listen && <p className="muted small">Escuchá: {selected.listen.join(' · ')}</p>}
       </section>
 
-      {!useCustom && selected.category === 'Mis temas' && (() => {
+      {selected.category === 'Mis temas' && (() => {
         const tune = tunes.find((t) => t.id === selected.id);
         return tune ? <MelodyPanel tune={tune} onSave={(m) => setLibrary({ tunes: tunes.map((t) => (t.id === tune.id ? { ...t, melody: m } : t)) })} /> : null;
       })()}
 
       {atril && (
         <Atril
-          title={useCustom ? 'Progresión propia' : loc(selected, selected.name)}
+          title={loc(selected, selected.name)}
           keyLabel={baseKey ? keyLabel(key) : null}
           chart={chart}
           layout={layout}
@@ -577,7 +491,7 @@ export function PlayAlong() {
         <p className="card muted">Grabando: dale play al acompañamiento y tocá. Las notas se ubican en la forma según el tiempo del play-along.</p>
       )}
       {takeAudio && !recording && (
-        <TakeAudio blob={takeAudio} name={useCustom ? 'Progresión propia' : selected.name} onDiscard={() => setTakeAudio(null)}>
+        <TakeAudio blob={takeAudio} name={selected.name} onDiscard={() => setTakeAudio(null)}>
           {esTemaRep && (
             grabadoHecho
               ? <span className="muted small">✓ «Grabado completo» marcado en Mi repertorio{detalleDe(rep[selected.id], PASO_GRABADO).bpm ? ` (${detalleDe(rep[selected.id], PASO_GRABADO).bpm} bpm)` : ''}</span>
@@ -618,7 +532,7 @@ export function PlayAlong() {
           secciones={secciones}
           loop={loopValid}
           onSeccion={(s) => { setTramoFloja(null); loopDe(s.desde, s.hasta); }}
-          flojos={useCustom ? null : { cuantos: flojosTema.length, tramos }}
+          flojos={{ cuantos: flojosTema.length, tramos }}
           marcando={marcando}
           onMarcando={() => setMarcando((m) => !m)}
           onRecorrer={() => {
@@ -639,7 +553,7 @@ export function PlayAlong() {
         />
         <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} notaActual={ci >= 0 ? ci + offset : -1} oir={oirGuia} onOir={() => setOirGuia((v) => !v)} />
         <FichaAcordes chart={chart} layout={layout} />
-        <TemasParecidos chart={chart} titulo={useCustom ? '' : selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
+        <TemasParecidos chart={chart} titulo={selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
         <MapaArmonico
           chart={chart}
           layout={layout}
@@ -651,7 +565,7 @@ export function PlayAlong() {
           chart={chart}
           memoModo={memoModo}
           onOcultar={() => setModo('oculto')}
-          onMarcarFloja={useCustom ? undefined : (bar) => {
+          onMarcarFloja={(bar) => {
             const w = orden ? orden[bar] : bar;
             setFlojosTodos((f) => (f[selected.id]?.includes(w) ? f : { ...f, [selected.id]: alternarFloja(f[selected.id], w) }));
           }}
@@ -671,48 +585,6 @@ export function PlayAlong() {
         onEmpezar={() => void empezarToma()}
         onCortar={cortarToma}
       />
-
-      <TuneLibrary
-        draft={draft}
-        onDraft={setDraft}
-        chartText={custom}
-        onChartText={setCustom}
-        doc={doc}
-        onDoc={setDoc}
-        editorKey={editorKey}
-        error={useCustom ? (doc ? docError ?? customError : customError) : null}
-        tunes={tunes}
-        message={libMsg}
-        abrirSenal={cargarSenal}
-        onTry={() => {
-          setLibMsg(null);
-          setCustomKey(null);
-          setShift(0);
-          setLoop(null);
-          setUseCustom(true);
-          setTempo(draft.tempo);
-        }}
-        onSave={saveTune}
-        onPlay={(t) => { setUseCustom(false); setTempo(t.tempo); setQuery(t.id); }}
-        onEdit={(t) => {
-          setDraft({ id: t.id, name: t.name, composer: t.composer, key: t.key ?? '', mode: t.mode, tempo: t.tempo, style: t.style });
-          setDoc(t.doc ?? docFromChart(t.chart));
-          setCustom(t.chart);
-          setEditorKey((k) => k + 1);
-          setLibMsg(null);
-        }}
-        onDelete={(t) => {
-          if (!window.confirm(`¿Borrar "${t.name}"?`)) return;
-          setLibrary({ tunes: tunes.filter((x) => x.id !== t.id) });
-          if (selected.id === t.id) setQuery(PROGRESSIONS[0].id);
-        }}
-        onExport={exportTunes}
-        onImport={importTunes}
-        onBulkImport={bulkImport}
-      />
-
-      {/* la colección va debajo de Mis temas: es una fuente desde la que se agrega ahí */}
-      <ColeccionPanel key={query.get('buscar') ?? ''} consultaInicial={query.get('buscar') ?? ''} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
     </div>
   );
 }

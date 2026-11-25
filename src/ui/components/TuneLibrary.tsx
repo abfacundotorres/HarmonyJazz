@@ -40,7 +40,6 @@ export function TuneLibrary({
   editorKey,
   error,
   tunes,
-  onTry,
   onSave,
   onPlay,
   onEdit,
@@ -62,7 +61,6 @@ export function TuneLibrary({
   editorKey: number;
   error: string | null;
   tunes: UserTune[];
-  onTry: () => void;
   onSave: () => void;
   onPlay: (t: UserTune) => void;
   onEdit: (t: UserTune) => void;
@@ -160,7 +158,6 @@ export function TuneLibrary({
         )}
         {error && <p className="error">{error}</p>}
         <div className="row">
-          <button onClick={onTry}>Probar sin guardar</button>
           <button className="primary" onClick={onSave}>{draft.id ? 'Guardar cambios' : 'Guardar tema'}</button>
           {draft.id && <button onClick={() => { onDraft(EMPTY_DRAFT); onChartText(''); onDoc({ bars: [{ chords: [''] }] }); }}>Cancelar edición</button>}
         </div>

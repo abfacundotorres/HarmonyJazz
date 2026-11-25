@@ -9,7 +9,6 @@ test.describe('mi repertorio', () => {
     await page.goto('/#/repertorio');
     await expect(page.getByRole('heading', { name: 'Temas', exact: true })).toBeVisible();
     await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Ir a Play-along' })).toBeVisible();
     // Repertorio está en el grupo Tocar del menú y es la pantalla actual
     const menu = await abrirMenu(page);
     await expect(menu.getByRole('link', { name: 'Temas', exact: true })).toHaveAttribute('aria-current', 'page');
