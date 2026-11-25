@@ -4,6 +4,7 @@ import {
   Library, MAX_TUNES, normalizeChartText, parseImport, tuneToProgression, UserTune, validateTune,
 } from '../../content/library';
 import { ChartDoc, compileDoc, docFromChart, docLayout, emptyBar } from '../../content/chartDoc';
+import { lineaGuideTones, melodiaGuideTones } from '../../content/guideTones';
 import { melodyNotes, sliceMelody } from '../../content/melody';
 import { PROGRESIONES_DOMINIO_PUBLICO } from '../../content/dominioPublico';
 import { PROGRESSIONS, Progression } from '../../content/progressions';
@@ -147,8 +148,22 @@ export function PlayAlong() {
     const d = useCustom ? doc : selected.doc;
     return d ? docLayout(d) : null;
   }, [useCustom, doc, selected]);
+  // «Oír la línea de guide tones»: la línea suena con la trompeta sobre el acompañamiento (en lugar de la melodía del tema, si la hay)
+  const [oirGuia, setOirGuia] = useState(false);
+  const guiaMel = useMemo(() => {
+    if (!oirGuia) return undefined;
+    const notas = melodiaGuideTones(chart, lineaGuideTones(chart, layout && layout.order.length === chart.bars ? layout.order : undefined));
+    return loopValid ? sliceMelody(notas, loopValid[0], loopValid[1], barLen(chart)) : notas;
+  }, [oirGuia, chart, loopValid, layout]);
 
   const pos = usePosition();
+  // la nota de la línea que suena: se recuerda entre aviso y aviso de tiempo y se borra al parar
+  const [notaGuia, setNotaGuia] = useState(-1);
+  useEffect(() => {
+    if (!pos || pos.owner !== OWNER) return;
+    if (pos.note !== undefined) setNotaGuia(pos.note);
+    else if (pos.countIn || pos.chorus < 0) setNotaGuia(-1);
+  }, [pos]);
   const control = useRef<PlayerControl | null>(null);
   // el paso «Grabado completo» de Mi repertorio se puede marcar desde la toma, si el tema está en el repertorio
   const [rep, setRep] = useRepertorio();
@@ -464,8 +479,9 @@ export function PlayAlong() {
           tempo={tempo}
           onTempo={setTempo}
           style={base.style}
-          melody={melody}
-          allowMelody={!!melody}
+          melody={oirGuia ? guiaMel : melody}
+          allowMelody={!oirGuia && !!melody}
+          oirLinea={oirGuia ? true : undefined}
           owner={OWNER}
           label={useCustom ? 'Progresión propia' : loc(selected, selected.name)}
           href={useCustom ? undefined : `#/playalong?${new URLSearchParams({ p: selected.id, ...(baseKey ? { k: key } : {}) })}`}
@@ -608,7 +624,7 @@ export function PlayAlong() {
           }}
           tramoActual={tramoFloja}
         />
-        <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} />
+        <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} notaActual={oirGuia && !loopValid ? notaGuia : -1} oir={oirGuia} onOir={() => setOirGuia((v) => !v)} />
         <FichaAcordes chart={chart} layout={layout} />
         <TemasParecidos chart={chart} titulo={useCustom ? '' : selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
         <MapaArmonico

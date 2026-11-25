@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { DocLayout } from '../../content/chartDoc';
 import { lineaGuideTones, melodiaGuideTones, textoGrado, textoMovimiento } from '../../content/guideTones';
-import { toAbc } from '../../exercises/abc';
+import { toAbcMap } from '../../exercises/abc';
 import type { Chart } from '../../theory/chart';
 import { noteName, simplify, transposeNote } from '../../theory/notes';
 import { useReading } from '../hooks';
@@ -19,6 +19,9 @@ export function LineaGuiaTones({
   keyValue,
   minor,
   compasActual = -1,
+  notaActual = -1,
+  oir,
+  onOir,
 }: {
   chart: Chart;
   layout?: DocLayout | null;
@@ -27,13 +30,18 @@ export function LineaGuiaTones({
   minor: boolean;
   /** Compás que suena (de la grilla que se toca, 0-based); -1 si no suena. */
   compasActual?: number;
+  /** Nota de la línea que suena (cuando se oye la línea y no hay loop); -1 si ninguna. */
+  notaActual?: number;
+  /** ¿La línea suena sobre el acompañamiento? */
+  oir: boolean;
+  onOir: () => void;
 }) {
   const { iv } = useReading();
   const [open, setOpen] = useState(false);
   const orden = layout && layout.order.length === chart.bars ? layout.order : undefined;
   const linea = useMemo(() => (open ? lineaGuideTones(chart, orden) : []), [open, chart, orden]);
-  const abc = useMemo(
-    () => (linea.length ? toAbc(chart, melodiaGuideTones(chart, linea), { transpose: iv, key: keyValue, mode: minor ? 'minor' : 'major', barsPerLine: 4 }) : ''),
+  const { abc, firstPiece } = useMemo(
+    () => (linea.length ? toAbcMap(chart, melodiaGuideTones(chart, linea), { transpose: iv, key: keyValue, mode: minor ? 'minor' : 'major', barsPerLine: 4 }) : { abc: '', firstPiece: [] as number[] }),
     [linea, chart, iv, keyValue, minor],
   );
   const nombre = (n: Parameters<typeof transposeNote>[0]) => noteName(simplify(transposeNote(n, iv)), true);
@@ -47,8 +55,14 @@ export function LineaGuiaTones({
       {linea.length > 0 && (
         <>
           <div className="linea-pentagrama">
-            <Notation abc={abc} highlightBar={compasActual} />
+            <Notation abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />
           </div>
+          <p>
+            <button className={oir ? 'on' : ''} aria-pressed={oir} onClick={onOir}>
+              🔊 {oir ? 'Dejar de oír la línea' : 'Oír la línea sobre el acompañamiento'}
+            </button>
+          </p>
+          {oir && <p className="muted small" role="status">La línea suena con la trompeta mientras toca el play-along (y reemplaza a la melodía del tema, si tiene). Si cambiás el loop o la tonalidad, se ajusta sola.</p>}
           <p className="linea-notas" aria-label="La línea completa">
             {linea.map((p, i) => (
               <span key={i}>{i > 0 && ' → '}<b>{nombre(p.nota)}</b></span>
