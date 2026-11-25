@@ -1081,3 +1081,11 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .linea-lista li { display: grid; grid-template-columns: 5.5em 4.2em 1fr; gap: 2px 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .linea-lista li > :last-child { grid-column: 2 / -1; }
 .linea-acorde { font-family: var(--serif); font-weight: 800; font-size: 1.3rem; color: var(--accent); }
+
+/* Temas de la colección con la misma armonía */
+.parecidos { margin-top: 10px; }
+.parecidos > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.parecidos-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+.parecidos-lista li { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.parecidos-lista .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.parecidos-lista button { min-height: 44px; }

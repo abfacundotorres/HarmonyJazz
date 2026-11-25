@@ -17,6 +17,7 @@ import { TakeAudio } from '../components/TakeAudio';
 import { ChordBoard, CurrentChord } from '../components/ChordInfo';
 import { FichaAcordes } from '../components/FichaAcordes';
 import { LineaGuiaTones } from '../components/LineaGuiaTones';
+import { TemasParecidos } from '../components/TemasParecidos';
 import { MapaArmonico } from '../components/MapaArmonico';
 import { QuizAcordes } from '../components/QuizAcordes';
 import { PracticaTramos } from '../components/PracticaTramos';
@@ -609,6 +610,7 @@ export function PlayAlong() {
         />
         <LineaGuiaTones chart={chart} layout={layout} />
         <FichaAcordes chart={chart} layout={layout} />
+        <TemasParecidos chart={chart} titulo={useCustom ? '' : selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
         <MapaArmonico
           chart={chart}
           layout={layout}
