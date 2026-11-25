@@ -39,6 +39,11 @@ export const useMastery = () => usePersistent<Mastery>('mastery', {});
 export const useMonth = () => usePersistent<MonthPlan>('month', EMPTY_MONTH);
 export const useCurricula = () => usePersistent<CurriculaProgress>('curricula', EMPTY_CURRICULA);
 export const useRepertorio = () => usePersistent<Repertorio>('repertorio', {});
+/** El tema que se está estudiando ahora (sólo su id). Vacío si no hay ninguno. */
+export interface TemaEstudio {
+  id?: string;
+}
+export const useTemaEstudio = () => usePersistent<TemaEstudio>('temaestudio', {});
 export const useSeen = () => usePersistent<Seen>('seen', {});
 /** Los temas del repertorio (id y nombre): los propios y la forma del mes. Sirve para dar nombre a lo que se repasa. */
 export function useTemasDeRepertorio() {

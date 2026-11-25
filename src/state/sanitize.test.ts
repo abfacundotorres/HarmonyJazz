@@ -144,3 +144,12 @@ describe('el detalle de la escalera de repertorio guardado', () => {
     expect(sanitizeKey('repertorio', { 'u:a': { hechos: [1], ultimo: 3, inicio: 2 } })).toEqual({ 'u:a': { hechos: [1], ultimo: 3, inicio: 2 } });
   });
 });
+
+describe('tema en estudio', () => {
+  it('guarda sólo un id válido; lo dañado queda vacío o se descarta', () => {
+    expect(sanitizeKey('temaestudio', { id: 'ii-v-i', otro: 1 })).toEqual({ id: 'ii-v-i' });
+    expect(sanitizeKey('temaestudio', { id: 5 })).toEqual({});
+    expect(sanitizeKey('temaestudio', { id: 'x'.repeat(200) })).toEqual({ id: 'x'.repeat(80) });
+    expect(sanitizeKey('temaestudio', 'x')).toBeNull();
+  });
+});

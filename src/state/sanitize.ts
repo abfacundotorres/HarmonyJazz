@@ -204,6 +204,13 @@ export const sanitizeCurricula: Sanitizer = (raw) => {
   return { aprobadas: ints(raw.aprobadas, 1, 36), actual, checks };
 };
 
+/** El tema que se está estudiando ahora: sólo su identificador (el nombre sale de la lista de temas, que puede cambiar). */
+export const sanitizeTemaEstudio: Sanitizer = (raw) => {
+  if (!isObj(raw)) return null;
+  const id = str(raw.id, 80);
+  return id ? { id } : {};
+};
+
 /** Mi repertorio: por tema, pasos logrados, último día que se tocó y día en que se empezó. */
 export const sanitizeRepertorio: Sanitizer = (raw) => {
   if (!isObj(raw)) return null;
@@ -245,6 +252,7 @@ export const SANITIZERS: Record<string, Sanitizer> = {
   camino: sanitizeCamino,
   curricula: sanitizeCurricula,
   repertorio: sanitizeRepertorio,
+  temaestudio: sanitizeTemaEstudio,
 };
 
 /**

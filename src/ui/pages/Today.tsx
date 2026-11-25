@@ -8,6 +8,7 @@ import { dayNum, dueItems } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
 import { abcOf, type PracticeExercise } from '../../content/practice';
 import { EarReview, useEarReview } from '../components/EarReview';
+import { TemaEnEstudio } from '../components/TemaEnEstudio';
 import { RepertorioReview, useRepasoRepertorio } from '../components/RepertorioReview';
 import { ReviewList } from '../components/ReviewList';
 import { phraseNames, showable } from '../progressItems';
@@ -83,6 +84,7 @@ export function Today() {
           <a className="button" href="#/mas">Ir a la copia</a>
         </p>
       )}
+      <TemaEnEstudio />
       <section className="card hero">
         <div>
           <span className="lbl">Tonalidad del día</span>

@@ -1099,3 +1099,9 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .atril-guiabtn { min-width: 44px; font-size: 1.3rem; padding: 0 .4em; }
 .atril-guiabtn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .atril-guia { margin: 4px 0; padding: 2px 0; }
+
+/* Hoy: el tema en estudio */
+.temaestudio .h3like { margin: 2px 0 4px; font-size: 1.5rem; }
+.temaestudio-datos { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 2px; }
+.temaestudio .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.temaestudio .row > * { min-height: 44px; }
