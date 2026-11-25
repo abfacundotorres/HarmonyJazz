@@ -608,7 +608,7 @@ export function PlayAlong() {
           }}
           tramoActual={tramoFloja}
         />
-        <LineaGuiaTones chart={chart} layout={layout} />
+        <LineaGuiaTones chart={chart} layout={layout} keyValue={baseKey ? key : null} minor={base.mode === 'minor'} compasActual={mine && !mine.countIn && mine.bar >= 0 ? mine.bar + (loopValid ? loopValid[0] : 0) : -1} />
         <FichaAcordes chart={chart} layout={layout} />
         <TemasParecidos chart={chart} titulo={useCustom ? '' : selected.name} existentes={nombresEnMisTemas} onAgregar={agregarDeColeccion} onTocar={tocarExistente} />
         <MapaArmonico
