@@ -52,3 +52,32 @@ test('mientras suena el play-along se resalta en el pentagrama el compás que va
   await page.getByRole('button', { name: 'Detener' }).first().click();
   await expect(pent.locator('.hj-current')).toHaveCount(0);
 });
+
+test('la línea se puede oír sobre el acompañamiento: suena con la trompeta y el pentagrama resalta la nota que suena', async ({ page }) => {
+  await sinAtrilAutomatico(page);
+  await conTema(page);
+  await page.goto('/#/playalong?p=u:lineatema');
+  await page.waitForSelector('.board');
+  await abrirEstudio(page);
+  await page.locator('details.linea > summary').click();
+  const pent = page.locator('details.linea .linea-pentagrama');
+  const oir = page.getByRole('button', { name: 'Oír la línea sobre el acompañamiento' });
+  await expect(oir).toHaveAttribute('aria-pressed', 'false');
+  await expect(pent.locator('.hj-note')).toHaveCount(0);
+
+  await oir.click();
+  await expect(page.getByRole('button', { name: 'Dejar de oír la línea' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/La línea suena con la trompeta/)).toBeVisible();
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  // el motor avisa de cada nota de la línea que toca: el pentagrama la resalta
+  await expect(pent.locator('.hj-note').first()).toBeAttached({ timeout: 20_000 });
+  await page.getByRole('button', { name: 'Detener' }).first().click();
+  await expect(pent.locator('.hj-note')).toHaveCount(0);
+
+  // dejar de oírla: ya no hay notas avisadas
+  await page.getByRole('button', { name: 'Dejar de oír la línea' }).click();
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  await expect(pent.locator('.hj-current').first()).toBeAttached({ timeout: 20_000 }); // el compás sigue resaltándose
+  await expect(pent.locator('.hj-note')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Detener' }).first().click();
+});

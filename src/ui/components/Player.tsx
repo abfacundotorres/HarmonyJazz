@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useId, useRef, useState } from 'react';
+import { MutableRefObject, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine';
 import type { MelNote } from '../../exercises/generators';
 import { beatsPerBar, type Chart } from '../../theory/chart';
@@ -16,6 +16,8 @@ export interface PlayerProps {
   style?: Style;
   /** Mostrar la opción de escuchar la línea notada. */
   allowMelody?: boolean;
+  /** Si está, manda sobre «Oír la línea»: la melodía suena (true) o no (false) sin pasar por el botón del reproductor. */
+  oirLinea?: boolean;
   defaultMetronome?: boolean;
   /** Identificador estable para saber si este reproductor es el que suena. */
   owner?: string;
@@ -36,7 +38,7 @@ export interface PlayerControl {
   start: (choruses: number) => Promise<boolean>;
 }
 
-export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, defaultMetronome, owner, onPlayingChange, controlRef, label, href }: PlayerProps) {
+export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 'swing', allowMelody, oirLinea, defaultMetronome, owner, onPlayingChange, controlRef, label, href }: PlayerProps) {
   const autoId = useId();
   const id = owner ?? autoId;
   const [settings, setSettings] = useSettings();
@@ -46,6 +48,8 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   const [paused, setPaused] = useState(retoma && engine.paused);
   const [countIn, setCountIn] = useState(true);
   const [mix, setMix] = useState<Mix>({ piano: true, bass: true, drums: true, melody: false, metronome: !!defaultMetronome });
+  /** La mezcla que suena: «Oír la línea» puede venir impuesto desde afuera. */
+  const mixSuena = useMemo<Mix>(() => (oirLinea === undefined ? mix : { ...mix, melody: oirLinea }), [mix, oirLinea]);
   const [style, setStyle] = useState<Style>(initialStyle);
   useEffect(() => setStyle(initialStyle), [initialStyle]);
 
@@ -67,7 +71,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
   // límite de coros de una toma completa: se mantiene si el motor se reinicia por un cambio en vivo
   const limit = useRef<number | null>(null);
   const opts = (): PlayOptions => ({
-    chart, tempo, swing: settings.swing, style, countIn, melody, mix, owner: id, ramp, label, href,
+    chart, tempo, swing: settings.swing, style, countIn, melody, mix: mixSuena, owner: id, ramp, label, href,
     ...(limit.current ? { choruses: limit.current, onEnd: () => { limit.current = null; setPlaying(false); } } : {}),
   });
   const optsRef = useRef(opts);
@@ -114,7 +118,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tempo, settings.swing, mix, style, chart, melody, rampOn, rampStep, rampEvery, rampMax]);
+  }, [tempo, settings.swing, mixSuena, style, chart, melody, rampOn, rampStep, rampEvery, rampMax]);
 
   // detener al desmontar
   useEffect(() => () => {
