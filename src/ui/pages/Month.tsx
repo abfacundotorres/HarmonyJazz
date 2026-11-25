@@ -231,7 +231,7 @@ export function Month() {
             </label>
             <p className="muted small">
               {tunes.length === 0
-                ? 'La app no trae temas de terceros: para trabajar uno (por ejemplo "Autumn Leaves") cargá su cifrado en Play-along → Mis temas, y aparece acá. Mientras tanto podés elegir una forma incluida.'
+                ? 'La app no trae temas de terceros: para trabajar uno (por ejemplo "Autumn Leaves") cargá su cifrado en Temas → Mis temas, y aparece acá. Mientras tanto podés elegir una forma incluida.'
                 : 'El recorrido de repertorio es el mismo para cualquier tema: forma y armonía, melodía, improvisar y grabar.'}
             </p>
             <details>

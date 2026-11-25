@@ -9,7 +9,6 @@ test.describe('mi repertorio', () => {
     await page.goto('/#/repertorio');
     await expect(page.getByRole('heading', { name: 'Temas', exact: true })).toBeVisible();
     await expect(page.getByText(/Todavía no cargaste ningún tema/)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Ir a Play-along' })).toBeVisible();
     // Repertorio está en el grupo Tocar del menú y es la pantalla actual
     const menu = await abrirMenu(page);
     await expect(menu.getByRole('link', { name: 'Temas', exact: true })).toHaveAttribute('aria-current', 'page');
@@ -356,5 +355,29 @@ test.describe('Temas: estados, orden y tema en estudio', () => {
     await page.goto('/#/repertorio');
     await page.getByRole('region', { name: 'Tema nuevo' }).getByRole('button', { name: 'Dejar de estudiarlo' }).click();
     await expect(page.getByRole('region', { name: 'Tema nuevo' })).not.toContainText('En estudio');
+  });
+});
+
+test.describe('Temas: Mis temas y Mi colección viven acá', () => {
+  test('en Temas están el editor y la colección; el Play-along ya no los trae', async ({ page }) => {
+    await page.goto('/#/repertorio');
+    await expect(page.locator('.library')).toBeVisible();
+    await expect(page.locator('details.coleccion')).toBeVisible();
+    await page.goto('/#/playalong');
+    await page.waitForSelector('.player');
+    await expect(page.locator('.library')).toHaveCount(0);
+    await expect(page.locator('details.coleccion')).toHaveCount(0);
+  });
+
+  test('un tema escrito como texto se guarda y aparece en la lista de Temas, sin salir de la pantalla', async ({ page }) => {
+    await page.goto('/#/repertorio?cargar=1');
+    await page.getByLabel('Nombre').fill('Tema de texto');
+    await page.getByRole('button', { name: 'Texto' }).click();
+    await page.getByRole('textbox', { name: 'Cifrado' }).fill('Dm7 | G7 | Cmaj7 | Cmaj7');
+    await page.getByRole('button', { name: 'Guardar tema' }).click();
+    await expect(page).toHaveURL(/#\/repertorio/);
+    await expect(page.getByRole('region', { name: 'Tema de texto' })).toContainText('Sin empezar');
+    await page.getByRole('region', { name: 'Tema de texto' }).getByRole('link', { name: 'Abrir en el play-along' }).click();
+    await expect(page.getByLabel('Tema', { exact: true })).toHaveValue(/^u:/);
   });
 });

@@ -5,7 +5,7 @@
  *
  * La app no trae temas de terceros: cada mes sugiere una **forma incluida** para practicar lo que se estudia y, como
  * ejemplos, títulos de standards de ese tipo (sólo los nombres) para que cargues su cifrado de tu libro en
- * Play-along → Mis temas. El orden y los textos son criterio propio, sin revisión pedagógica.
+ * Temas → Mis temas. El orden y los textos son criterio propio, sin revisión pedagógica.
  */
 import { type FocusWeek, REPERTOIRE_WEEKS } from './focus';
 import { task } from './focusShapes';

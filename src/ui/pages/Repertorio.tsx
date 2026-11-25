@@ -3,6 +3,7 @@ import { alternarTonalidad, type Avance, BPM, detalleDe, estadoTema, fijarBpm, l
 import { dayNum } from '../../state/progress';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute, useTemaEstudio } from '../hooks';
+import { MisTemas } from '../components/MisTemas';
 import { QueEstudiar } from '../components/QueEstudiar';
 import { TemaEjercicios } from '../components/TemaEjercicios';
 import { progresionDeTema } from '../progresionDeTema';
@@ -21,6 +22,8 @@ export function Repertorio() {
   const [lib] = usePersistentLibrary();
   const [mp] = useMonth();
   const [estudio, setEstudio] = useTemaEstudio();
+  // «＋ Cargar un tema» (o ?cargar=1 desde el Play-along): abre Mis temas y lo lleva a la vista
+  const [cargarSenal, setCargarSenal] = useState(0);
   const hoy = dayNum();
   const today = useMemo(() => new Date(), []);
   const { temas, delMes } = useMemo(() => temasDeRepertorio(lib, mp, today), [lib, mp, today]);
@@ -40,9 +43,12 @@ export function Repertorio() {
   return (
     <div className="page repertorio">
       <section className="card">
-        <h2>Temas</h2>
+        <header>
+          <h2>Temas</h2>
+          <button onClick={() => setCargarSenal((n) => n + 1)}>＋ Cargar un tema</button>
+        </header>
         <p className="muted">
-          Todos tus temas en un solo lugar; el que marcás «Estudiar este» queda arriba y en Hoy. Cada uno tiene siete pasos, de saber la forma a tenerlo grabado; cuando están los siete queda <b>terminado</b> y la app te avisa cuándo repasarlo. Para cargar o importar temas: Play-along → Mis temas y Mi colección.
+          Todos tus temas en un solo lugar; el que marcás «Estudiar este» queda arriba y en Hoy. Cada uno tiene siete pasos, de saber la forma a tenerlo grabado; cuando están los siete queda <b>terminado</b> y la app te avisa cuándo repasarlo. Más abajo cargás temas nuevos (Mis temas) y buscás en tu colección.
         </p>
         {temas.length > 0 && (
           <p className="small" role="status">
@@ -53,10 +59,7 @@ export function Repertorio() {
 
       {temas.length === 0 && (
         <section className="card">
-          <p>Todavía no cargaste ningún tema. Cargá el cifrado de un standard de tu libro en Play-along → Mis temas y aparece acá.</p>
-          <p>
-            <a className="button primary" href="#/playalong">Ir a Play-along</a>
-          </p>
+          <p>Todavía no cargaste ningún tema. Cargá el cifrado de un standard de tu libro en «Mis temas» (más abajo) y aparece acá.</p>
         </section>
       )}
 
@@ -78,6 +81,8 @@ export function Repertorio() {
           lib={lib}
         />
       ))}
+
+      <MisTemas buscar={query.get('buscar') ?? ''} cargarSenal={cargarSenal + (query.get('cargar') === '1' ? 1 : 0)} />
 
       <QueEstudiar tunes={lib.tunes} />
     </div>

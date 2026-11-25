@@ -28,7 +28,7 @@ export function QueEstudiar({ tunes }: { tunes: readonly { id: string; name: str
               <a className="button" href={`#/playalong?p=${encodeURIComponent(id)}`} aria-label={`Tocar ${t.titulo}`}>Tocar</a>
             </>
           ) : (
-            <a className="button" href={`#/playalong?buscar=${encodeURIComponent(t.q)}`} aria-label={`Buscar ${t.titulo} en mi colección`}>Buscar en mi colección</a>
+            <a className="button" href={`#/repertorio?buscar=${encodeURIComponent(t.q)}`} aria-label={`Buscar ${t.titulo} en mi colección`}>Buscar en mi colección</a>
           )}
         </span>
       </li>
@@ -46,7 +46,7 @@ export function QueEstudiar({ tunes }: { tunes: readonly { id: string; name: str
         {sig && (
           <>
             {' '}Sigue: <b>{sig.titulo}</b> (etapa {sig.etapa}).{' '}
-            <a className="button" href={`#/playalong?buscar=${encodeURIComponent(sig.q)}`} aria-label={`Buscar ${sig.titulo} en mi colección`}>Buscar en mi colección</a>
+            <a className="button" href={`#/repertorio?buscar=${encodeURIComponent(sig.q)}`} aria-label={`Buscar ${sig.titulo} en mi colección`}>Buscar en mi colección</a>
           </>
         )}
       </p>

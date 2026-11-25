@@ -27,10 +27,12 @@ test('sin colección cargada dice dónde cargarla', async ({ page }) => {
 });
 
 test('compara la armonía con toda la colección y muestra los más parecidos, sin importar la tonalidad y sin los que no se parecen; se agrega a Mis temas', async ({ page }) => {
-  await ir(page);
+  // la colección se carga en Temas y queda guardada en el navegador; el Play-along la usa para buscar parecidos
+  await page.goto('/#/repertorio');
   await page.getByText('Mi colección (archivo JSON)').click();
   await page.locator('input[aria-label="Archivo de la colección"]').setInputFiles({ name: 'mis-temas.txt', mimeType: 'text/plain', buffer: COLECCION });
   await expect(page.getByText('«mis-temas.txt» · 1502 temas')).toBeVisible();
+  await ir(page);
 
   await abrirParecidos(page);
   await page.getByRole('button', { name: 'Buscar en mi colección' }).click();

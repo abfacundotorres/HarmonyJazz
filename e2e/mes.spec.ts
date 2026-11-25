@@ -89,7 +89,7 @@ test.describe('el mes con focos', () => {
     await page.locator('#f-t-largas-artic').check();
     await page.locator('#f-l-triadas-mayores').check();
     // el tema: sin temas propios se ofrece una forma incluida y se explica cómo cargar uno
-    await expect(page.getByText(/cargá su cifrado en Play-along → Mis temas/)).toBeVisible();
+    await expect(page.getByText(/cargá su cifrado en Temas → Mis temas/)).toBeVisible();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page).toHaveURL(/#\/hoy$/);
 

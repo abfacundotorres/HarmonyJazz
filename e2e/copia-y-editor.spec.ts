@@ -43,8 +43,8 @@ test.describe('copia de seguridad', () => {
 
 test.describe('editor de grilla', () => {
   test('atajos: plantillas, acordes de la tonalidad y transposición reversible', async ({ page }) => {
-    await page.goto('/#/playalong');
-    await page.getByText(/Mis temas/).first().click();
+    await page.goto('/#/repertorio');
+    await page.locator('.library > details > summary').click();
     await page.getByText('Atajos: acordes de la tonalidad y plantillas').click();
     await page.getByLabel('Tonalidad de los atajos').selectOption('Bb');
     await page.getByRole('button', { name: 'Blues de jazz (12 compases)' }).click();

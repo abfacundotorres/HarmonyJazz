@@ -41,8 +41,8 @@ test.describe('qué estudiar', () => {
     await expect(page.locator('details.coleccion')).toHaveAttribute('open', '');
     await page.locator('input[aria-label="Archivo de la colección"]').setInputFiles({ name: 'c.json', mimeType: 'application/json', buffer: COLECCION });
     await expect(page.locator('.colecc-buscar input')).toHaveValue('c jam blues');
-    await expect(page.locator('.colecc-lista li')).toHaveCount(1);
-    await expect(page.locator('.colecc-lista li')).toContainText('C Jam Blues');
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(1);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toContainText('C Jam Blues');
   });
 
   test('los créditos citan las listas de las que sale', async ({ page }) => {

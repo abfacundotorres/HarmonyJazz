@@ -20,13 +20,13 @@ const relleno = Array.from({ length: 1500 }, (_, i) => ({
 const COLECCION = Buffer.from(JSON.stringify([FINALES, VALS, CINCO, ARBOL, ...relleno]));
 
 const abrir = async (page: Page) => {
-  await page.goto('/#/playalong');
-  await page.waitForSelector('.player');
+  await page.goto('/#/repertorio');
+  await page.waitForSelector('.library');
   if (!(await page.locator('details.coleccion[open]').count())) await page.getByText('Mi colección (archivo JSON)').click();
 };
 const subir = (page: Page, buffer: Buffer = COLECCION, name = 'mis-temas.txt', mimeType = 'text/plain') =>
   page.locator('input[aria-label="Archivo de la colección"]').setInputFiles({ name, mimeType, buffer });
-const fila = (page: Page, titulo: string) => page.locator('.colecc-lista li', { hasText: titulo });
+const fila = (page: Page, titulo: string) => page.locator('details.coleccion .colecc-lista li', { hasText: titulo });
 const biblioteca = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:library') ?? '{"tunes":[]}').tunes as { name: string; composer: string; key: string | null; mode: string; chart: string; style: string; tempo: number; doc?: { bars: { chords: string[]; section?: string; repeatStart?: boolean; ending?: number }[] } }[]);
 
 test.describe('mi colección', () => {
@@ -36,9 +36,9 @@ test.describe('mi colección', () => {
     await expect(page.locator('details.coleccion').getByText(/no se sube a ningún lado/)).toBeVisible();
     await subir(page); // la extensión .txt (como llega por WhatsApp) también sirve
     await expect(page.getByText('«mis-temas.txt» · 1504 temas')).toBeVisible();
-    await expect(page.locator('.colecc-lista li')).toHaveCount(30);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(30);
     await page.getByRole('button', { name: /^Ver más \(1474\)/ }).click();
-    await expect(page.locator('.colecc-lista li')).toHaveCount(60);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(60);
   });
 
   test('se busca por título o compositor, sin importar mayúsculas ni acentos, y rápido aunque haya 1500 temas', async ({ page }) => {
@@ -46,19 +46,19 @@ test.describe('mi colección', () => {
     await subir(page);
     const buscar = page.getByLabel('Buscar', { exact: true });
     await buscar.fill('arbol');
-    await expect(page.locator('.colecc-lista li')).toHaveCount(1);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(1);
     await expect(fila(page, 'Árbol de otoño')).toContainText('Ñandú Pérez');
     await expect(page.getByText('1 de 1504 temas')).toBeVisible();
     await buscar.fill('PEREZ'); // por compositor
-    await expect(page.locator('.colecc-lista li')).toHaveCount(1);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(1);
     await buscar.fill('relleno 07');
     // cada palabra puede estar en cualquier parte del título («0107», «0170»…): la cuenta esperada sale con la misma regla
     const esperados = relleno.filter((t) => t.Title.toLowerCase().includes('07')).length;
     expect(esperados).toBeGreaterThan(30);
-    await expect(page.locator('.colecc-lista li')).toHaveCount(30); // se muestran de a 30
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(30); // se muestran de a 30
     await expect(page.getByText(`${esperados} de 1504 temas`)).toBeVisible();
     await buscar.fill('zzzz');
-    await expect(page.locator('.colecc-lista li')).toHaveCount(0);
+    await expect(page.locator('details.coleccion .colecc-lista li')).toHaveCount(0);
     await buscar.fill('');
     await expect(page.getByText('1504 temas', { exact: true })).toBeVisible();
   });
@@ -96,7 +96,8 @@ test.describe('mi colección', () => {
     const t = (await biblioteca(page))[0];
     expect(t).toMatchObject({ name: 'Vals de prueba', key: 'D', mode: 'minor', style: 'swing' });
     expect(t.chart.startsWith('@3/4 ')).toBe(true);
-    // «Tocar» sobre un tema que ya está lo elige de nuevo
+    // «Tocar» sobre un tema que ya está lo elige de nuevo (se vuelve a Temas, donde está la colección)
+    await abrir(page);
     await page.getByLabel('Buscar', { exact: true }).fill('árbol');
     await page.getByRole('button', { name: 'Agregar Árbol de otoño a Mis temas' }).click();
     await page.getByLabel('Buscar', { exact: true }).fill('vals');
@@ -119,12 +120,12 @@ test.describe('mi colección', () => {
     await subir(page);
     await expect(page.getByText('1504 temas').first()).toBeVisible();
     await page.reload();
-    await page.waitForSelector('.player');
+    await page.waitForSelector('.library');
     await expect(page.getByText('«mis-temas.txt» · 1504 temas')).toBeVisible({ timeout: 15_000 }); // se abrió sola
     await page.getByRole('button', { name: 'Quitar la colección' }).click();
     await expect(page.getByRole('button', { name: 'Elegir archivo…' })).toBeVisible();
     await page.reload();
-    await page.waitForSelector('.player');
+    await page.waitForSelector('.library');
     await page.getByText('Mi colección (archivo JSON)').click();
     await expect(page.getByRole('button', { name: 'Elegir archivo…' })).toBeVisible();
   });
