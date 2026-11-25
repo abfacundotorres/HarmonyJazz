@@ -538,6 +538,11 @@ export function PlayAlong() {
           onPeek={() => setMirar((v) => !v)}
           transpose={showKeys ? { kind: 'key', value: key, minor: base.mode === 'minor', onChange: changeKey } : { kind: 'shift', shift, onShift: (d) => setShift((s) => s + d), onReset: () => setShift(0) }}
           consigna={tomaActiva ? consignaToma(corosToma, mine ? (mine.countIn ? -1 : mine.chorus) : -1) : null}
+          keyValue={baseKey ? key : null}
+          minor={base.mode === 'minor'}
+          oirGuia={oirGuia}
+          onOirGuia={() => setOirGuia((v) => !v)}
+          notaGuia={!loopValid ? notaGuia : -1}
         />
       )}
 
