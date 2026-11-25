@@ -1105,3 +1105,14 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .temaestudio-datos { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 2px; }
 .temaestudio .row { display: flex; flex-wrap: wrap; gap: 8px; }
 .temaestudio .row > * { min-height: 44px; }
+
+/* Reto de guide tones: un casillero por acorde de la forma */
+.reto-mapa { list-style: none; margin: 10px 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.reto { display: grid; grid-template-columns: auto auto; gap: 0 6px; align-items: baseline; min-width: 5.2em; padding: 4px 8px; border: 2px solid var(--line); border-radius: 8px; background: var(--surface); }
+.reto .n { grid-row: 1 / 3; font-size: .72rem; color: var(--muted); align-self: start; }
+.reto .s { font-family: var(--serif); font-weight: 800; }
+.reto .m { grid-column: 2; font-size: .8rem; min-height: 1.1em; }
+.reto.acierto { border-color: var(--good); }
+.reto.fallo { border-color: var(--bad); }
+.reto.silencio { border-style: dashed; color: var(--muted); }
+.reto.ahora { box-shadow: 0 0 0 2px var(--accent); }
