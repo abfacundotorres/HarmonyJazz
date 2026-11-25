@@ -58,9 +58,8 @@ test('con la opción de tira, los guide tones van en una sola línea y la nota q
   await expect(guia.locator('.hj-note').first()).toBeAttached({ timeout: 20_000 });
   // avanza a una nota de la segunda mitad: sigue en el mismo lugar de la pantalla (±2 px) y la partitura se movió
   await expect.poll(async () => guia.locator('svg').evaluate((s) => (s as SVGElement).style.transform), { timeout: 30_000 }).not.toBe('translateX(0px)');
-  const a = await x();
-  await page.waitForTimeout(1500);
-  const b = await x();
-  expect(Math.abs(a - b)).toBeLessThan(40);
+  // una vez asentado el desplazamiento, la nota que suena está siempre cerca del 30 % del ancho (se espera a que termine la transición)
+  const caja = (await guia.boundingBox())!;
+  await expect.poll(async () => Math.abs((await x()) - caja.x - caja.width * 0.3), { timeout: 10_000 }).toBeLessThan(25);
   await atril(page).getByRole('button', { name: 'Detener' }).click();
 });
