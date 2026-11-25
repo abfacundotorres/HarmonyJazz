@@ -1,4 +1,4 @@
-import { expect, sinAtrilAutomatico, test } from './helpers';
+import { abrirPasos, expect, sinAtrilAutomatico, test } from './helpers';
 
 // Toma completa del tema: micrófono + acompañamiento con cuenta previa durante N coros (melodía, solo, melodía), que se
 // detiene sola y deja «Tu toma». El navegador de prueba usa un micrófono falso.
@@ -21,6 +21,7 @@ test.describe('toma completa', () => {
   test('desde Mi repertorio, el paso «Grabado completo» lleva a la toma con la tarjeta abierta', async ({ page }) => {
     await conTema(page);
     await page.goto('/#/repertorio');
+    await abrirPasos(page);
     const tema = page.getByRole('region', { name: 'Tema de toma' });
     await tema.getByRole('link', { name: /Grabar una toma completa/ }).click();
     await expect(page).toHaveURL(/#\/playalong\?p=u%3Atoma&toma=1/);

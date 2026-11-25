@@ -179,3 +179,9 @@ export async function cambiarVista(page: Page, vista: 'Si♭' | 'Concierto') {
   await page.getByRole('group', { name: 'Transposición' }).getByRole('button', { name: vista, exact: true }).click();
   await page.goto('/' + volver);
 }
+
+/** En «Temas», abre los pasos de cada tema que estén plegados (los que no se empezaron o ya terminaron arrancan cerrados). */
+export async function abrirPasos(page: Page) {
+  await page.locator('section.tema').first().waitFor();
+  for (const s of await page.locator('details.pasos-det:not([open]) > summary').all()) await s.click();
+}

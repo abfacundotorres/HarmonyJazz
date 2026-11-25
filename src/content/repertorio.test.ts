@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alternarTonalidad, BPM, completo, detalleDe, fijarBpm, llegoAlTempo, logrado, logrados, marcar, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from './repertorio';
+import { alternarTonalidad, BPM, completo, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrado, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from './repertorio';
 
 describe('mi repertorio', () => {
   it('son siete pasos únicos, de la forma al grabado', () => {
@@ -119,5 +119,25 @@ describe('tempo y tonalidades de cada paso', () => {
     expect(llegoAlTempo(119, 120)).toBe(false);
     expect(llegoAlTempo(120, 120)).toBe(true);
     expect(llegoAlTempo(160, 120)).toBe(true);
+  });
+});
+
+describe('estado y orden de los temas', () => {
+  const rep = {
+    a: { hechos: [0, 1], ultimo: 5, inicio: 1 },
+    b: { hechos: [0, 1, 2, 3, 4, 5, 6], ultimo: 5, inicio: 1 },
+    c: { hechos: [], ultimo: 9, inicio: 1 },
+  };
+  it('distingue sin empezar, aprendiendo y terminado', () => {
+    expect(estadoTema(undefined)).toBe('sin');
+    expect(estadoTema({ hechos: [], ultimo: 0, inicio: 3 })).toBe('sin');
+    expect(estadoTema(rep.c)).toBe('aprendiendo'); // lo tocó aunque no tildó pasos
+    expect(estadoTema(rep.a)).toBe('aprendiendo');
+    expect(estadoTema(rep.b)).toBe('terminado');
+  });
+  it('ordena: en estudio, aprendiendo, sin empezar, terminados; estable', () => {
+    const ts = [{ id: 'b' }, { id: 'n1' }, { id: 'a' }, { id: 'n2' }, { id: 'c' }];
+    expect(ordenarTemas(ts, rep).map((t) => t.id)).toEqual(['a', 'c', 'n1', 'n2', 'b']);
+    expect(ordenarTemas(ts, rep, 'n2').map((t) => t.id)).toEqual(['n2', 'a', 'c', 'n1', 'b']);
   });
 });
