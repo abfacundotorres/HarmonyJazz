@@ -1096,4 +1096,6 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 /* Atril con la línea de guide tones */
 .atril-sub { display: flex; gap: 8px; flex-wrap: wrap; padding: 2px 0 4px; }
 .atril-sub button { min-height: 44px; }
+.atril-guiabtn { min-width: 44px; font-size: 1.3rem; padding: 0 .4em; }
+.atril-guiabtn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .atril-guia { margin: 4px 0; padding: 2px 0; }

@@ -133,14 +133,14 @@ export function Atril({
               <i key={b} className={b === beat ? 'on' : ''} />
             ))}
           </div>
+          <button className={`atril-guiabtn ${verGuia ? 'on' : ''}`} aria-pressed={verGuia} aria-label="Guide tones (pentagrama)" onClick={() => setVerGuia((v) => !v)}>𝄞</button>
           <button onClick={onClose} aria-label="Cerrar el modo atril">✕ Cerrar</button>
         </div>
-        <div className="atril-sub" role="group" aria-label="Guide tones">
-          <button className={verGuia ? 'on' : ''} aria-pressed={verGuia} onClick={() => setVerGuia((v) => !v)}>𝄞 Guide tones</button>
-          {verGuia && (
-            <button className={oirGuia ? 'on' : ''} aria-pressed={oirGuia} onClick={onOirGuia}>🔊 {oirGuia ? 'Dejar de oírla' : 'Oír la línea'}</button>
-          )}
-        </div>
+        {verGuia && (
+          <div className="atril-sub">
+            <button className={oirGuia ? 'on' : ''} aria-pressed={oirGuia} onClick={onOirGuia}>🔊 {oirGuia ? 'Dejar de oír la línea' : 'Oír la línea de guide tones'}</button>
+          </div>
+        )}
         {consigna && <p className="atril-consigna" role="status">{consigna}</p>}
         {keysOpen && transpose && (
           <div className="atril-keys" role="group" aria-label="Tonalidad">

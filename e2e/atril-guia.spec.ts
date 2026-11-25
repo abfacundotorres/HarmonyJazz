@@ -14,7 +14,7 @@ test('el atril muestra la línea de guide tones en pentagrama, resalta el compá
   await expect(atril(page)).toBeVisible();
   await expect(atril(page).locator('.atril-guia')).toHaveCount(0); // por defecto sólo la grilla
 
-  await atril(page).getByRole('button', { name: '𝄞 Guide tones' }).click();
+  await atril(page).getByRole('button', { name: 'Guide tones (pentagrama)' }).click();
   const guia = atril(page).locator('.atril-guia');
   await expect(guia.locator('svg')).toBeVisible();
   await expect(guia.locator('.abcjs-note')).toHaveCount(4);
@@ -27,12 +27,12 @@ test('el atril muestra la línea de guide tones en pentagrama, resalta el compá
   await expect(guia.locator('.hj-note')).toHaveCount(0); // sin «oír la línea» no se marca la nota
 
   // oír la línea: el motor avisa cada nota y se resalta
-  await atril(page).getByRole('button', { name: '🔊 Oír la línea' }).click();
-  await expect(atril(page).getByRole('button', { name: '🔊 Dejar de oírla' })).toHaveAttribute('aria-pressed', 'true');
+  await atril(page).getByRole('button', { name: '🔊 Oír la línea de guide tones' }).click();
+  await expect(atril(page).getByRole('button', { name: '🔊 Dejar de oír la línea' })).toHaveAttribute('aria-pressed', 'true');
   await expect(guia.locator('.hj-note').first()).toBeAttached({ timeout: 20_000 });
   await atril(page).getByRole('button', { name: 'Detener' }).click();
 
   // se vuelve a ocultar
-  await atril(page).getByRole('button', { name: '𝄞 Guide tones' }).click();
+  await atril(page).getByRole('button', { name: 'Guide tones (pentagrama)' }).click();
   await expect(atril(page).locator('.atril-guia')).toHaveCount(0);
 });
