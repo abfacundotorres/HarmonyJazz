@@ -1124,3 +1124,6 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .tema .estado-terminado { background: var(--accent, #7a4a0a); color: var(--accent-ink, #fff); border-color: transparent; }
 .tema .pasos-det { margin-top: 8px; }
 .tema .pasos-det > summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.mapa-tonalidades { margin: 6px 0; }
+.mapa-tonalidades .tonalidades { gap: 4px; }
+.mapa-tonalidades .tonalidades button { min-width: 44px; min-height: 40px; padding: 4px 6px; }
