@@ -43,5 +43,5 @@ export function PentagramaGuia({
     [linea, chart, iv, keyValue, minor, tira],
   );
   if (!linea.length) return null;
-  return <Notation tira={tira} abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />;
+  return <Notation seguir={false} tira={tira} abc={abc} highlightBar={compasActual} highlightNote={notaActual >= 0 ? firstPiece[notaActual] : undefined} />;
 }
