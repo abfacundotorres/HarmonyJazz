@@ -36,7 +36,10 @@ test('con la escalera empezada muestra el próximo paso y los compases flojos', 
   await page.goto('/#/hoy');
   await expect(tarjeta(page)).toContainText('Próximo paso: Guide tones');
   await expect(tarjeta(page)).toContainText('2 de 7 hechos');
-  await expect(tarjeta(page)).toContainText('2 compases flojos marcados');
+  await expect(tarjeta(page)).toContainText('2 compases flojos marcados (compases 2–3)');
+  await tarjeta(page).getByRole('link', { name: 'Practicar solo esos' }).click();
+  await expect(page).toHaveURL(/p=ii-v-i&flojos=1/);
+  await expect(page.locator('.loopbar')).toContainText('compases 2–3');
 });
 
 test('el Play-along sin tema pedido abre el que se está estudiando, y se puede dejar de estudiarlo', async ({ page }) => {

@@ -71,11 +71,12 @@ test.describe('mi repertorio', () => {
     });
     await page.goto('/#/hoy');
     const repaso = page.locator('#repaso');
-    await expect(repaso).toContainText('Repertorio · Hojas de otoño');
+    await expect(repaso).toContainText('Tema · Hojas de otoño');
     await expect(repaso).toContainText('Hace 9 días que no lo tocás');
     await expect(repaso).toContainText('sigue: Guide tones');
-    await repaso.getByRole('link', { name: /Repertorio · Hojas de otoño/ }).click();
-    await expect(page).toHaveURL(/#\/repertorio$/);
+    await repaso.getByRole('link', { name: /Tema · Hojas de otoño/ }).click();
+    await expect(page).toHaveURL(/#\/playalong\?p=u%3Ahoja$/); // va directo a tocarlo
+    await expect(page.getByRole('button', { name: 'Practicar el siguiente tramo flojo' })).toHaveCount(0); // sin flojos no hay atajo
     await page.goto('/#/progreso');
     await expect(page.locator('#repaso')).toContainText('Hace 9 días que no lo tocás');
   });
@@ -379,5 +380,39 @@ test.describe('Temas: Mis temas y Mi colección viven acá', () => {
     await expect(page.getByRole('region', { name: 'Tema de texto' })).toContainText('Sin empezar');
     await page.getByRole('region', { name: 'Tema de texto' }).getByRole('link', { name: 'Abrir en el play-along' }).click();
     await expect(page.getByLabel('Tema', { exact: true })).toHaveValue(/^u:/);
+  });
+});
+
+test.describe('compases flojos: se ven en Temas y en Hoy y se practican con un toque', () => {
+  const FLOJOS = { 'u:hoja': [1, 2, 5] };
+  const preparar = (page: import('@playwright/test').Page) =>
+    page.addInitScript(
+      ([t, flojos]) => {
+        localStorage.setItem('harmonyjazz:library', JSON.stringify({ tunes: [t] }));
+        localStorage.setItem('harmonyjazz:flojos', JSON.stringify(flojos));
+        const hoy = Math.floor(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) / 86400000);
+        localStorage.setItem('harmonyjazz:repertorio', JSON.stringify({ 'u:hoja': { hechos: [0], ultimo: hoy - 9, inicio: hoy - 20 } }));
+      },
+      [{ ...TEMA, chart: 'Cm7 | F7 | Bbmaj7 | Ebmaj7 | Cm7 | F7' }, FLOJOS] as const,
+    );
+
+  test('en Temas, la tarjeta del tema dice cuáles compases le cuestan y lleva a practicarlos', async ({ page }) => {
+    await preparar(page);
+    await page.goto('/#/repertorio');
+    const tema = page.getByRole('region', { name: 'Hojas de otoño' });
+    await expect(tema.getByTestId('flojos-tema')).toContainText('Te cuestan los compases 2–3 y 6');
+    await tema.getByRole('link', { name: 'Practicar solo esos' }).click();
+    await expect(page).toHaveURL(/#\/playalong\?p=u%3Ahoja&flojos=1/);
+    // arranca en el primer tramo flojo
+    await expect(page.locator('.loopbar')).toContainText('compases 2–3');
+  });
+
+  test('en Hoy, «Para repasar» muestra los flojos y deja practicarlos directo', async ({ page }) => {
+    await preparar(page);
+    await page.goto('/#/hoy');
+    await expect(page.locator('#repaso')).toContainText('te cuestan los compases 2–3 y 6');
+    await page.locator('#repaso').getByRole('link', { name: 'Practicar solo los compases flojos de Hojas de otoño' }).click();
+    await expect(page).toHaveURL(/flojos=1/);
+    await expect(page.locator('.loopbar')).toContainText('compases 2–3');
   });
 });

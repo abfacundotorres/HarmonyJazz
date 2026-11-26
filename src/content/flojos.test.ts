@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { sanitizeFlojos } from '../state/sanitize';
 import { docLayout } from './chartDoc';
 import type { ChartDoc } from './chartDoc';
-import { alternarFloja, flojosDentro, secciones, sonados, tramoSiguiente, tramosFlojos } from './flojos';
+import { alternarFloja, flojosDentro, secciones, sonados, sumarFlojos, textoFlojos, tramoSiguiente, tramosFlojos } from './flojos';
 
 const doc = (bars: ChartDoc['bars']): ChartDoc => ({ bars });
 const b = (c: string, extra: Partial<ChartDoc['bars'][number]> = {}) => ({ chords: [c], ...extra });
@@ -60,5 +60,19 @@ describe('sanitizeFlojos', () => {
     expect(sanitizeFlojos({ 'u:abcd': [3, 1, 1, 2.5, -1, 300, 'x'], malo: 'x', vacio: [] })).toEqual({ 'u:abcd': [1, 3] });
     expect(sanitizeFlojos(null)).toBeNull();
     expect(sanitizeFlojos([])).toBeNull();
+  });
+});
+
+describe('sumar y decir los flojos', () => {
+  it('suma sin repetir y ordena', () => {
+    expect(sumarFlojos([4, 2], [2, 9, 3])).toEqual([2, 3, 4, 9]);
+    expect(sumarFlojos(undefined, [1])).toEqual([1]);
+  });
+  it('los dice en palabras', () => {
+    expect(textoFlojos([])).toBe('');
+    expect(textoFlojos([2])).toBe('compás 3');
+    expect(textoFlojos([4, 5, 6, 7])).toBe('compases 5–8');
+    expect(textoFlojos([4, 5, 6, 7, 12])).toBe('compases 5–8 y 13');
+    expect(textoFlojos([0, 2, 4])).toBe('compases 1, 3 y 5');
   });
 });

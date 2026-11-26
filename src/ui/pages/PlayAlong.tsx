@@ -19,7 +19,7 @@ import { TemasParecidos } from '../components/TemasParecidos';
 import { MapaArmonico } from '../components/MapaArmonico';
 import { QuizAcordes } from '../components/QuizAcordes';
 import { PracticaTramos } from '../components/PracticaTramos';
-import { alternarFloja, flojosDentro, secciones as seccionesDe, sonados, tramoSiguiente, tramosFlojos } from '../../content/flojos';
+import { alternarFloja, flojosDentro, sumarFlojos, secciones as seccionesDe, sonados, tramoSiguiente, tramosFlojos } from '../../content/flojos';
 import type { Flojos } from '../../content/flojos';
 import { MEMORIA_MODOS, type MemoriaModo, memoriaNivel, siguienteModo } from '../../content/memoria';
 import { KeySelect } from '../components/KeySelect';
@@ -185,6 +185,15 @@ export function PlayAlong() {
     setLoop(r);
     setPending(null);
   };
+  // «Practicar solo esos» desde Temas u Hoy (?flojos=1): arranca en el primer tramo flojo, una sola vez
+  const flojosAbiertos = useRef(false);
+  useEffect(() => {
+    if (flojosAbiertos.current || query.get('flojos') !== '1' || !tramos.length) return;
+    flojosAbiertos.current = true;
+    setTramoFloja(tramos[0]);
+    loopDe(tramos[0][0], tramos[0][1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tramos]);
 
   const onBarClick = (bar: number) => {
     if (marcando) {
@@ -483,6 +492,7 @@ export function PlayAlong() {
           chorus={mine?.chorus ?? 0}
           tempo={tempo}
           micRef={micRef}
+          onMarcarFlojos={(cs) => setFlojosTodos((f) => ({ ...f, [selected.id]: sumarFlojos(f[selected.id], cs) }))}
           recorder={{ recording, toggle: toggleRecording, onEvent, count, onAudio: setTakeAudio }}
         />
       </div>
