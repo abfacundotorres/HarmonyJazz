@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirFocos, expect, test } from './helpers';
 
 const caminos = (page: import('@playwright/test').Page) => page.locator('details.info', { hasText: 'Ver el camino completo' });
 
@@ -8,21 +8,27 @@ test.describe('camino sugerido', () => {
     await expect(page.locator('.notice', { hasText: 'Camino sugerido' })).toContainText('Técnica: Nota larga y articulación');
     await expect(page.locator('.notice', { hasText: 'Camino sugerido' })).toContainText('Lenguaje: Tríadas mayores');
     // ya viene elegido lo sugerido
+    await abrirFocos(page);
     await expect(page.locator('#f-t-largas-artic')).toBeChecked();
+    await abrirFocos(page);
     await expect(page.locator('#f-l-triadas-mayores')).toBeChecked();
     // elegir otro y volver a lo sugerido
+    await abrirFocos(page);
     await page.locator('#f-l-escalas-bebop').check();
     await page.getByRole('button', { name: 'Usar lo sugerido' }).click();
+    await abrirFocos(page);
     await expect(page.locator('#f-l-triadas-mayores')).toBeChecked();
   });
 
   test('un foco sin su base avisa qué conviene tener antes', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     const bebop = page.locator('.focuscard', { has: page.locator('#f-l-escalas-bebop') });
     await expect(bebop).toContainText('Etapa 4');
     await expect(bebop).toContainText('antes conviene:');
     await expect(bebop).toContainText('La escala de cada acorde');
     // las tríadas mayores son la base: no piden nada
+    await abrirFocos(page);
     await expect(page.locator('.focuscard', { has: page.locator('#f-l-triadas-mayores') })).not.toContainText('antes conviene');
   });
 
@@ -35,6 +41,7 @@ test.describe('camino sugerido', () => {
     await expect(page.locator('.notice', { hasText: 'Camino sugerido' })).toContainText('Lenguaje: Swing y articulación jazzística');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:camino')!))).toEqual({ done: ['l-triadas-mayores'] });
     // el foco trabajado se marca en su tarjeta y se puede destildar
+    await abrirFocos(page);
     await expect(page.locator('.focuscard', { has: page.locator('#f-l-triadas-mayores') })).toContainText('Ya trabajado');
     await caminos(page).getByLabel('Ya trabajé: Tríadas mayores', { exact: true }).uncheck();
     await expect(page.locator('.notice', { hasText: 'Camino sugerido' })).toContainText('Lenguaje: Tríadas mayores');
@@ -64,6 +71,7 @@ test.describe('camino sugerido', () => {
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await page.goto('/#/mes');
     await page.getByRole('button', { name: 'Cambiar los focos' }).click();
+    await abrirFocos(page);
     await page.locator('#f-t-flexibilidad').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     expect(await page.evaluate(() => localStorage.getItem('harmonyjazz:camino'))).toBeNull();

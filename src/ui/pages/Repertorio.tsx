@@ -52,7 +52,7 @@ export function Repertorio() {
           <button onClick={() => setCargarSenal((n) => n + 1)}>＋ Cargar un tema</button>
         </header>
         <p className="muted">
-          Todos tus temas en un solo lugar; el que marcás «Estudiar este» queda arriba y en Hoy. Cada uno tiene siete pasos, de saber la forma a tenerlo grabado; cuando están los siete queda <b>terminado</b> y la app te avisa cuándo repasarlo. Más abajo cargás temas nuevos (Mis temas) y buscás en tu colección.
+          Siete pasos por tema; con los siete queda <b>terminado</b> y la app avisa cuándo repasarlo. Cargar temas y tu colección: más abajo.
         </p>
         {temas.length > 0 && (
           <p className="small" role="status">
@@ -75,7 +75,6 @@ export function Repertorio() {
           hoy={hoy}
           delMes={t.id === delMes}
           enEstudio={t.id === estudio.id}
-          inicial={t.id === estudio.id || estadoTema(repInicial[t.id]) === 'aprendiendo'}
           diasSinTocar={repaso.get(t.id)}
           tempoTema={tempos.get(t.id)}
           flojos={flojos[t.id] ?? []}
@@ -96,14 +95,12 @@ export function Repertorio() {
 }
 
 /** Un tema: nombre, estado, avance y atajos; los siete pasos (con tempo, tonalidades y ejercicios) van plegados. */
-function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, flojos, tonica, setRep, onEstudiar, onDejar, query, lib }: {
+function TemaCard({ t, avance: a, hoy, delMes, enEstudio, diasSinTocar, tempoTema, flojos, tonica, setRep, onEstudiar, onDejar, query, lib }: {
   t: { id: string; name: string };
   avance: Avance | undefined;
   hoy: number;
   delMes: boolean;
   enEstudio: boolean;
-  /** Si los pasos arrancan abiertos (el tema en estudio y los que se están aprendiendo). */
-  inicial: boolean;
   diasSinTocar: number | undefined;
   tempoTema: number | undefined;
   /** Compases flojos del tema (0-based, de la grilla escrita). */
@@ -117,43 +114,50 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
   lib: { tunes?: unknown[] };
 }) {
   const { keyLabel } = useReading();
-  const [abierto, setAbierto] = useState(inicial || query.get('t') === t.id);
+  // la tarjeta arranca plegada (una fila por tema) salvo la del tema en estudio o la pedida por la dirección
+  const pedido = query.get('t') === t.id;
+  const [tarjeta, setTarjeta] = useState(enEstudio || pedido);
+  const [abierto, setAbierto] = useState(pedido);
   const n = logrados(a);
   const sig = siguientePaso(a);
   const res = resumenAvance(a);
   const estado = estadoTema(a);
   return (
     <section className="card tema" aria-label={t.name}>
-      <header>
-        <h3>{t.name}</h3>
-        <span className={`estado estado-${estado}`}>{ESTADO_TXT[estado]}</span>
-        {delMes && <span className="muted small">Tema del mes</span>}
-        {enEstudio && <span className="muted small">En estudio</span>}
-      </header>
-      <progress max={PASOS.length} value={n} aria-label={`Pasos logrados de ${t.name}`} />
-      <p className="small">
-        {n} de {PASOS.length} pasos · {a && a.ultimo > 0 ? `lo tocaste ${hace(hoy - a.ultimo)}` : 'todavía no lo tocaste'}
-        {sig !== null ? ` · sigue: ${PASOS[sig].titulo}` : ' · ¡completo!'}
-      </p>
-      {diasSinTocar !== undefined && (
-        <p className="small" role="status">
-          ⏰ Toca repasarlo: hace {diasSinTocar} días que no lo tocás (cada {estado === 'terminado' ? UMBRAL.completo : UMBRAL.aprendiendo} días).
-        </p>
-      )}
-      <MapaTonalidades id={t.id} name={t.name} avance={a} inicial={tonica} onToggle={(k) => setRep((r) => alternarTonalidadTema(r, t.id, k, dayNum()))} />
-      {flojos.length > 0 && (
-        <p className="small" data-testid="flojos-tema">
-          ⚑ Te cuestan los {textoFlojos(flojos)}.{' '}
-          <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&flojos=1`}>Practicar solo esos</a>
-        </p>
-      )}
-      <div className="row">
-        <a className="button primary" href={`#/playalong?p=${encodeURIComponent(t.id)}`}>Abrir en el play-along</a>
-        {enEstudio && <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&estudio=1`}>Estudiarlo</a>}
-        {!enEstudio && estado !== 'terminado' && <button onClick={onEstudiar}>Estudiar este</button>}
-        {enEstudio && <button onClick={onDejar}>Dejar de estudiarlo</button>}
-        <button onClick={() => setRep((r) => tocado(r, t.id, dayNum()))}>Lo toqué hoy</button>
-      </div>
+      <details className="tema-det" open={tarjeta} onToggle={(e) => e.target === e.currentTarget && setTarjeta((e.target as HTMLDetailsElement).open)}>
+        <summary>
+          <span className="tema-linea">
+            <b className="tema-nombre">{t.name}</b>
+            <span className={`estado estado-${estado}`}>{ESTADO_TXT[estado]}</span>
+            {diasSinTocar !== undefined && <span role="img" aria-label="Toca repasarlo" title="Toca repasarlo">⏰</span>}
+            {flojos.length > 0 && <span role="img" aria-label="Tiene compases flojos" title="Tiene compases flojos">⚑</span>}
+          </span>
+          <small className="muted">
+            {n} de {PASOS.length} pasos{sig !== null ? ` · sigue: ${PASOS[sig].titulo}` : ' · ¡completo!'}
+            {delMes ? ' · tema del mes' : ''}{enEstudio ? ' · en estudio' : ''}
+          </small>
+          <progress max={PASOS.length} value={n} aria-label={`Pasos logrados de ${t.name}`} />
+        </summary>
+        <p className="small">{a && a.ultimo > 0 ? `Lo tocaste ${hace(hoy - a.ultimo)}.` : 'Todavía no lo tocaste.'}</p>
+        {diasSinTocar !== undefined && (
+          <p className="small" role="status">
+            ⏰ Toca repasarlo: hace {diasSinTocar} días que no lo tocás (cada {estado === 'terminado' ? UMBRAL.completo : UMBRAL.aprendiendo} días).
+          </p>
+        )}
+        <MapaTonalidades id={t.id} name={t.name} avance={a} inicial={tonica} onToggle={(k) => setRep((r) => alternarTonalidadTema(r, t.id, k, dayNum()))} />
+        {flojos.length > 0 && (
+          <p className="small" data-testid="flojos-tema">
+            ⚑ Te cuestan los {textoFlojos(flojos)}.{' '}
+            <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&flojos=1`}>Practicar solo esos</a>
+          </p>
+        )}
+        <div className="row">
+          <a className="button primary" href={`#/playalong?p=${encodeURIComponent(t.id)}`}>Abrir en el play-along</a>
+          {enEstudio && <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&estudio=1`}>Estudiarlo</a>}
+          {!enEstudio && estado !== 'terminado' && <button onClick={onEstudiar}>Estudiar este</button>}
+          {enEstudio && <button onClick={onDejar}>Dejar de estudiarlo</button>}
+          <button onClick={() => setRep((r) => tocado(r, t.id, dayNum()))}>Lo toqué hoy</button>
+        </div>
       <details className="pasos-det" open={abierto} onToggle={(e) => e.target === e.currentTarget && setAbierto((e.target as HTMLDetailsElement).open)}>
         <summary>Los {PASOS.length} pasos{estado === 'terminado' ? ' (completos)' : ''}</summary>
         {(res.mejorBpm !== null || res.tonalidades.length > 0) && (
@@ -187,6 +191,7 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
           ))}
         </ol>
         <Ejercicios id={t.id} lib={lib} abrir={query.get('t') === t.id} ex={query.get('t') === t.id ? query.get('ex') : null} k={query.get('t') === t.id ? query.get('k') : null} />
+      </details>
       </details>
     </section>
   );

@@ -1,4 +1,4 @@
-import { abrirMenu, expect, irA, openBlock, test } from './helpers';
+import { abrirFocos, abrirMenu, expect, irA, openBlock, test } from './helpers';
 
 /** Pasa al día siguiente del mes recién empezado (sesión 2: toca el foco de lenguaje). */
 async function alSegundoDia(page: import('@playwright/test').Page) {
@@ -29,10 +29,13 @@ test.describe('el mes con focos', () => {
 
   test('hay focos nuevos para elegir (tríadas menores, mayores y menores, acordes de cuatro notas, células) y el plan de Hoy los trabaja', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     for (const t of ['Tríadas menores', 'Tríadas mayores y menores', 'Acordes de cuatro notas (maj7, m7, 7, m7♭5)', 'Células 1-2-3-5 (mayor) y 1-♭3-4-5 (menor)', 'Ritmo, síncopa y tresillos', 'Arpegios, intervalos y saltos']) {
       await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
     }
+    await abrirFocos(page);
     await page.locator('#f-l-celulas-1235').check();
+    await abrirFocos(page);
     await page.locator('#f-t-ritmo-precision').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page).toHaveURL(/#\/hoy$/);
@@ -43,6 +46,7 @@ test.describe('el mes con focos', () => {
 
   test('cada tarea de los focos nuevos trae ideas de lenguaje para tocar (frases sobre el ii–V–I)', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     await page.locator('#f-l-triadas-menores').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await alSegundoDia(page);
@@ -58,9 +62,11 @@ test.describe('el mes con focos', () => {
 
   test('más consignas de lenguaje para elegir: pares de tríadas, intervalos, pentatónicas, blues, sustitución tritonal y más', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     for (const t of ['Pares de tríadas', 'Intervalos: terceras, cuartas y saltos', 'Pentatónicas sobre acordes', 'Lenguaje de blues', 'Sustitución tritonal', 'La escala de cada acorde (modos)', 'Motivos y desarrollo', 'Side-slipping (tocar «afuera»)', 'Desplazamiento rítmico']) {
       await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
     }
+    await abrirFocos(page);
     await page.locator('#f-l-triad-pairs').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await alSegundoDia(page);
@@ -72,10 +78,13 @@ test.describe('el mes con focos', () => {
 
   test('otra tanda de focos: técnica (dinámica, digitación, boquilla, colores) y lenguaje (bebop, Coltrane, Rhythm changes, ii–V–i menor, simétricas, turnarounds, swing, grabaciones, vals)', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     for (const t of ['Dinámica y control del aire', 'Digitación y velocidad', 'Boquilla y buzzing', 'Escalas y colores del jazz', 'Escalas bebop', 'Cambios de Coltrane', 'Rhythm changes (el puente en cadena)', 'ii–V–i menor y dominante con tensiones', 'Escalas simétricas (disminuida y tonos enteros)', 'Turnarounds (I–vi–ii–V)', 'Swing y articulación jazzística', 'Aprender de grabaciones (transcribir)', 'Improvisar en 3/4 y 6/8']) {
       await expect(page.locator('.focuscard b', { hasText: t }).first()).toBeVisible();
     }
+    await abrirFocos(page);
     await page.locator('#f-t-dinamica-aire').check();
+    await abrirFocos(page);
     await page.locator('#f-l-escalas-bebop').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Dinámica y control del aire');
@@ -86,7 +95,9 @@ test.describe('el mes con focos', () => {
   test('se eligen los tres focos y el plan de Hoy pasa a trabajarlos: tres bloques, un solo foco por día', async ({ page }) => {
     await page.goto('/#/mes');
     await expect(page.getByRole('heading', { name: 'Elegí los focos de este mes' })).toBeVisible();
+    await abrirFocos(page);
     await page.locator('#f-t-largas-artic').check();
+    await abrirFocos(page);
     await page.locator('#f-l-triadas-mayores').check();
     // el tema: sin temas propios se ofrece una forma incluida y se explica cómo cargar uno
     await expect(page.getByText(/cargá su cifrado en Temas → Mis temas/)).toBeVisible();
@@ -165,7 +176,9 @@ test.describe('el mes con focos', () => {
 
   test('la sesión se corrige a mano en Mi mes, Hoy la sigue y se puede volver al cálculo automático', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     await page.locator('#f-t-largas-artic').check();
+    await abrirFocos(page);
     await page.locator('#f-l-triadas-mayores').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Nota larga y articulación'); // sesión 1
@@ -193,6 +206,7 @@ test.describe('el mes con focos', () => {
     await expect(page.getByRole('heading', { name: /^Tu mes:/ })).toBeVisible();
     await expect(page.getByText('Semana 1 de 4 · sesión 1')).toBeVisible();
     await page.getByRole('button', { name: 'Cambiar los focos' }).click();
+    await abrirFocos(page);
     await page.locator('#f-t-flexibilidad').check();
     await page.getByRole('button', { name: 'Empezar el mes con estos focos' }).click();
     await expect(page.locator('article.block .bhead').nth(1)).toContainText('Técnica: Flexibilidad y ligaduras');
@@ -200,6 +214,7 @@ test.describe('el mes con focos', () => {
 
   test('los recorridos se pueden leer antes de elegir', async ({ page }) => {
     await page.goto('/#/mes');
+    await abrirFocos(page);
     const card = page.locator('.focuscard', { has: page.locator('#f-t-largas-artic') });
     await card.locator('summary').click();
     await expect(card.locator('.outline > li')).toHaveCount(4);
