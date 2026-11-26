@@ -67,3 +67,14 @@ export function tramoSiguiente(tramos: readonly [number, number][], actual: [num
   const i = tramos.findIndex((t) => t[0] === actual[0] && t[1] === actual[1]);
   return tramos[(i + 1) % tramos.length];
 }
+
+/** Suma compases flojos nuevos a los que ya había (sin repetir, ordenados). */
+export const sumarFlojos = (lista: readonly number[] | undefined, nuevos: readonly number[]): number[] => [...new Set([...(lista ?? []), ...nuevos])].sort((a, b) => a - b);
+
+/** Los compases flojos en palabras: «compás 3», «compases 5–8 y 13». Vacío si no hay. */
+export function textoFlojos(lista: readonly number[]): string {
+  const t = tramosFlojos(lista).map(([d, h]) => (d === h ? String(d + 1) : `${d + 1}–${h + 1}`));
+  if (!t.length) return '';
+  const una = t.length === 1 && !t[0].includes('–');
+  return `${una ? 'compás' : 'compases'} ${t.length > 1 ? `${t.slice(0, -1).join(', ')} y ${t[t.length - 1]}` : t[0]}`;
+}

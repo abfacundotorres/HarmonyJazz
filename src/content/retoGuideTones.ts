@@ -84,3 +84,12 @@ export function dondeFallo(r: Reto, etiquetas: { compas: number; acorde: string 
   });
   return out;
 }
+
+/** Los compases (0-based, de la grilla escrita) donde el reto salió mal, sin repetir y en orden. `acordes[i].compas` es el compás escrito (1-based) del acorde i. */
+export function compasesFallados(r: Reto, acordes: readonly { compas: number }[]): number[] {
+  const s = new Set<number>();
+  r.estados.forEach((e, i) => {
+    if (e === 'fallo' && acordes[i]) s.add(acordes[i].compas - 1);
+  });
+  return [...s].sort((a, b) => a - b);
+}

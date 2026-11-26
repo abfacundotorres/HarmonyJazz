@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { alternarTonalidad, type Avance, BPM, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from '../../content/repertorio';
+import { type Flojos, textoFlojos } from '../../content/flojos';
 import { dayNum } from '../../state/progress';
+import { usePersistent } from '../../state/storage';
 import { CONCERT_KEYS } from '../../theory/chart';
 import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute, useTemaEstudio } from '../hooks';
 import { MisTemas } from '../components/MisTemas';
@@ -22,6 +24,7 @@ export function Repertorio() {
   const [lib] = usePersistentLibrary();
   const [mp] = useMonth();
   const [estudio, setEstudio] = useTemaEstudio();
+  const [flojos] = usePersistent<Flojos>('flojos', {});
   // «＋ Cargar un tema» (o ?cargar=1 desde el Play-along): abre Mis temas y lo lleva a la vista
   const [cargarSenal, setCargarSenal] = useState(0);
   const hoy = dayNum();
@@ -74,6 +77,7 @@ export function Repertorio() {
           inicial={t.id === estudio.id || estadoTema(repInicial[t.id]) === 'aprendiendo'}
           diasSinTocar={repaso.get(t.id)}
           tempoTema={tempos.get(t.id)}
+          flojos={flojos[t.id] ?? []}
           setRep={setRep}
           onEstudiar={() => setEstudio(() => ({ id: t.id }))}
           onDejar={() => setEstudio(() => ({}))}
@@ -90,7 +94,7 @@ export function Repertorio() {
 }
 
 /** Un tema: nombre, estado, avance y atajos; los siete pasos (con tempo, tonalidades y ejercicios) van plegados. */
-function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, setRep, onEstudiar, onDejar, query, lib }: {
+function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, flojos, setRep, onEstudiar, onDejar, query, lib }: {
   t: { id: string; name: string };
   avance: Avance | undefined;
   hoy: number;
@@ -100,6 +104,8 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
   inicial: boolean;
   diasSinTocar: number | undefined;
   tempoTema: number | undefined;
+  /** Compases flojos del tema (0-based, de la grilla escrita). */
+  flojos: number[];
   setRep: ReturnType<typeof useRepertorio>[1];
   onEstudiar: () => void;
   onDejar: () => void;
@@ -128,6 +134,12 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
       {diasSinTocar !== undefined && (
         <p className="small" role="status">
           ⏰ Toca repasarlo: hace {diasSinTocar} días que no lo tocás (cada {estado === 'terminado' ? UMBRAL.completo : UMBRAL.aprendiendo} días).
+        </p>
+      )}
+      {flojos.length > 0 && (
+        <p className="small" data-testid="flojos-tema">
+          ⚑ Te cuestan los {textoFlojos(flojos)}.{' '}
+          <a className="button" href={`#/playalong?p=${encodeURIComponent(t.id)}&flojos=1`}>Practicar solo esos</a>
         </p>
       )}
       <div className="row">

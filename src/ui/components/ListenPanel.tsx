@@ -1,5 +1,5 @@
 import { type MutableRefObject, useEffect, useRef, useState } from 'react';
-import { cerrar, cuenta, dondeFallo, nota, retoNuevo, ventanaNueva, type Ventana } from '../../content/retoGuideTones';
+import { cerrar, compasesFallados, cuenta, dondeFallo, nota, retoNuevo, ventanaNueva, type Ventana } from '../../content/retoGuideTones';
 import { analyzePc, Chord, chordSymbol, NoteRole, prettyDegree, transposeChord } from '../../theory/chords';
 import { BB_TRUMPET, midiName, mod } from '../../theory/notes';
 import { listen, MicListener } from '../../pitch/mic';
@@ -40,6 +40,7 @@ export function ListenPanel({
   acordes,
   recorder,
   micRef,
+  onMarcarFlojos,
 }: {
   /** La forma que suena, en orden: da el resultado del reto acorde por acorde. */
   acordes: AcordeReto[];
@@ -50,6 +51,8 @@ export function ListenPanel({
   /** Si está, se muestra el botón de grabar y se le pasan las notas con su tiempo. */
   /** Para que otra parte de la pantalla (la toma completa) pida el micrófono encendido. */
   micRef?: MutableRefObject<{ ensure: () => Promise<boolean> } | null>;
+  /** Si está, tras el reto se ofrece marcar como flojos los compases donde falló (el tema tiene que estar guardado). Recibe compases 0-based de la grilla escrita. */
+  onMarcarFlojos?: (compases: number[]) => void;
   recorder?: { recording: boolean; toggle: () => void; onEvent: (midi: number | null, time: number) => void; count: number; /** Recibe el audio de la toma cuando termina. */ onAudio?: (b: Blob) => void };
 }) {
   const { iv } = useReading();
@@ -141,6 +144,9 @@ export function ListenPanel({
   const c = cuenta(reto);
   const etiquetas = acordes.map((a) => ({ compas: a.compas, acorde: chordSymbol(transposeChord(a.chord, iv), true) }));
   const fallos = dondeFallo(reto, etiquetas);
+  const falladosCompases = compasesFallados(reto, acordes);
+  // los compases ya marcados en este reto (para no ofrecerlo dos veces)
+  const [marcados, setMarcados] = useState('');
 
   return (
     <section className="card listen">
@@ -181,6 +187,19 @@ export function ListenPanel({
               ))}
             </ol>
             {fallos.length > 0 && <p className="small" role="status">Te trabaste en: {fallos.join('; ')}.</p>}
+            {fallos.length > 0 && onMarcarFlojos && (
+              <p>
+                <button
+                  disabled={marcados === falladosCompases.join(',')}
+                  onClick={() => {
+                    onMarcarFlojos(falladosCompases);
+                    setMarcados(falladosCompases.join(','));
+                  }}
+                >
+                  {marcados === falladosCompases.join(',') ? '⚑ Marcados como flojos' : `⚑ Marcar ${falladosCompases.length === 1 ? 'ese compás' : `esos ${falladosCompases.length} compases`} como flojos`}
+                </button>
+              </p>
+            )}
           </div>
           <div className="bars">
             {(Object.keys(counts) as NoteRole[]).map((r) => (

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { PASOS, siguientePaso } from '../../content/repertorio';
-import type { Flojos } from '../../content/flojos';
+import { type Flojos, textoFlojos } from '../../content/flojos';
 import { localizeNotes } from '../../exercises/localize';
 import { usePersistent } from '../../state/storage';
 import { useReading, usePersistentLibrary, useRepertorio, useTemaEstudio } from '../hooks';
@@ -31,7 +31,8 @@ export function TemaEnEstudio() {
   const nombre = tema.category === 'Mis temas' || tema.category === 'Dominio público' ? tema.name : localizeNotes(tema.name, 'C', 'C', iv);
   const avance = rep[tema.id];
   const paso = siguientePaso(avance);
-  const nFlojos = flojos[tema.id]?.length ?? 0;
+  const listaFlojos = flojos[tema.id] ?? [];
+  const nFlojos = listaFlojos.length;
   const q = `p=${encodeURIComponent(tema.id)}`;
   return (
     <section className="card temaestudio" aria-label="Tema en estudio">
@@ -39,7 +40,11 @@ export function TemaEnEstudio() {
       <h2 className="h3like">{nombre}</h2>
       <ul className="temaestudio-datos muted">
         <li>{paso === null ? '✓ Escalera completa (los 7 pasos)' : <>Próximo paso: <b>{PASOS[paso].titulo}</b> <span className="small">({(avance?.hechos.length ?? 0)} de {PASOS.length} hechos)</span></>}</li>
-        {nFlojos > 0 && <li>{nFlojos} {nFlojos === 1 ? 'compás flojo' : 'compases flojos'} marcados</li>}
+        {nFlojos > 0 && (
+          <li>
+            ⚑ {nFlojos} {nFlojos === 1 ? 'compás flojo' : 'compases flojos'} marcados ({textoFlojos(listaFlojos)}) · <a href={`#/playalong?${q}&flojos=1`}>Practicar solo esos</a>
+          </li>
+        )}
       </ul>
       <div className="row">
         <a className="button primary" href={`#/playalong?${q}`}>Tocarlo</a>

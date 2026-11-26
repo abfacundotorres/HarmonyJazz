@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cerrar, cuenta, dondeFallo, MARGEN_MS, nota, retoNuevo, ventanaNueva } from './retoGuideTones';
+import { cerrar, compasesFallados, cuenta, dondeFallo, MARGEN_MS, nota, retoNuevo, ventanaNueva } from './retoGuideTones';
 
 describe('reto de guide tones', () => {
   it('la ventana dura lo que dura el acorde más un margen', () => {
@@ -58,5 +58,13 @@ describe('reto de guide tones', () => {
     expect(nota(r, null, 0, 'C', true)).toBe(r);
     expect(cerrar(r, null)).toBe(r);
     expect(cerrar(r, ventanaNueva(5, 0, 2, 120)).estados).toEqual(['pendiente']);
+  });
+});
+
+describe('compases donde falló el reto', () => {
+  it('da los compases escritos (0-based) de los fallos, sin repetir; no cuenta silencios ni aciertos', () => {
+    const r = { estados: ['acierto', 'fallo', 'fallo', 'silencio', 'fallo', 'pendiente'] as const, notas: [] as (string | undefined)[] };
+    const acordes = [{ compas: 1 }, { compas: 2 }, { compas: 2 }, { compas: 3 }, { compas: 5 }, { compas: 6 }];
+    expect(compasesFallados({ estados: [...r.estados], notas: r.notas }, acordes)).toEqual([1, 4]);
   });
 });
