@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PASOS, siguientePaso } from '../../content/repertorio';
+import { PASOS, siguientePaso, siguienteTonalidad, tonalidadesDe } from '../../content/repertorio';
 import { type Flojos, textoFlojos } from '../../content/flojos';
 import { localizeNotes } from '../../exercises/localize';
 import { usePersistent } from '../../state/storage';
@@ -15,7 +15,7 @@ export function TemaEnEstudio() {
   const [lib] = usePersistentLibrary();
   const [rep] = useRepertorio();
   const [flojos] = usePersistent<Flojos>('flojos', {});
-  const { iv } = useReading();
+  const { iv, keyLabel } = useReading();
   const tema = useMemo(() => todosLosTemas((lib.tunes ?? []) as Parameters<typeof todosLosTemas>[0]).find((t) => t.id === estudio.id), [lib, estudio.id]);
   if (!estudio.id) return null;
   if (!tema) {
@@ -31,6 +31,8 @@ export function TemaEnEstudio() {
   const nombre = tema.category === 'Mis temas' || tema.category === 'Dominio público' ? tema.name : localizeNotes(tema.name, 'C', 'C', iv);
   const avance = rep[tema.id];
   const paso = siguientePaso(avance);
+  const tocadas = tonalidadesDe(avance);
+  const sigTon = siguienteTonalidad(tocadas, tema.key);
   const listaFlojos = flojos[tema.id] ?? [];
   const nFlojos = listaFlojos.length;
   const q = `p=${encodeURIComponent(tema.id)}`;
@@ -40,6 +42,14 @@ export function TemaEnEstudio() {
       <h2 className="h3like">{nombre}</h2>
       <ul className="temaestudio-datos muted">
         <li>{paso === null ? '✓ Escalera completa (los 7 pasos)' : <>Próximo paso: <b>{PASOS[paso].titulo}</b> <span className="small">({(avance?.hechos.length ?? 0)} de {PASOS.length} hechos)</span></>}</li>
+        <li>
+          Tonalidades: {tocadas.length} de 12
+          {sigTon && (
+            <>
+              {' · '}<a href={`#/playalong?${q}&k=${encodeURIComponent(sigTon)}`}>probá en {keyLabel(sigTon)}</a>
+            </>
+          )}
+        </li>
         {nFlojos > 0 && (
           <li>
             ⚑ {nFlojos} {nFlojos === 1 ? 'compás flojo' : 'compases flojos'} marcados ({textoFlojos(listaFlojos)}) · <a href={`#/playalong?${q}&flojos=1`}>Practicar solo esos</a>

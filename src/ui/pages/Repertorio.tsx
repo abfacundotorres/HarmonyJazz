@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { alternarTonalidad, type Avance, BPM, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from '../../content/repertorio';
+import { alternarTonalidad, alternarTonalidadTema, type Avance, BPM, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from '../../content/repertorio';
 import { type Flojos, textoFlojos } from '../../content/flojos';
 import { dayNum } from '../../state/progress';
 import { usePersistent } from '../../state/storage';
@@ -7,6 +7,7 @@ import { CONCERT_KEYS } from '../../theory/chart';
 import { useMonth, usePersistentLibrary, useReading, useRepertorio, useRoute, useTemaEstudio } from '../hooks';
 import { MisTemas } from '../components/MisTemas';
 import { QueEstudiar } from '../components/QueEstudiar';
+import { MapaTonalidades } from '../components/MapaTonalidades';
 import { TemaEjercicios } from '../components/TemaEjercicios';
 import { progresionDeTema } from '../progresionDeTema';
 import { temasDeRepertorio } from '../repertorioTemas';
@@ -78,6 +79,7 @@ export function Repertorio() {
           diasSinTocar={repaso.get(t.id)}
           tempoTema={tempos.get(t.id)}
           flojos={flojos[t.id] ?? []}
+          tonica={progresionDeTema(t.id, lib)?.key ?? null}
           setRep={setRep}
           onEstudiar={() => setEstudio(() => ({ id: t.id }))}
           onDejar={() => setEstudio(() => ({}))}
@@ -94,7 +96,7 @@ export function Repertorio() {
 }
 
 /** Un tema: nombre, estado, avance y atajos; los siete pasos (con tempo, tonalidades y ejercicios) van plegados. */
-function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, flojos, setRep, onEstudiar, onDejar, query, lib }: {
+function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar, tempoTema, flojos, tonica, setRep, onEstudiar, onDejar, query, lib }: {
   t: { id: string; name: string };
   avance: Avance | undefined;
   hoy: number;
@@ -106,6 +108,8 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
   tempoTema: number | undefined;
   /** Compases flojos del tema (0-based, de la grilla escrita). */
   flojos: number[];
+  /** Tonalidad del tema (concierto), de donde arranca la sugerencia de tonalidades. */
+  tonica: string | null;
   setRep: ReturnType<typeof useRepertorio>[1];
   onEstudiar: () => void;
   onDejar: () => void;
@@ -136,6 +140,7 @@ function TemaCard({ t, avance: a, hoy, delMes, enEstudio, inicial, diasSinTocar,
           ⏰ Toca repasarlo: hace {diasSinTocar} días que no lo tocás (cada {estado === 'terminado' ? UMBRAL.completo : UMBRAL.aprendiendo} días).
         </p>
       )}
+      <MapaTonalidades id={t.id} name={t.name} avance={a} inicial={tonica} onToggle={(k) => setRep((r) => alternarTonalidadTema(r, t.id, k, dayNum()))} />
       {flojos.length > 0 && (
         <p className="small" data-testid="flojos-tema">
           ⚑ Te cuestan los {textoFlojos(flojos)}.{' '}

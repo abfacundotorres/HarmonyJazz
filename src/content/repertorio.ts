@@ -4,7 +4,7 @@
  * vez para avisar cuándo repasarlo. Cada paso puede llevar además el **tempo** al que salió y las **tonalidades** en que se tocó
  * («la melodía, en otra tonalidad»; «de memoria, al tempo del tema»). Núcleo puro; la pantalla está en `ui/pages/Repertorio.tsx`.
  */
-import { CONCERT_KEYS } from '../theory/chart';
+import { CONCERT_KEYS, CYCLE_OF_FOURTHS } from '../theory/chart';
 
 export interface Paso {
   id: string;
@@ -162,4 +162,36 @@ const RANGO: Record<EstadoTema, number> = { aprendiendo: 1, sin: 2, terminado: 3
 export function ordenarTemas<T extends { id: string }>(temas: readonly T[], rep: Repertorio, enEstudio?: string): T[] {
   const rango = (t: T) => (t.id === enEstudio ? 0 : RANGO[estadoTema(rep[t.id])]);
   return temas.map((t, i) => ({ t, i })).sort((x, y) => rango(x.t) - rango(y.t) || x.i - y.i).map((x) => x.t);
+}
+
+/** Paso en el que se anotan las tonalidades que se marcan desde el mapa: «La melodía» (la pide «en otra tonalidad»). */
+export const PASO_MELODIA = PASOS.findIndex((p) => p.id === 'melodia');
+
+/** Las tonalidades (concierto) en que se tocó algún paso del tema, en el orden de las doce. */
+export const tonalidadesDe = (a: Avance | undefined): string[] => resumenAvance(a).tonalidades;
+
+/**
+ * La tonalidad que conviene tocar ahora: la primera que falta recorriendo el ciclo de cuartas desde la del tema (como se practica en
+ * jazz: C, F, B♭, E♭…). null si ya están las doce.
+ */
+export function siguienteTonalidad(tocadas: readonly string[], inicial?: string | null): string | null {
+  const i = Math.max(0, CYCLE_OF_FOURTHS.indexOf(inicial ?? 'C'));
+  for (let n = 0; n < 12; n++) {
+    const k = CYCLE_OF_FOURTHS[(i + n) % 12];
+    if (!tocadas.includes(k)) return k;
+  }
+  return null;
+}
+
+/**
+ * Marca o desmarca una tonalidad en el tema entero. Si todavía no estaba (en ningún paso), se anota en «La melodía»; si estaba, se quita
+ * de todos los pasos donde se anotó.
+ */
+export function alternarTonalidadTema(rep: Repertorio, id: string, key: string, day: number): Repertorio {
+  if (!CONCERT_KEYS.includes(key)) return rep;
+  const a = rep[id];
+  if (!tonalidadesDe(a).includes(key)) return alternarTonalidad(rep, id, PASO_MELODIA, key, day);
+  let r = rep;
+  for (const [paso, d] of Object.entries(a?.detalle ?? {})) if (d.keys.includes(key)) r = alternarTonalidad(r, id, Number(paso), key, day);
+  return r;
 }

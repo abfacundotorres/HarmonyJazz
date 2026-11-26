@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alternarTonalidad, BPM, completo, detalleDe, estadoTema, fijarBpm, llegoAlTempo, logrado, logrados, marcar, ordenarTemas, PASOS, repasoRepertorio, resumenAvance, siguientePaso, tocado, UMBRAL } from './repertorio';
+import { alternarTonalidad, BPM, completo, detalleDe, alternarTonalidadTema, estadoTema, fijarBpm, llegoAlTempo, logrado, logrados, marcar, ordenarTemas, PASO_MELODIA, PASOS, repasoRepertorio, resumenAvance, siguientePaso, siguienteTonalidad, tonalidadesDe, tocado, UMBRAL } from './repertorio';
 
 describe('mi repertorio', () => {
   it('son siete pasos únicos, de la forma al grabado', () => {
@@ -139,5 +139,32 @@ describe('estado y orden de los temas', () => {
     const ts = [{ id: 'b' }, { id: 'n1' }, { id: 'a' }, { id: 'n2' }, { id: 'c' }];
     expect(ordenarTemas(ts, rep).map((t) => t.id)).toEqual(['a', 'c', 'n1', 'n2', 'b']);
     expect(ordenarTemas(ts, rep, 'n2').map((t) => t.id)).toEqual(['n2', 'a', 'c', 'n1', 'b']);
+  });
+});
+
+describe('mapa de tonalidades del tema', () => {
+  it('la sugerencia recorre el ciclo de cuartas desde la del tema y salta las que ya están', () => {
+    expect(siguienteTonalidad([], 'C')).toBe('C');
+    expect(siguienteTonalidad(['C'], 'C')).toBe('F');
+    expect(siguienteTonalidad(['C', 'F', 'Bb'], 'C')).toBe('Eb');
+    expect(siguienteTonalidad(['G'], 'G')).toBe('C'); // el ciclo desde G es G, C, F…: G ya está, sigue C
+    expect(siguienteTonalidad([], 'Eb')).toBe('Eb');
+    expect(siguienteTonalidad([], null)).toBe('C');
+    expect(siguienteTonalidad(['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'], 'C')).toBeNull();
+  });
+  it('marcar una tonalidad la anota en «La melodía»; volver a marcarla la quita de todos los pasos', () => {
+    let r = alternarTonalidadTema({}, 't', 'F', 10);
+    expect(detalleDe(r.t, PASO_MELODIA).keys).toEqual(['F']);
+    expect(tonalidadesDe(r.t)).toEqual(['F']);
+    // una tonalidad anotada en otro paso cuenta como tocada y, al desmarcarla, se quita de ahí
+    r = alternarTonalidad(r, 't', 5, 'Bb', 11);
+    expect(tonalidadesDe(r.t)).toEqual(['F', 'Bb']);
+    r = alternarTonalidadTema(r, 't', 'Bb', 12);
+    expect(tonalidadesDe(r.t)).toEqual(['F']);
+    r = alternarTonalidadTema(r, 't', 'F', 12);
+    expect(tonalidadesDe(r.t)).toEqual([]);
+  });
+  it('ignora tonalidades que no existen', () => {
+    expect(alternarTonalidadTema({}, 't', 'H', 1)).toEqual({});
   });
 });

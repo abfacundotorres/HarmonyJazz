@@ -416,3 +416,35 @@ test.describe('compases flojos: se ven en Temas y en Hoy y se practican con un t
     await expect(page.locator('.loopbar')).toContainText('compases 2–3');
   });
 });
+
+test.describe('Temas: mapa de las doce tonalidades', () => {
+  test('se marcan tocando, la sugerencia sigue el ciclo de cuartas desde la del tema y se guarda en «La melodía»', async ({ page }) => {
+    await conTema(page); // Hojas de otoño: Sol (concierto) menor
+    await page.goto('/#/repertorio');
+    const mapa = page.getByRole('region', { name: 'Hojas de otoño' }).getByRole('group', { name: 'Tonalidades de Hojas de otoño' });
+    await expect(mapa.locator('.tonalidades button')).toHaveCount(12);
+    await expect(mapa).toContainText('0 de 12');
+    // desde Sol: Sol, Do, Fa…; Do concierto se lee Re en Si♭, por eso se busca por el nombre en concierto del botón
+    await expect(mapa.getByRole('link', { name: /Tocar Hojas de otoño en/ })).toHaveAttribute('href', /p=u%3Ahoja&k=G$/);
+    await mapa.locator('.tonalidades button[title="Concierto: G"]').click();
+    await expect(mapa).toContainText('1 de 12');
+    await expect(mapa.getByRole('link', { name: /Tocar Hojas de otoño en/ })).toHaveAttribute('href', /k=C$/); // sigue Do
+    expect((await guardado(page))['u:hoja'].detalle['3'].keys).toEqual(['G']); // «La melodía»
+    // desmarcar
+    await mapa.locator('.tonalidades button[title="Concierto: G"]').click();
+    await expect(mapa).toContainText('0 de 12');
+    // el toque abre el tema en esa tonalidad
+    await mapa.getByRole('link', { name: /Tocar Hojas de otoño en/ }).click();
+    await expect(page).toHaveURL(/#\/playalong\?p=u%3Ahoja&k=G/);
+  });
+
+  test('en Hoy, el tema en estudio dice cuántas tonalidades lleva y cuál probar', async ({ page }) => {
+    await conTema(page);
+    await page.addInitScript(() => localStorage.setItem('harmonyjazz:temaestudio', JSON.stringify({ id: 'u:hoja' })));
+    await page.goto('/#/hoy');
+    const t = page.getByRole('region', { name: 'Tema en estudio' });
+    await expect(t).toContainText('Tonalidades: 0 de 12');
+    await t.getByRole('link', { name: /probá en/ }).click();
+    await expect(page).toHaveURL(/#\/playalong\?p=u%3Ahoja&k=G/);
+  });
+});
