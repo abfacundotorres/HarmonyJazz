@@ -13,6 +13,7 @@ export function Notation({
   highlightNote,
   transpose = 0,
   tira = false,
+  seguir = true,
 }: {
   abc: string;
   highlightBar?: number;
@@ -21,6 +22,8 @@ export function Notation({
   transpose?: number;
   /** Una sola línea larga que se desplaza para dejar la nota que suena en un lugar fijo (tipo teleprompter). El abc debe venir en una línea. */
   tira?: boolean;
+  /** Si la nota que suena trae la pantalla a la vista (partituras largas de ejercicios). Apagado en pentagramas que van dentro de otra pantalla: el desplazamiento se llevaría al usuario del reproductor. */
+  seguir?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -106,8 +109,8 @@ export function Notation({
     }
     // en una partitura larga, la línea que suena queda a la vista
     const r = note.getBoundingClientRect();
-    if (!tira && (r.top < 60 || r.bottom > window.innerHeight - 60)) note.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [highlightNote, abc, width, tira]);
+    if (seguir && !tira && (r.top < 60 || r.bottom > window.innerHeight - 60)) note.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [highlightNote, abc, width, tira, seguir]);
 
   // tira: la nota que suena queda fija a ~30 % del ancho y la partitura pasa por debajo
   useEffect(() => {

@@ -108,3 +108,27 @@ test('la línea se puede oír sobre el acompañamiento: suena con la trompeta y 
   await expect(pent.locator('.hj-note').first()).toBeAttached({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Detener' }).first().click();
 });
+
+test('al sonar con la línea de guide tones abierta (fuera del atril) la pantalla no sube y baja sola', async ({ page }) => {
+  await sinAtrilAutomatico(page);
+  await conTema(page);
+  await page.goto('/#/playalong?p=u:lineatema&estudio=1');
+  await page.waitForSelector('.board');
+  await abrirEstudio(page);
+  await page.locator('details.linea > summary').click();
+  await expect(page.locator('details.linea .linea-pentagrama svg')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  // anota la posición de la pantalla cada 100 ms mientras suena
+  await page.evaluate(() => {
+    const w = window as unknown as { __ys: number[] };
+    w.__ys = [];
+    setInterval(() => w.__ys.push(window.scrollY), 100);
+  });
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  await expect(page.locator('details.linea .linea-pentagrama .hj-note').first()).toBeAttached({ timeout: 20_000 });
+  await page.waitForTimeout(5000); // varias notas: el marcador pasa de una a otra
+  const ys = await page.evaluate(() => (window as unknown as { __ys: number[] }).__ys);
+  // el tablero de acordes puede ajustar unos píxeles para dejar a la vista el compás que suena (`block: 'nearest'`); lo que no puede es llevar la pantalla hasta el pentagrama y volver
+  expect(Math.max(...ys) - Math.min(...ys), `posiciones de la pantalla: ${[...new Set(ys)].join(', ')}`).toBeLessThan(40);
+  await page.getByRole('button', { name: 'Detener' }).first().click();
+});
