@@ -13,9 +13,18 @@ import { userTunes } from '../repertorioTemas';
 import { navigate } from '../hooks';
 
 function FocusPicker({ legend, foci, value, onChange, done, next }: { legend: string; foci: Focus[]; value: string; onChange: (id: string) => void; done: ReadonlySet<string>; next: string | null }) {
+  const elegido = foci.find((f) => f.id === value);
   return (
     <fieldset className="focuspick">
       <legend>{legend}</legend>
+      {/* el foco elegido en una línea; la lista entera (decenas de focos) se abre sólo para cambiarlo */}
+      <details className="focuspick-det">
+        <summary>
+          <b>{elegido?.title ?? 'Elegir un foco'}</b>
+          {elegido && <small className="muted">{elegido.summary}</small>}
+          {elegido && <PathTag id={elegido.id} done={done} next={next} />}
+          <small className="cambiar">Cambiar</small>
+        </summary>
       {foci.map((f) => (
         <div key={f.id} className={`focuscard ${f.id === value ? 'on' : ''}`}>
           <div className="pick">
@@ -32,6 +41,7 @@ function FocusPicker({ legend, foci, value, onChange, done, next }: { legend: st
           </details>
         </div>
       ))}
+      </details>
     </fieldset>
   );
 }

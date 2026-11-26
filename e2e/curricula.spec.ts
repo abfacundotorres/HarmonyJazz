@@ -1,4 +1,4 @@
-import { expect, test } from './helpers';
+import { abrirFocos, expect, test } from './helpers';
 
 const guardado = (page: import('@playwright/test').Page) => page.evaluate(() => JSON.parse(localStorage.getItem('harmonyjazz:curricula') ?? 'null'));
 
@@ -90,15 +90,19 @@ test.describe('currícula de tres años', () => {
     await expect(aviso).toContainText('Tríadas mayores');
     await expect(aviso).toContainText('Tema sugerido:');
     await expect(aviso).toContainText('Now’s the Time');
+    await abrirFocos(page);
     await expect(page.locator('#f-l-triadas-mayores')).toBeChecked();
     // con la primera aprobada, ofrece la segunda
     await page.addInitScript(() => localStorage.setItem('harmonyjazz:curricula', JSON.stringify({ aprobadas: [1], actual: null, checks: {} })));
     await page.goto('/#/mes');
     await page.reload();
     await expect(page.locator('.notice', { hasText: 'Currícula · mes 2' })).toContainText('Swing y articulación');
+    await abrirFocos(page);
     await expect(page.locator('#f-l-swing-articulacion')).toBeChecked();
+    await abrirFocos(page);
     await page.locator('#f-l-escalas-bebop').check();
     await page.getByRole('button', { name: 'Usar la materia' }).click();
+    await abrirFocos(page);
     await expect(page.locator('#f-l-swing-articulacion')).toBeChecked();
   });
 

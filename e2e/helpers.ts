@@ -180,8 +180,17 @@ export async function cambiarVista(page: Page, vista: 'Si♭' | 'Concierto') {
   await page.goto('/' + volver);
 }
 
-/** En «Temas», abre los pasos de cada tema que estén plegados (los que no se empezaron o ya terminaron arrancan cerrados). */
+/** En «Temas», abre cada tarjeta plegada y, dentro, los pasos (las tarjetas arrancan en una línea; sólo la del tema en estudio viene abierta). */
 export async function abrirPasos(page: Page) {
   await page.locator('section.tema').first().waitFor();
-  for (const s of await page.locator('details.pasos-det:not([open]) > summary').all()) await s.click();
+  // cada toque cambia qué queda por abrir: se abre siempre el primero que siga plegado
+  for (const sel of ['details.tema-det:not([open]) > summary', 'details.pasos-det:not([open]) > summary']) {
+    for (let i = 0; i < 50 && (await page.locator(sel).count()) > 0; i++) await page.locator(sel).first().click();
+  }
+}
+
+/** En «Mi mes», despliega la lista de focos de cada área (por defecto se ve sólo el elegido). */
+export async function abrirFocos(page: Page) {
+  await page.locator('details.focuspick-det').first().waitFor();
+  for (let i = 0; i < 5 && (await page.locator('details.focuspick-det:not([open]) > summary').count()) > 0; i++) await page.locator('details.focuspick-det:not([open]) > summary').first().click();
 }

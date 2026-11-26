@@ -1127,3 +1127,13 @@ body:has(.barra-flotante) .app { padding-bottom: 96px; }
 .mapa-tonalidades { margin: 6px 0; }
 .mapa-tonalidades .tonalidades { gap: 4px; }
 .mapa-tonalidades .tonalidades button { min-width: 44px; min-height: 40px; padding: 4px 6px; }
+.tema > .tema-det > summary { cursor: pointer; list-style: none; display: grid; gap: 4px; min-height: 44px; align-content: center; }
+.tema > .tema-det > summary::-webkit-details-marker { display: none; }
+.tema > .tema-det > summary .tema-linea::before { content: '▸'; color: var(--muted); }
+.tema > .tema-det[open] > summary .tema-linea::before { content: '▾'; }
+.tema-linea { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.tema-nombre { font-family: var(--serif); font-size: 1.1rem; }
+.tema > .tema-det > summary progress { width: 100%; height: 6px; }
+.focuspick-det > summary { cursor: pointer; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 10px; background: var(--surface-2); min-height: 44px; }
+.focuspick-det > summary .cambiar { color: var(--accent); font-weight: 700; }
+.focuspick-det[open] > summary .cambiar { display: none; }
