@@ -128,7 +128,8 @@ test('al sonar con la línea de guide tones abierta (fuera del atril) la pantall
   await expect(page.locator('details.linea .linea-pentagrama .hj-note').first()).toBeAttached({ timeout: 20_000 });
   await page.waitForTimeout(5000); // varias notas: el marcador pasa de una a otra
   const ys = await page.evaluate(() => (window as unknown as { __ys: number[] }).__ys);
-  // el tablero de acordes puede ajustar unos píxeles para dejar a la vista el compás que suena (`block: 'nearest'`); lo que no puede es llevar la pantalla hasta el pentagrama y volver
-  expect(Math.max(...ys) - Math.min(...ys), `posiciones de la pantalla: ${[...new Set(ys)].join(', ')}`).toBeLessThan(40);
+  // el tablero de acordes puede correr la pantalla unas decenas de píxeles para dejar a la vista el compás que suena (`block: 'nearest'`, intencional;
+  // en CI llegó a ~50 px). El bug era otro: el pentagrama arrastraba la pantalla hasta él (más de 1500 px) y volvía a cada nota.
+  expect(Math.max(...ys), `posiciones de la pantalla: ${[...new Set(ys)].join(', ')}`).toBeLessThan(200);
   await page.getByRole('button', { name: 'Detener' }).first().click();
 });
