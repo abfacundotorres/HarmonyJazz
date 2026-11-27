@@ -2,6 +2,7 @@ import { MutableRefObject, useEffect, useId, useMemo, useRef, useState } from 'r
 import { engine, Mix, PlayOptions, Style, STYLE_LABEL } from '../../audio/engine';
 import type { MelNote } from '../../exercises/generators';
 import { beatsPerBar, type Chart } from '../../theory/chart';
+import { VOLUME } from '../../state/volume';
 import { useSettings } from '../hooks';
 import { Ecualizador } from './Ecualizador';
 import { NumberField } from './NumberField';
@@ -253,7 +254,7 @@ export function Player({ chart, tempo, onTempo, melody, style: initialStyle = 's
         <label>
           Volumen{' '}
           <input
-            type="range" min={-14} max={2} step={1} value={settings.volume}
+            type="range" min={VOLUME.min} max={VOLUME.max} step={1} value={settings.volume}
             onChange={(e) => setSettings({ volume: Number(e.target.value) })}
           />{' '}
           {settings.volume > 0 ? '+' : ''}{settings.volume} dB

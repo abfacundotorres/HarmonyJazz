@@ -9,6 +9,7 @@ import { cleanMixer } from '../audio/mixer';
 import { isMemoriaModo } from '../content/memoria';
 import { BPM } from '../content/repertorio';
 import { CONCERT_KEYS } from '../theory/chart';
+import { VOLUME } from './volume';
 import { THEME_IDS } from '../ui/themes';
 
 export type Sanitizer = (raw: unknown) => unknown;
@@ -28,7 +29,7 @@ export const sanitizeSettings: Sanitizer = (raw) => {
   set('register', oneOf(raw.register, ['grave', 'medio', 'agudo'] as const));
   set('swing', num(raw.swing, 0.5, 0.72));
   set('focusLesson', str(raw.focusLesson, 40));
-  set('volume', num(raw.volume, -14, 2));
+  set('volume', num(raw.volume, VOLUME.min, VOLUME.max));
   if (raw.mixer !== undefined) set('mixer', cleanMixer(raw.mixer));
   set('output', oneOf(raw.output, ['auto', 'phone', 'normal'] as const));
   set('chordStyle', oneOf(raw.chordStyle, ['ireal', 'full'] as const));

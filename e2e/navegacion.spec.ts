@@ -82,6 +82,17 @@ test.describe('menú de pantallas', () => {
     }
   });
 
+  test('el volumen arranca en −4 dB y no pasa de 0 dB: con más, los acordes saturan en el altavoz del celular', async ({ page }) => {
+    await page.goto('/#/mas');
+    const vol = page.getByLabel(/Volumen/);
+    await expect(vol).toHaveValue('-4');
+    await expect(vol).toHaveAttribute('max', '0');
+    // un volumen guardado por encima del techo (de una versión anterior) se lleva a 0 dB
+    await page.evaluate(() => localStorage.setItem('harmonyjazz:settings', JSON.stringify({ volume: 2 })));
+    await page.reload();
+    await expect(page.getByLabel(/Volumen/)).toHaveValue('0');
+  });
+
   test('Más reúne apariencia, sonido y copia de seguridad, y los ajustes se recuerdan', async ({ page }) => {
     await page.goto('/#/mas');
     await expect(page.getByRole('heading', { name: 'Apariencia' })).toBeVisible();

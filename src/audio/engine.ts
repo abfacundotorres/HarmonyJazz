@@ -460,7 +460,7 @@ export class JazzEngine {
   /** Estado de las muestras: idle (sin pedir), loading, ready (instrumentos reales) o synth (se usan sintetizadores). */
   samples: 'idle' | 'loading' | 'ready' | 'synth' = 'idle';
   private loading: Promise<void> | null = null;
-  private volumeDb = 0;
+  private volumeDb = -4;
   private outputMode: OutputMode = 'normal';
   private mixer: Mixer = defaultMixer();
 
@@ -497,9 +497,9 @@ export class JazzEngine {
     }
   }
 
-  /** Volumen general en dB respecto del nivel base (−14…+2; más arriba empieza a distorsionar). */
+  /** Volumen general en dB respecto del nivel base (−14…0; con 0 el pico llega a −0,6 dBFS y en el altavoz de un celular los acordes saturan). */
   setVolume(db: number) {
-    this.volumeDb = Math.max(-14, Math.min(2, Number.isFinite(db) ? db : 0));
+    this.volumeDb = Math.max(-14, Math.min(0, Number.isFinite(db) ? db : -4));
     if (this.inst) this.inst.trim.volume.value = BASE_TRIM_DB + this.volumeDb;
   }
 
