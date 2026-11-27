@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ThemeId } from '../ui/themes';
 import { defaultMixer, type Mixer } from '../audio/mixer';
 import { sanitizeKey } from './sanitize';
+import { VOLUME } from './volume';
 
 const PREFIX = 'harmonyjazz:';
 
@@ -81,7 +82,7 @@ export interface Settings {
   autoAtril: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: 0, mixer: defaultMixer(), output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false, autoAtril: true };
+export const DEFAULT_SETTINGS: Settings = { view: 'Bb', register: 'medio', swing: 0.64, focusLesson: '', volume: VOLUME.default, mixer: defaultMixer(), output: 'auto', chordStyle: 'ireal', theme: 'auto', a4: 440, keepAwake: false, autoAtril: true };
 
 /** Rango escrito para trompeta (MIDI) según el registro elegido. */
 export const WRITTEN_RANGE: Record<Register, [number, number]> = {

@@ -2,6 +2,7 @@ import { BackupCard } from '../components/BackupCard';
 import { ThemeCard } from '../components/ThemeCard';
 import { ATRIL_SIZE, clampAtrilSize } from '../../state/atril';
 import { usePersistent } from '../../state/storage';
+import { VOLUME } from '../../state/volume';
 import { useReading, useSettings } from '../hooks';
 
 /** Ajustes: apariencia, sonido, lectura y copia de seguridad (antes repartidos entre Hoy y el reproductor). */
@@ -50,7 +51,7 @@ export function More() {
         <div className="settingslist">
           <label>
             Volumen: {settings.volume > 0 ? '+' : ''}{settings.volume} dB
-            <input type="range" min={-14} max={2} step={1} value={settings.volume} onChange={(e) => setSettings({ volume: Number(e.target.value) })} />
+            <input type="range" min={VOLUME.min} max={VOLUME.max} step={1} value={settings.volume} onChange={(e) => setSettings({ volume: Number(e.target.value) })} />
           </label>
           <label>
             Swing: {settings.swing <= 0.52 ? 'recto' : settings.swing >= 0.66 ? 'tresillo' : `${Math.round(settings.swing * 100)} %`}

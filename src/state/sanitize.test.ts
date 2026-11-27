@@ -15,14 +15,14 @@ describe('validación de datos guardados', () => {
     const clean = sanitizeKey('settings', { minutes: 'a', view: 7, register: null, volume: 'x', swing: 0.6, output: 'phone' }) as object;
     const merged = { ...DEFAULT_SETTINGS, ...clean };
     expect(merged.view).toBe('Bb');
-    expect(merged.volume).toBe(0);
+    expect(merged.volume).toBe(-4); // el valor por defecto: con 0 dB los acordes saturan en el altavoz de un celular
     expect(merged.swing).toBe(0.6);
     expect(merged.output).toBe('phone');
   });
 
   it('los números fuera de rango se recortan y NaN o Infinity se descartan', () => {
     const c = sanitizeKey('settings', { volume: 99, swing: Infinity }) as Record<string, number>;
-    expect(c.volume).toBe(2);
+    expect(c.volume).toBe(0); // el techo del control es 0 dB
     expect(c.swing).toBeUndefined();
   });
 
